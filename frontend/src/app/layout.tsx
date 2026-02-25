@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import pkg from '../../package.json';
 
 export const metadata: Metadata = {
-  title: 'AML/KYC/CDD Compliance Portal',
+  title: `AML/KYC/CDD Compliance Portal v${pkg.version}`,
   description: 'Corporate Service Provider Compliance Management Platform',
   robots: { index: false, follow: false },
 };
