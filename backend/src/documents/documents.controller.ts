@@ -31,7 +31,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Upload a document for a client' })
   async upload(
     @Param('clientId') clientId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
     @Body('documentType') documentType: string,
     @Request() req: any,
   ) {

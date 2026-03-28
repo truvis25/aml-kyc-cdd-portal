@@ -28,7 +28,7 @@ export class MlroService {
         referenceNumber,
         subject: data.subject,
         narrative: data.narrative,
-        suspiciousActivity: data.suspiciousActivity,
+        suspiciousActivity: data.suspiciousActivity as any,
         status: 'DRAFT',
       },
     });
