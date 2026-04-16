@@ -17,7 +17,7 @@ Establish the security and compliance backbone before any customer data flows. A
 - Append-only enforcement on `audit_log` (trigger + permission grant)
 - Generic audit trigger function (`log_audit_event()`) attached to core tables
 - Supabase Auth: email+password, email verification, TOTP MFA
-- JWT enrichment Edge Function: adds `tenant_id`, `role`, `mfa_verified` claims
+- JWT enrichment: Postgres Custom Access Token Hook (`custom_access_token_hook`) adds `tenant_id`, `role`, `mfa_verified` claims — C-02
 - RBAC role definitions and permission map in `modules/auth/rbac.ts`
 - Supabase client setup: browser, server, admin clients
 - Edge Middleware: auth guard, tenant resolution, MFA enforcement
@@ -31,43 +31,45 @@ Establish the security and compliance backbone before any customer data flows. A
 ### 3. Milestone Task List
 | Task ID | Title | Status |
 |---|---|---|
-| M1-T01 | Initialize Next.js 16 App Router project | `todo` |
-| M1-T02 | Create canonical folder structure | `todo` |
+| M1-T01 | Initialize Next.js 16 App Router project | `done` |
+| M1-T02 | Create canonical folder structure | `done` |
 | M1-T03 | Supabase CLI initialisation + extensions | `todo` |
-| M1-T04 | Vercel project setup + environments | `todo` |
-| M1-T05 | Migration 0001: tenants table | `todo` |
-| M1-T06 | Migration 0002: users, user_roles, roles | `todo` |
-| M1-T07 | Migration 0003: audit_log (append-only, hash chain) | `todo` |
-| M1-T08 | Migration 0004: generic audit trigger function | `todo` |
+| M1-T04 | Vercel project setup + environments (C-01: me1 region) | `todo` |
+| M1-T05 | Migration 0001: tenants table | `done` |
+| M1-T06 | Migration 0002: users, user_roles, roles | `done` |
+| M1-T07 | Migration 0003: audit_log (append-only, hash chain) | `done` |
+| M1-T08 | Migration 0004: generic audit trigger function | `done` |
 | M1-T09 | Supabase Auth configuration (email, MFA) | `todo` |
-| M1-T10 | JWT enrichment Edge Function (enrich-jwt) | `todo` |
-| M1-T11 | RBAC role definitions + permission map | `todo` |
-| M1-T12 | Auth service / Supabase client setup (browser, server, admin) | `todo` |
-| M1-T13 | Edge Middleware: auth guard, tenant resolution, MFA check | `todo` |
-| M1-T14 | Sign-in, email verification, MFA setup UI | `todo` |
-| M1-T15 | User invitation flow | `todo` |
-| M1-T16 | Role-based navigation shell | `todo` |
-| M1-T17 | Audit service module (emit, query, export) | `todo` |
+| M1-T10 | JWT enrichment: Postgres Custom Access Token Hook (C-02) — Migration 0005 + Dashboard registration | `done (migration); register in dashboard` |
+| M1-T11 | RBAC role definitions + permission map | `done` |
+| M1-T12 | Auth service / Supabase client setup (browser, server, admin) | `done` |
+| M1-T13 | Edge Proxy (proxy.ts): auth guard, tenant resolution, MFA check | `done` |
+| M1-T14 | Sign-in, email verification, MFA setup UI | `done` |
+| M1-T15 | User invitation flow | `done` |
+| M1-T16 | Role-based navigation shell | `done` |
+| M1-T17 | Audit service module (emit, query, export) | `done` |
 
 ### 4. Milestone Checklist
 - [ ] Next.js project builds without TypeScript errors (`npm run build`)
 - [ ] All folder structure matches DevPlan Section 10 exactly
-- [ ] `supabase start` runs locally and all migrations apply cleanly
+- [ ] `supabase start` runs locally and all migrations (0001–0005) apply cleanly
 - [ ] `supabase db reset` runs without errors
 - [ ] pgcrypto, pg_cron, uuid-ossp extensions enabled
-- [ ] Vercel staging deployment live from repo
+- [ ] Vercel staging deployment live from repo (region: `me1` Bahrain — C-01)
 - [ ] tenants table created with RLS enabled
 - [ ] users + user_roles + roles tables created with RLS and seed data
 - [ ] audit_log table: UPDATE blocked by trigger, DELETE blocked by trigger
 - [ ] audit_log: INSERT succeeds with correct row_hash populated
 - [ ] prev_hash references previous row correctly (hash chain)
 - [ ] Generic audit trigger fires on tenants INSERT and user_roles INSERT
+- [ ] `custom_access_token_hook` Postgres function created (migration 0005) — C-02
+- [ ] `custom_access_token_hook` registered in Supabase Dashboard → Auth → Hooks
 - [ ] JWT contains tenant_id, role, mfa_verified after sign-in
 - [ ] RBAC: all 7 roles defined with correct permission maps
 - [ ] Admin client (service role) only importable in Edge Functions — not in app/
-- [ ] Unauthenticated user → redirected to /sign-in by middleware
-- [ ] Analyst accessing /admin → 403 by middleware
-- [ ] Cross-tenant JWT → 403 by middleware
+- [ ] Unauthenticated user → redirected to /sign-in by proxy.ts
+- [ ] Analyst accessing /admin → 403 by proxy.ts
+- [ ] Cross-tenant JWT → 403 by proxy.ts
 - [ ] MLRO without MFA → redirected to /mfa-setup
 - [ ] Sign-in flow works end-to-end
 - [ ] MFA TOTP setup flow works for Tenant Admin
@@ -77,17 +79,15 @@ Establish the security and compliance backbone before any customer data flows. A
 ### 5. Milestone Risks
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| JWT enrichment hook complexity (Supabase hook type selection) | Medium | High | Prototype hook first before any RLS-dependent feature |
+| Postgres hook not registered in dashboard after migration | Medium | High | Registration step documented in CLAUDE.md and MILESTONE_1_PLAN.md; test JWT claims immediately after registration |
 | RLS policy errors causing cross-tenant data exposure | Low | Critical | pgTAP test suite for every policy; test with wrong tenant context |
 | MFA enforcement gaps for specific routes | Medium | High | Test every sensitive route with user who has no MFA |
-| Vercel region misconfiguration for data residency | Low | High | Confirm region before project creation (C-01) |
 | Supabase CLI migration conflicts in team environment | Medium | Medium | Strict migration naming convention (numbered, sequential) |
 
 ### 6. Milestone Blockers
 - Supabase project not created (supabase.com) → blocks M1-T03
 - Vercel project not connected to repo → blocks M1-T04
-- Vercel region not confirmed (C-01) → blocks M1-T04
-- MFA enforcement approach not confirmed (C-02) → blocks M1-T09 + M1-T10
+- `custom_access_token_hook` not registered in Supabase dashboard → JWT claims missing → all RLS fails
 
 ### 7. Milestone Acceptance Checklist
 - [ ] Sign in as Tenant Admin → see dashboard, not another tenant's data

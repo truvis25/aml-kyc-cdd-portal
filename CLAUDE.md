@@ -19,11 +19,21 @@ Planning docs: see `docs/` folder.
 | Schema validation | Zod v4 |
 | Database | Supabase Postgres (shared schema + RLS) |
 | Auth | Supabase Auth (email+password + TOTP MFA) |
-| Edge Functions | Supabase Edge Functions (Deno) |
+| JWT Enrichment | Postgres Custom Access Token Hook (`custom_access_token_hook`) |
+| Edge Functions | Supabase Edge Functions (Deno) — for future async tasks |
 | File Storage | Supabase Storage (private buckets, signed URLs) |
-| Deployment | Vercel (App Router) |
+| Deployment | Vercel (App Router) — region `me1` (Bahrain) |
 
-## Repository
+## Confirmed Architecture Decisions
+
+| Decision | Value |
+|---|---|
+| **C-01** Vercel region | `me1` (Bahrain) — UAE data residency baseline |
+| **C-02** JWT enrichment method | Postgres Custom Access Token Hook (`custom_access_token_hook` in migration 0005) |
+| **C-10** Multi-tenancy model | Shared schema + `tenant_id` on all tenant-scoped tables + strict RLS (schema-per-tenant deferred) |
+
+> **C-02 registration:** After applying migration 0005, enable the hook in:
+> Supabase Dashboard → Authentication → Hooks → Custom Access Token Hook → select `custom_access_token_hook`
 
 - Remote: `truvis25/aml-kyc-cdd-portal`
 - Feature branches should be pushed to `origin` and PRs opened against `main`
@@ -58,8 +68,9 @@ supabase test db
 # Generate TypeScript types from Supabase schema
 npx supabase gen types typescript --local > lib/supabase/database.types.ts
 
-# Deploy Edge Functions to Supabase
-supabase functions deploy enrich-jwt
+# Deploy Edge Functions to Supabase (future async functions only)
+# NOTE: enrich-jwt Edge Function is RETIRED — JWT enrichment is now a Postgres hook (C-02)
+# supabase functions deploy <function-name>
 ```
 
 ## Environment Setup
@@ -124,6 +135,7 @@ tests/
 7. **RBAC checks at two layers** -- middleware (JWT claims) AND API route (assertPermission)
 8. **customer_data_versions is append-only** -- never bare UPDATE on customer data fields
 9. **Webhook queue before provider calls** -- all async webhooks go through `webhook_events` queue
+10. **JWT enrichment is a Postgres hook (C-02)** -- `custom_access_token_hook` in migration 0005; the `enrich-jwt` Edge Function is retired and must NOT be deployed
 
 ## Milestone Status
 

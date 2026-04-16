@@ -97,6 +97,15 @@ export async function middleware(request: NextRequest) {
     const role = claims.role;
     const mfaVerified = Boolean(claims.mfa_verified);
 
+    // Fail closed: if JWT is missing enriched claims the Custom Access Token
+    // Hook either failed or the user has no active role assignment.
+    // Redirect to sign-in rather than allowing unenriched JWT through.
+    if (!claims.tenant_id || !role) {
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('error', 'session_invalid');
+      return NextResponse.redirect(signInUrl);
+    }
+
     // Check MFA requirement for sensitive paths
     const requiresMfa = MFA_REQUIRED_PATHS.some((p) => pathname.includes(p));
     const roleMfaRequired = role ? MFA_REQUIRED_ROLES.includes(role) : false;

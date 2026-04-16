@@ -1,21 +1,18 @@
 /**
- * enrich-jwt — Supabase Auth Hook (Edge Function)
+ * enrich-jwt — RETIRED (Decision C-02, 2026-04-16)
  *
- * Purpose: Adds custom claims to the JWT after successful authentication.
- * Claims added: tenant_id, role, mfa_verified, permissions[]
+ * This Edge Function approach has been superseded by a Postgres Function
+ * Custom Access Token Hook (decision C-02).
  *
- * These claims are read by:
- * - RLS policies: auth.jwt() ->> 'tenant_id'
- * - Edge Middleware: JWT claim inspection (no DB calls)
- * - API route handlers: auth context
+ * The active JWT enrichment implementation is now in:
+ *   supabase/migrations/0005_jwt_custom_access_token_hook.sql
+ *   Function: custom_access_token_hook(event jsonb)
  *
- * Source: DevPlan v1.0 Section 4.1 — JWT Custom Claims
- * Source: DevPlan v1.0 Section 7.1 — Supabase Auth Hook
+ * Registration: Supabase Dashboard → Authentication → Hooks
+ *               → Custom Access Token Hook → custom_access_token_hook
  *
- * SECURITY:
- * - Uses service role key (available as built-in Deno secret in Edge Functions)
- * - If user has no active role in user_roles, JWT claims are empty → access denied
- * - Fail closed: missing claims → re-authentication required (enforced by middleware)
+ * This file is retained for reference only. DO NOT deploy or register it.
+ * It will be removed in a future cleanup milestone.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

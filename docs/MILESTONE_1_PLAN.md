@@ -55,14 +55,16 @@ Build and prove the compliance backbone before any customer data flows:
 - [ ] Enable TOTP MFA in Supabase dashboard
 - [ ] [CONFIRM BEFORE BUILD] Decide MFA enforcement: Supabase Auth Hook vs JWT claim in middleware
 
-### Step 5 — JWT Enrichment Edge Function (highest-risk item — build and test FIRST)
-- [ ] Create `supabase/functions/enrich-jwt/index.ts`
-- [ ] Function reads `user_roles` (active role) and `users` (mfa_enabled) via service role client
-- [ ] Returns enriched claims: `{ tenant_id, role, mfa_verified, permissions }`
-- [ ] Register as Auth Hook in Supabase dashboard
-- [ ] **CRITICAL TEST:** Sign in → decode JWT → verify `tenant_id` and `role` present
+### Step 5 — JWT Enrichment: Postgres Custom Access Token Hook (C-02 confirmed)
+> **C-02 decision:** Uses a Postgres Function Custom Access Token Hook — NOT an HTTP/Edge Function hook.
+- [x] Migration `0005_jwt_custom_access_token_hook.sql` — `custom_access_token_hook(event jsonb)` function
+- [x] Function reads `user_roles` + `roles` (active role) and `users` (mfa_enabled) via SECURITY DEFINER
+- [x] Returns enriched claims: `{ tenant_id, role, mfa_verified, permissions }`
+- [x] GRANT EXECUTE to `supabase_auth_admin`; REVOKE from PUBLIC
+- [ ] **Register in Supabase Dashboard:** Auth → Hooks → Custom Access Token Hook → `custom_access_token_hook`
+- [ ] **CRITICAL TEST:** Sign in → decode JWT → verify `tenant_id`, `role`, `mfa_verified` present
 - [ ] **CRITICAL TEST:** Sign in as Analyst → decode JWT → `role` = 'analyst'
-- [ ] **CRITICAL TEST:** Simulate hook failure → verify user is NOT silently given access
+- [ ] **CRITICAL TEST:** User with no active role → JWT missing claims → proxy.ts blocks access
 
 ### Step 6 — RBAC Module
 - [ ] Create `lib/constants/roles.ts` — Role enum: `platform_super_admin | tenant_admin | mlro | senior_reviewer | analyst | onboarding_agent | read_only`
@@ -112,11 +114,11 @@ Build and prove the compliance backbone before any customer data flows:
 - [ ] `tests/db/004_rls_user_roles.sql` — user_roles cross-tenant isolation
 - [ ] Run all pgTAP tests against local Supabase: `supabase test db`
 
-### Step 14 — Vercel Setup
+### Step 14 — Vercel Setup (C-01 confirmed: `me1` Bahrain)
 - [ ] Connect repo to Vercel
+- [ ] `vercel.json` created with `"regions": ["me1"]` ✅
 - [ ] Create `main` → Production and `staging` → Staging environment mapping
 - [ ] Add environment variables per `.env.example`
-- [ ] [CONFIRM BEFORE BUILD] Select region: `me-1` (Middle East, Bahrain) or `fra1` (Frankfurt) based on UAE data residency requirement
 - [ ] Confirm staging deployment accessible
 
 ---
@@ -129,26 +131,27 @@ Build and prove the compliance backbone before any customer data flows:
 3.  Create folder structure            ← architecture
 4.  supabase init + config.toml       ← DB tooling
 5.  Write 0001_create_tenants.sql     ← first migration
-6.  Write 0002_create_users_roles.sql ← second migration  
+6.  Write 0002_create_users_roles.sql ← second migration
 7.  Write 0003_create_audit_log.sql   ← MOST CRITICAL MIGRATION
 8.  Write 0004_audit_triggers.sql     ← immutability enforcement
-9.  supabase db reset (verify)        ← validate migrations
-10. Configure Supabase Auth            ← auth foundation
-11. Write enrich-jwt Edge Function    ← JWT enrichment (highest risk)
-12. Test JWT claims (decode + verify)  ← validate JWT enrichment before proceeding
-13. Write lib/constants/roles.ts       ← role definitions
-14. Write modules/auth/rbac.ts         ← permission map
-15. Write lib/supabase/client.ts       ← browser client
+9.  Write 0005_jwt_custom_access_token_hook.sql  ← JWT enrichment (C-02: Postgres hook)
+10. supabase db reset (verify)        ← validate migrations 0001-0005
+11. Configure Supabase Auth            ← auth foundation
+12. Register custom_access_token_hook  ← Dashboard → Auth → Hooks
+13. Test JWT claims (decode + verify)  ← validate JWT enrichment before proceeding
+14. Write lib/constants/roles.ts       ← role definitions
+15. Write modules/auth/rbac.ts         ← permission map
+16. Write lib/supabase/client.ts       ← browser client
     Write lib/supabase/server.ts       ← server client  (parallel)
     Write lib/supabase/admin.ts        ← admin client   (parallel)
-16. Write middleware.ts                ← edge auth guard
-17. Build sign-in + MFA UI             ← auth flows
-18. Build invite flow                  ← user management
-19. Build nav shell                    ← authenticated layout
-20. Write modules/audit/               ← audit service
-21. Write pgTAP tests                  ← RLS verification
-22. Configure Vercel                   ← deployment
-23. Verify staging deployment          ← integration check
+17. Write proxy.ts                     ← edge auth guard (note: proxy.ts not middleware.ts)
+18. Build sign-in + MFA UI             ← auth flows
+19. Build invite flow                  ← user management
+20. Build nav shell                    ← authenticated layout
+21. Write modules/audit/               ← audit service
+22. Write pgTAP tests                  ← RLS verification
+23. Configure Vercel (me1 region)      ← deployment (vercel.json already created)
+24. Verify staging deployment          ← integration check
 ```
 
 ---
@@ -158,9 +161,10 @@ Build and prove the compliance backbone before any customer data flows:
 | Order | Filename | Why First |
 |---|---|---|
 | 1 | `0001_create_tenants.sql` | All tables depend on tenants.id FK |
-| 2 | `0002_create_users_roles.sql` | JWT enrichment reads from user_roles |
+| 2 | `0002_create_users_roles.sql` | JWT enrichment hook reads from user_roles |
 | 3 | `0003_create_audit_log.sql` | MOST CRITICAL — all compliance data depends on audit trail existing |
 | 4 | `0004_audit_triggers.sql` | Immutability must be enforced immediately, before any data is written |
+| 5 | `0005_jwt_custom_access_token_hook.sql` | Postgres Custom Access Token Hook (C-02) — must exist before hook registration |
 
 No other migrations should be created in Milestone 1. All subsequent table migrations (customers, documents, consent, screening, risk, cases, approvals) are Milestone 2+.
 
@@ -222,15 +226,15 @@ No other migrations should be created in Milestone 1. All subsequent table migra
 
 ---
 
-## Confirmations Required Before Starting M1 Coding
+## Confirmed Decisions (locked — 2026-04-16)
 
-| # | Question | Who Answers | Blocks |
-|---|---|---|---|
-| C-01 | Vercel region: `me-1` (Bahrain) or `fra1` (Frankfurt)? UAE data residency? | Product/Legal | Vercel project creation |
-| C-02 | MFA enforcement: Supabase Auth Hook type? Database Webhook vs Auth Hook (Edge Function)? | Engineering | M1-T09, M1-T10 |
-| C-10 | Shared schema + RLS acceptable for MVP (not schema-per-tenant)? | Product/CTO | All DB design |
+| # | Decision | Value |
+|---|---|---|
+| **C-01** ✅ | Vercel region | `me1` (Bahrain) — UAE/GCC data residency baseline |
+| **C-02** ✅ | JWT enrichment method | Postgres Custom Access Token Hook (`custom_access_token_hook`) — NOT an Edge Function |
+| **C-10** ✅ | Multi-tenancy model | Shared schema + `tenant_id` on all tenant-scoped tables + strict RLS |
 
-> **These three must be answered before writing the first line of code for M1.**
+> All three decisions are locked. Schema-per-tenant is deferred unless a regulatory or enterprise requirement forces redesign.
 
 ---
 
