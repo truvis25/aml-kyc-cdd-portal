@@ -5,6 +5,9 @@ import { assertPermission } from '@/modules/auth/rbac';
 import { emit } from '@/modules/audit/audit.service';
 import { AuditEventType, AuditEntityType } from '@/lib/constants/events';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+// Admin client is intentionally used here for auth.admin.inviteUserByEmail.
+// API routes are server-only — the service role key is never exposed to the browser.
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const InviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -52,11 +55,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    // 5. Send invitation via Supabase Auth
-    // The invitation email is sent by Supabase; the user activates their account
-    // Note: inviteUserByEmail requires the service role — handled here via admin client
-    // For MVP: use the standard client and auth.admin which is available server-side
-    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+    // 5. Send invitation via Supabase Auth (requires service role)
+    const adminClient = createAdminClient();
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
         data: {

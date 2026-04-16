@@ -21,7 +21,7 @@ export default function SignInPage() {
 
     if (authError === 'session_invalid') {
       setError(
-        'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.'
+        'Your account is not fully configured. This usually means your user profile or role assignment is missing. Please contact your administrator — signing in again will not resolve this.'
       );
       return;
     }
