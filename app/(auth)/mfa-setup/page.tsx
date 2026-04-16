@@ -74,6 +74,32 @@ export default function MfaSetupPage() {
       return;
     }
 
+    const completeRes = await fetch('/api/auth/mfa/complete', {
+      method: 'POST',
+    });
+    if (!completeRes.ok) {
+      let apiError = 'MFA verification succeeded, but account setup could not be completed.';
+      try {
+        const body = await completeRes.json();
+        if (typeof body?.error === 'string') {
+          apiError = body.error;
+        }
+      } catch {
+        // Fallback to generic message
+      }
+      setError(`${apiError} Please try again or contact your administrator.`);
+      setLoading(false);
+      return;
+    }
+
+    const { error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) {
+      router.push('/sign-in?error=session_refresh_failed');
+      router.refresh();
+      setLoading(false);
+      return;
+    }
+
     setStep('complete');
     setLoading(false);
   }

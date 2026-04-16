@@ -15,7 +15,12 @@ export default async function PlatformLayout({
     redirect('/sign-in');
   }
 
-  const claims = user.app_metadata as {
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  if (claimsError || !claimsData?.claims) {
+    redirect('/sign-in?error=session_invalid');
+  }
+
+  const claims = claimsData.claims as {
     tenant_id?: string;
     role?: Role;
     mfa_verified?: boolean;
@@ -23,7 +28,7 @@ export default async function PlatformLayout({
 
   if (!claims.tenant_id || !claims.role) {
     // JWT not yet enriched — force re-auth
-    redirect('/sign-in');
+    redirect('/sign-in?error=session_invalid');
   }
 
   return (

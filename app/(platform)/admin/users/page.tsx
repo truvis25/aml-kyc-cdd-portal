@@ -10,7 +10,12 @@ export default async function UsersPage() {
 
   if (!user) redirect('/sign-in');
 
-  const claims = user.app_metadata as { role?: Role; tenant_id?: string };
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  if (claimsError || !claimsData?.claims) {
+    redirect('/sign-in?error=session_invalid');
+  }
+
+  const claims = claimsData.claims as { role?: Role; tenant_id?: string };
   const role = claims.role;
 
   if (!role || !hasPermission(role, 'admin:manage_users')) {

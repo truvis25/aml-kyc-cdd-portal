@@ -1,7 +1,7 @@
 import type { Role } from '@/lib/constants/roles';
 
 /**
- * JWT custom claims added by the enrich-jwt Edge Function
+ * JWT custom claims added by the custom_access_token_hook Postgres function
  * These claims are available via auth.jwt() in RLS policies
  */
 export interface JwtClaims {

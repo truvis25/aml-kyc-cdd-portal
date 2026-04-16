@@ -98,7 +98,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const claims = user.app_metadata as {
+    const { data: claimsData } = await supabase.auth.getClaims();
+    const claims = (claimsData?.claims ?? {}) as {
       tenant_id?: string;
       role?: Role;
       mfa_verified?: boolean;
