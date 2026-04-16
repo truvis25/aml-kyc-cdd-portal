@@ -5,6 +5,7 @@ export class SupabaseEnvError extends Error {
   constructor() {
     super(SUPABASE_ENV_ERROR);
     this.name = "SupabaseEnvError";
+    Object.setPrototypeOf(this, SupabaseEnvError.prototype);
   }
 }
 
