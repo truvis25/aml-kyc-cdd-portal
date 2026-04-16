@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,24 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   // Generic error message — never reveal whether email exists or not
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('error');
+
+    if (authError === 'session_invalid') {
+      setError(
+        'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.'
+      );
+      return;
+    }
+
+    if (authError === 'session_refresh_failed') {
+      setError(
+        'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.'
+      );
+    }
+  }, []);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +54,19 @@ export default function SignInPage() {
 
     // Redirect to dashboard on success
     // Middleware will check MFA requirement and redirect to /mfa-setup if needed
-    router.push('/dashboard');
+    const redirectTo = new URLSearchParams(window.location.search).get('redirectTo');
+    let safeRedirectTo = '/dashboard';
+    if (redirectTo) {
+      try {
+        const redirectUrl = new URL(redirectTo, window.location.origin);
+        if (redirectUrl.origin === window.location.origin) {
+          safeRedirectTo = `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`;
+        }
+      } catch {
+        safeRedirectTo = '/dashboard';
+      }
+    }
+    router.push(safeRedirectTo);
     router.refresh();
   }
 
