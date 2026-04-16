@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { Role, MFA_REQUIRED_ROLES } from '@/lib/constants/roles';
+import { getSupabasePublicEnv, SupabaseEnvError } from '@/lib/supabase/env';
 
 /**
  * Edge Middleware — Auth Guard, Tenant Resolution, MFA Check
@@ -49,16 +50,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Only apply auth guard to platform routes
-  const isPlatformRoute = pathname.startsWith('/(platform)') ||
-    (!pathname.startsWith('/api/') && !pathname.startsWith('/_next'));
+  let supabaseEnv: ReturnType<typeof getSupabasePublicEnv>;
+  try {
+    supabaseEnv = getSupabasePublicEnv();
+  } catch (error) {
+    if (error instanceof SupabaseEnvError) {
+      return NextResponse.json(
+        { error: 'Service is not configured. Missing Supabase environment variables.' },
+        { status: 503 }
+      );
+    }
+    throw error;
+  }
 
   // Create a response to pass cookies through
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseEnv.url,
+    supabaseEnv.anonKey,
     {
       cookies: {
         getAll() {
