@@ -1,0 +1,1746 @@
+TruVis International Services​KYC / AML Onboarding Infrastructure — PRD v1.0
+ 
+
+TRUVIS INTERNATIONAL SERVICES
+ 
+Modular KYC / AML / Onboarding Infrastructure
+Product Requirements & Solution Design Document
+
+ 
+ 
+Jurisdictional Scope: UAE Federal  ·  ADGM  ·  DIFC  ·  KSA  ·  English Common Law Principles
+ 
+Intended Audience: Product  ·  Architecture  ·  Compliance  ·  Engineering
+ 
+Classification: Internal Working Document  ·  Confidential
+ 
+Version 1.0  ·  2026
+ 
+
+ 
+This document is implementation-ready in intent. It contains design assumptions that are clearly flagged. Areas requiring legal sign-off before production deployment are marked [LEGAL REVIEW REQUIRED]. Compliance baseline requirements are distinguished from best practice and optional enterprise controls throughout.
+
+SECTION 01
+Module Architecture
+The platform is designed as a set of independently deployable, loosely coupled modules. Each module owns its data domain and exposes a defined API surface. Tenants configure which modules are active and how they interconnect through the Admin Configuration Layer. No module is hardwired to another at the code level.
+ 
+1.1 Core Module Inventory
+The following 14 modules constitute the complete platform. All are required for a compliant, enterprise-grade deployment. MVP-phased modules are identified in Section 3.
+ 
+Module ID
+Module Name
+Primary Function
+Compliance Anchor
+M-01
+Client Onboarding Orchestrator
+Entry point and session manager for all onboarding flows. Routes to appropriate sub-modules based on entity type and risk configuration.
+UAE AML Law Art. 4; ADGM AML Rules Ch. 3; DFSA AML Module
+M-02
+Individual KYC
+Identity verification, document collection, liveness, biometric match, and data extraction for natural persons.
+UAE Cabinet Decision 10/2019; FATF R.10-12; KSA SAMA AML Manual 5.2
+M-03
+Corporate KYB
+Entity verification, registry confirmation, legal structure mapping, authorised signatory verification, sector and activity classification.
+UAE AML Law Art. 4(2); ADGM Rules 8.7; DIFC AML Module 3.4
+M-04
+UBO Identification Engine
+Beneficial ownership tracing through ownership chain to natural person threshold (25% default, configurable). Recursive corporate layer resolution.
+UAE Cabinet Resolution 109/2023; ADGM Co. Regs; DIFC Co. Law; FATF R.24
+M-05
+Customer Due Diligence (CDD)
+Risk-graded data and document collection above KYC baseline. Configurable by entity type, sector, risk tier, and jurisdiction.
+UAE AML Law Art. 5; ADGM AML Rules 4.2; KSA SAMA Art. 6; FATF R.10
+M-06
+Enhanced Due Diligence (EDD)
+Supplementary investigation for high-risk customers: PEPs, high-risk jurisdictions, complex structures, high-value relationships.
+UAE AML Law Art. 5(3); ADGM AML Rules 5.1; DFSA AML-5; FATF R.12
+M-07
+Screening Engine
+Real-time and batch screening against sanctions lists, PEP databases, adverse media, and proprietary watchlists. Configurable hit management.
+UAE Exec. Reg. Art. 14-16; UN Security Council Resolutions; OFAC; EU/UK lists
+M-08
+Risk Scoring Engine
+Composite risk score computation across customer, geography, product, channel, and relationship dimensions. Configurable weights and thresholds.
+FATF RBA Guidance; ADGM AML Rules 3.1; DFSA AML-3
+M-09
+Document Management
+Structured document collection, OCR extraction, automated validation, expiry tracking, re-request workflows, and secure storage.
+UAE AML Law Art. 14; ADGM Rules 10.3; DIFC PDPL; UAE PDPL 45/2021
+M-10
+Case Management & Review Queue
+Analyst workbench for manual review, escalation, approval, rejection, and remediation. Configurable queue routing and SLA management.
+FATF R.16-17; internal governance; ADGM Supervision requirements
+M-11
+Approval Workflow Engine
+Multi-stage, role-gated approval orchestration. Configurable by customer type, risk band, decision type, and business rule.
+Governance frameworks; segregation of duties; ADGM/DIFC internal controls
+M-12
+Audit Trail & Immutable Log
+Tamper-evident, append-only record of every action, decision, field change, document event, and system event across all modules.
+UAE AML Law Art. 14; ADGM Rules 10; evidentiary standards; English law
+M-13
+Consent & Privacy Controls
+Lawful basis capture, purpose-specific consent, withdrawal management, data subject rights request handling, and cross-border transfer records.
+UAE PDPL 45/2021; ADGM DPR 2021; DIFC PDPL 2020; KSA PDPL 2023
+M-14
+Ongoing Monitoring & Periodic Review
+Transaction pattern monitoring triggers, periodic re-KYC scheduling, change-event monitoring, risk tier re-assessment, and expiry management.
+UAE AML Law Art. 5(5); ADGM Rules 4.7; DFSA AML-4; FATF R.10(d)
+M-15
+Admin Configuration & Workflow Builder
+No-code/low-code admin interface for configuring all module parameters, building onboarding flows, setting rules, and managing templates by tenant.
+Internal governance; multi-tenant architecture requirement
+ 
+1.2 Module Dependency Map
+M-01 (Orchestrator) is the entry point for all flows. M-08 (Risk Scoring) is called after M-02/M-03 and M-07 complete, and its output determines the routing into M-05 or M-06. M-12 (Audit Trail) receives events from every other module and operates as a passive subscriber with no write-back capability.
+ 
+Module
+Upstream Dependencies
+Downstream Outputs To
+M-01 Orchestrator
+None — entry point
+M-02, M-03, M-07, M-08, M-10, M-11, M-12
+M-02 Individual KYC
+M-01, M-09, M-13
+M-04, M-07, M-08, M-12
+M-03 Corporate KYB
+M-01, M-09, M-13
+M-04, M-07, M-08, M-12
+M-04 UBO Engine
+M-03
+M-02 (UBO individuals), M-07, M-08, M-12
+M-05 CDD
+M-08 output (standard risk)
+M-10, M-11, M-12
+M-06 EDD
+M-08 output (high risk), M-07 hits
+M-10, M-11, M-12
+M-07 Screening
+M-02, M-03, M-04
+M-08 (risk input), M-06 (EDD trigger), M-10, M-12
+M-08 Risk Scoring
+M-02, M-03, M-04, M-07
+M-05, M-06, M-10, M-11, M-12
+M-09 Document Management
+M-01, M-02, M-03
+All modules requiring documents, M-12
+M-10 Case Management
+M-05, M-06, M-07, M-08, M-11
+M-11, M-12
+M-11 Approval Workflow
+M-10, M-08
+Final decision, M-12, M-14
+M-12 Audit Trail
+All modules (events only)
+External export, regulatory reporting
+M-13 Consent & Privacy
+M-01 (consent capture at entry)
+M-02, M-03, M-09, M-12
+M-14 Ongoing Monitoring
+M-11 (post-approval), M-08
+M-05, M-06, M-10, M-12
+M-15 Admin Config
+None — configuration layer
+All modules (config consumed at runtime)
+ 
+
+SECTION 02
+Workflow Design
+All onboarding flows are orchestrated by M-01. The base flow is configured per tenant in M-15 and resolved at runtime based on entity type, product type, and risk outcome. The following describes the canonical flows that the workflow engine must support as configurable templates.
+ 
+2.1 Individual Customer Onboarding — Standard CDD Flow
+Step
+Module(s)
+Decision / Output
+1. Session initiation & consent capture
+M-01, M-13
+Consent record created. Legal basis logged. Session token issued.
+2. Entity type selection
+M-01
+Routes to Individual KYC path. Journey configuration loaded.
+3. Personal data collection
+M-02
+Name, DOB, nationality, address, occupation, purpose of relationship captured.
+4. Document upload
+M-09
+Passport / national ID / residence permit. Proof of address if required.
+5. OCR extraction & auto-validation
+M-09, M-02
+MRZ read. Data consistency check. Document expiry check. Country config applied.
+6. Liveness check & biometric match
+M-02
+Liveness result. Face match score vs document photo. Pass/fail threshold applied.
+7. Sanctions & PEP screening
+M-07
+Name, aliases, DOB, nationality screened. Hit list generated. Fuzzy match score applied.
+8. Risk score computation
+M-08
+Customer risk score produced. Risk band assigned (Low / Medium / High / Unacceptable).
+9a. Low/Medium risk — CDD complete
+M-05
+Standard CDD data package assembled. Auto-approval eligibility assessed.
+9b. High risk — EDD triggered
+M-06
+EDD form served. Source of wealth, source of funds, enhanced documentation required.
+10. Screening hit resolution
+M-07, M-10
+Hits reviewed. True match / false positive determined by analyst.
+11. Case creation (if manual review)
+M-10
+Analyst queue assignment. SLA clock starts. Decision: Approve / Reject / Escalate / Request Info.
+12. Approval workflow execution
+M-11
+Approval path executed per risk band and tenant config. Senior sign-off if EDD.
+13. Decision recorded & communicated
+M-11, M-12
+Immutable decision record. Customer notified. Onboarding status updated.
+14. Ongoing monitoring enrolled
+M-14
+Periodic review schedule set. Change triggers configured. Transaction monitoring activated.
+ 
+2.2 Corporate Customer Onboarding — KYB Flow
+Step
+Module(s)
+Decision / Output
+1. Session, consent, entity type
+M-01, M-13
+Corporate entity path selected. Authorised representative identified.
+2. Entity data collection
+M-03
+Legal name, registration number, jurisdiction, registered address, incorporation date, legal form, activity/sector.
+3. Registry verification
+M-03
+Commercial registry lookup (API or manual). Name, number, status, address confirmed. Good standing check.
+4. Document collection — entity level
+M-09
+Certificate of incorporation, MOA/AOA, commercial licence, latest annual return, operating licence if regulated.
+5. Ownership structure mapping
+M-04 / M-03
+Shareholder register uploaded or declared. Ownership chain mapped. Corporate layers identified.
+6. UBO identification (recursive)
+M-04
+All natural persons meeting threshold identified. Threshold default 25% per UAE Cabinet Resolution 109; configurable to lower threshold per jurisdiction.
+7. UBO individual KYC
+M-02, M-09
+Each UBO goes through individual KYC sub-flow. Biometric may be waived if listed-company UBO with attestation.
+8. Authorised signatory verification
+M-02, M-03
+Board resolution or PoA collected. Signatory KYC completed.
+9. Sanctions/PEP — entity & all individuals
+M-07
+Entity name, registration, all directors, all UBOs, all signatories screened.
+10. Sector risk, jurisdiction risk applied
+M-08
+Composite risk score. High-risk sectors (DNFBP, financial services, arms, crypto) trigger additional controls.
+11. EDD if warranted
+M-06
+Source of funds (entity level). Group structure narrative. Audited financials. Regulatory status confirmation.
+12. Case, approval, decision
+M-10, M-11, M-12
+As per individual flow steps 11-13.
+13. Ongoing monitoring enrolled
+M-14
+Director/UBO change monitoring. Registry renewal monitoring. Periodic review cadence set by risk band.
+ 
+2.3 Risk-Based Routing Matrix
+The workflow engine evaluates the M-08 risk score output and routes the customer journey accordingly. Risk band thresholds are configurable per tenant and per customer type.
+ 
+Risk Band
+Score Range
+CDD Level
+Approval Path
+Review Period
+Low
+0-30
+Simplified CDD (where jurisdiction permits)
+Auto-approval eligible if no screening hits
+24-36 months
+Medium
+31-60
+Standard CDD
+Single reviewer approval
+12-18 months
+High
+61-80
+Enhanced Due Diligence (EDD)
+Dual reviewer + MLRO/Compliance sign-off
+6-12 months
+Unacceptable
+81-100
+EDD with escalation
+MLRO decision. SAR consideration mandatory. Senior Management sign-off for any approval.
+Continuous monitoring or exit
+ 
+ 
+[LEGAL REVIEW REQUIRED] Simplified CDD (SDD) is not available in all jurisdictions. Under UAE AML Law and ADGM AML Rules, SDD is only available for specific prescribed low-risk categories and requires documented internal risk assessment. DIFC DFSA does not permit SDD as a default. KSA SAMA does not recognise SDD as a formal risk reduction category for most financial institutions. Any SDD configuration must be approved by the tenant's MLRO and legal counsel before activation.
+ 
+2.4 Manual Review, Escalation, and Rejection Flow
+When auto-approval criteria are not met, or where screening hits, EDD flags, or analyst discretion require human review, the following escalation flow applies.
+ 
+1. Case auto-created
+M-10 creates a case record with full customer data package, risk score, screening results, and document inventory attached.
+2. Queue assignment
+Case assigned to appropriate queue (Standard Review / EDD Review / Sanctions Review / Senior Escalation) based on risk band and trigger type.
+3. Analyst review
+Analyst opens case. Reviews all data, documents, screening hits, and risk factors. Can: Request Additional Information (RAI), Escalate, Approve, or Reject.
+4. Request Additional Information
+System sends configured request to customer. Case status moves to Pending Customer Response. SLA paused. Timer set for customer response window.
+5. MLRO escalation
+High-risk or unacceptable-risk cases, PEP true matches, complex structures, or analyst uncertainty trigger MLRO queue. MLRO reviews and decides.
+6. SAR consideration
+Where suspicion arises during review, MLRO assesses STR/SAR obligation. If filed, case status updated (masked to operational staff per tipping-off rules). Onboarding may proceed or be declined.
+7. Senior Management sign-off
+For EDD approvals and PEP onboarding, separate senior management approval captured in M-11 with timestamped record.
+8. Rejection
+Rejection decision recorded with reason code. Customer notified with appropriately worded message (tipping-off-compliant). Case locked and archived.
+9. Audit trail closed
+All steps, decisions, timestamps, and actor IDs written immutably to M-12 audit log.
+ 
+2.5 Ongoing Re-KYC and Trigger-Based Review
+Periodic refresh — scheduled
+M-14 triggers a re-KYC workflow based on the customer's risk-band review period. Customer receives request for document refresh or declaration update.
+Event-triggered refresh
+System monitors for: document expiry, UBO/director change alerts from registry API, adverse media monitoring hits, transaction anomaly flags, customer-reported changes.
+Change-event workflow
+On trigger: risk score recalculated. If risk band increases, EDD workflow initiated. If risk band decreases, standard refresh applied.
+Exit / off-boarding
+If customer cannot satisfy re-KYC requirements or risk becomes unacceptable, exit workflow initiated. Records retained per retention schedule. SAR obligation assessed.
+ 
+2.6 Workflow Builder — Admin Perspective
+M-15 provides a visual workflow builder with the following capabilities. The builder operates on a flow definition JSON schema that is versioned and applied at runtime.
+ 
+Capability
+Description
+Configuration Scope
+Step sequencer
+Drag-and-drop ordering of onboarding steps. Steps are typed (Form, Document, Check, Decision, Notification).
+Per customer type. Per product type. Per jurisdiction.
+Conditional branching
+If/then/else logic applied to any field value, risk score output, screening result, or document status.
+Per step. Per field. Unlimited nesting.
+Field configuration
+Add, remove, or reorder fields within each step. Set required/optional/conditional status per field. Apply validation rules.
+Per form/step. Per customer type.
+Document requirements
+Configure which documents are required, optional, or conditionally required. Set acceptable document types per field. Configure OCR extraction mapping.
+Per entity type. Per jurisdiction. Per risk band.
+Rule engine hookup
+Connect business rules from M-08 (risk rules) and M-07 (screening config) to workflow decision nodes.
+Per flow. Per decision node.
+Approval path design
+Define approval stages, required roles per stage, parallel vs sequential approval, override permissions, and escalation triggers.
+Per risk band. Per customer type. Per product.
+Template library
+Save and clone workflow templates. Version-control templates. Apply jurisdiction-specific overlays to base templates.
+Per tenant. Shared library available.
+Preview and test mode
+Simulate a workflow run with test data to validate logic before activating in production.
+Per workflow version.
+ 
+
+SECTION 03
+Feature List by Module
+Features are classified across three delivery phases. MVP (Minimum Viable Product) represents the compliance baseline required for a regulated deployment. Phase 2 adds operational maturity and scale. Enterprise adds advanced controls for complex institutional deployments.
+ 
+3.1 M-01 Client Onboarding Orchestrator
+Feature
+MVP
+Phase 2
+Enterprise
+Multi-entity-type routing (individual / corporate / trust / fund)
+Yes
+ 
+ 
+Configurable journey steps per entity type
+Yes
+ 
+ 
+Session management with resumable flows
+Yes
+ 
+ 
+Multi-language UI support (EN, AR, RU priority)
+ 
+Yes
+ 
+Embeddable SDK for white-label integration
+ 
+Yes
+ 
+Multi-product onboarding (different rules per product)
+ 
+Yes
+ 
+A/B flow testing
+ 
+ 
+Yes
+Real-time flow analytics and drop-off heatmaps
+ 
+ 
+Yes
+Headless API mode (no UI — full API-driven flow)
+ 
+Yes
+ 
+Co-applicant / joint account onboarding
+ 
+ 
+Yes
+ 
+3.2 M-02 Individual KYC
+Feature
+MVP
+Phase 2
+Enterprise
+Document capture (upload + mobile camera)
+Yes
+ 
+ 
+Passport, national ID, and residency permit acceptance
+Yes
+ 
+ 
+OCR data extraction and MRZ parsing
+Yes
+ 
+ 
+Document authenticity checks (chip, holograms, template matching)
+ 
+Yes
+ 
+Liveness detection (passive and active)
+Yes
+ 
+ 
+Biometric face match vs document photo
+Yes
+ 
+ 
+Address proof collection and validation
+Yes
+ 
+ 
+Occupation, PEP self-declaration
+Yes
+ 
+ 
+Multi-country document type library (200+ countries)
+ 
+Yes
+ 
+Non-documentary verification (database verification as alternative)
+ 
+ 
+Yes
+Video KYC for regulated use cases
+ 
+ 
+Yes
+Re-use of verified identity across onboarding journeys
+ 
+Yes
+ 
+Proof of address extraction (utility bill, bank statement OCR)
+ 
+Yes
+ 
+ 
+3.3 M-03 Corporate KYB / M-04 UBO Engine
+Feature
+MVP
+Phase 2
+Enterprise
+Corporate entity data collection form
+Yes
+ 
+ 
+Commercial registry API lookup (UAE, UK, EU priority)
+ 
+Yes
+ 
+Manual registry document upload fallback
+Yes
+ 
+ 
+Ownership structure declaration (form-based)
+Yes
+ 
+ 
+Visual ownership tree rendering
+ 
+Yes
+ 
+Recursive UBO resolution through multi-layer structures
+Yes
+ 
+ 
+Configurable UBO threshold (default 25%)
+Yes
+ 
+ 
+Listed-entity exemption with attestation
+ 
+Yes
+ 
+Corporate trust and foundation UBO logic
+ 
+ 
+Yes
+Automated periodic registry re-check
+ 
+ 
+Yes
+Director/officer data collection and verification
+Yes
+ 
+ 
+Authorised signatory verification
+Yes
+ 
+ 
+Regulated entity status check (FSRA, DFSA, FCA, SEC, etc.)
+ 
+Yes
+ 
+ 
+3.4 M-07 Screening / M-08 Risk Scoring
+Feature
+MVP
+Phase 2
+Enterprise
+Real-time sanctions screening (OFAC, UN, EU, UK, UAE)
+Yes
+ 
+ 
+PEP database screening (Tier 1 global)
+Yes
+ 
+ 
+Adverse media screening
+ 
+Yes
+ 
+Fuzzy match with configurable confidence threshold
+Yes
+ 
+ 
+Alias and name variation screening
+Yes
+ 
+ 
+Screening hit management workflow (review, dismiss, escalate)
+Yes
+ 
+ 
+Ongoing screening (post-approval batch)
+ 
+Yes
+ 
+Custom internal watchlist management
+ 
+Yes
+ 
+Risk scoring across 5+ dimensions (customer, geo, product, channel, behaviour)
+Yes
+ 
+ 
+Admin-configurable risk weights per dimension
+ 
+Yes
+ 
+ML-assisted risk calibration
+ 
+ 
+Yes
+Risk score explainability (factor breakdown)
+ 
+Yes
+ 
+Risk band auto-routing to CDD / EDD / case
+Yes
+ 
+ 
+FATF high-risk country list auto-update
+ 
+Yes
+ 
+ 
+3.5 M-10 Case Management / M-11 Approval Workflow
+Feature
+MVP
+Phase 2
+Enterprise
+Unified case view (all data, docs, screening, risk in one screen)
+Yes
+ 
+ 
+Queue-based assignment with role routing
+Yes
+ 
+ 
+SLA tracking and breach alerts
+Yes
+ 
+ 
+Request Additional Information (RAI) workflow
+Yes
+ 
+ 
+Analyst notes and internal comments (immutable)
+Yes
+ 
+ 
+Multi-stage approval with sequential routing
+Yes
+ 
+ 
+Parallel approval paths
+ 
+Yes
+ 
+Override capability with senior authority audit trail
+ 
+Yes
+ 
+Bulk case management and batch decision tools
+ 
+Yes
+ 
+Performance analytics — analyst productivity, SLA compliance
+ 
+ 
+Yes
+Intelligent case prioritisation (risk-weighted queue)
+ 
+ 
+Yes
+Case linking — related entities, groups, connections
+ 
+Yes
+ 
+ 
+3.6 M-12 Audit Trail / M-13 Consent / M-14 Monitoring
+Feature
+MVP
+Phase 2
+Enterprise
+Append-only audit log for all module events
+Yes
+ 
+ 
+Cryptographic hash chaining for tamper evidence
+ 
+Yes
+ 
+Regulatory export (structured audit report)
+Yes
+ 
+ 
+Consent capture at session start
+Yes
+ 
+ 
+Purpose-specific consent per data category
+Yes
+ 
+ 
+Consent withdrawal and downstream processing halt
+ 
+Yes
+ 
+Data subject rights request (access, deletion, rectification)
+ 
+Yes
+ 
+Cross-border transfer consent and lawful basis record
+Yes
+ 
+ 
+Periodic review scheduling by risk band
+Yes
+ 
+ 
+Document expiry auto-alerts
+Yes
+ 
+ 
+Registry change monitoring
+ 
+Yes
+ 
+Transaction-pattern-driven re-KYC triggers
+ 
+ 
+Yes
+Adverse media monitoring post-onboarding
+ 
+Yes
+ 
+ 
+
+SECTION 04
+Module-by-Module Data Design
+This section specifies the data collected, verified, stored, and retained within each module. Fields are classified as Required (R), Optional (O), or Conditional (C). Immutable fields are marked [IMM]. Versioned fields are marked [VER]. Evidence fields that must be retained as regulatory records are marked [EVIDENCE].
+ 
+4.1 M-02 — Individual KYC
+4.1.1 Personal Identity Data
+Field / Data Point
+Status
+Source
+Notes
+Full legal name (first, middle, last)
+R
+Self-declared + document extracted
+[VER] Must match document. Version on change.
+Date of birth
+R
+Self-declared + document extracted
+[IMM after verification] [EVIDENCE]
+Gender
+O
+Self-declared
+Required for some jurisdictions
+Nationality (primary)
+R
+Document extracted
+[EVIDENCE]
+Dual nationality
+C
+Self-declared
+Required if first nationality is high-risk jurisdiction
+Country of birth
+C
+Self-declared
+Required for EDD
+Current residential address
+R
+Self-declared + proof of address
+[VER]
+Previous residential address
+C
+Self-declared
+Required if <12 months at current address
+Email address
+R
+Self-declared
+Verified by OTP at session start
+Mobile number
+R
+Self-declared
+WhatsApp/SMS verified
+Tax identification number
+C
+Self-declared
+Required for FATCA/CRS obligations
+Tax residency country/countries
+R
+Self-declared
+Required for CRS; [EVIDENCE]
+Occupation / employer
+R
+Self-declared
+Used in risk scoring
+Source of funds (declared)
+R
+Self-declared
+[VER in EDD] [EVIDENCE]
+Source of wealth (declared)
+C
+Self-declared
+Required in EDD and for HNWIs
+Purpose of relationship
+R
+Self-declared
+[EVIDENCE]
+Estimated annual transaction volume
+R
+Self-declared
+Input to risk scoring
+PEP self-declaration
+R
+Self-declared
+[EVIDENCE] Triggers EDD if Yes
+Family member of PEP
+R
+Self-declared
+[EVIDENCE]
+Close associate of PEP
+R
+Self-declared
+[EVIDENCE]
+ 
+4.1.2 Document Data
+Document Type
+Status
+Data Extracted
+Verification Required
+Passport
+R (primary)
+Full name, DOB, nationality, document number, expiry, MRZ, issue country
+OCR + MRZ validation. Biometric match. Authenticity check.
+National ID card
+R (alternative)
+Full name, DOB, ID number, expiry, address (if present)
+OCR. Template validation. Biometric match.
+Residency permit / Emirates ID
+C
+Name, UID, expiry, sponsor
+OCR. Required for UAE residents.
+Proof of address
+R
+Address, issuer, issue date (must be within 90 days)
+Date validation. Address match to declared address.
+Tax residency certificate
+C
+Issuing authority, valid period, TIN
+Manual review for EDD
+Source of wealth evidence
+C (EDD)
+Bank statements, salary slips, investment records, property title
+Manual analyst review required
+ 
+4.1.3 Verification Results (System-Generated, Immutable)
+Data Point
+Generated By
+Stored As
+Mutable?
+Liveness check result (pass/fail + score)
+Identity verification provider
+EVIDENCE record with provider reference ID
+No [IMM]
+Biometric face match score
+Identity verification provider
+Score + threshold + result flag
+No [IMM]
+Document authenticity result
+IDV provider
+Pass/fail + flags (tamper, font anomaly, security feature)
+No [IMM]
+OCR confidence score
+OCR engine
+Numeric score per field
+No [IMM]
+Screening result snapshot
+M-07
+Full hit list at time of screening + list version
+No [IMM]
+Risk score at onboarding
+M-08
+Composite score + factor breakdown
+No [IMM] — re-assessment creates new record
+KYC completion status
+M-02
+Enum: PENDING / VERIFIED / FAILED / MANUAL_REVIEW
+No — transitions logged
+Analyst decision + rationale
+M-10
+Decision + free text + actor ID + timestamp
+No [IMM]
+ 
+4.2 M-03 / M-04 — Corporate KYB and UBO
+4.2.1 Entity-Level Data
+Field / Data Point
+Status
+Source
+Notes
+Legal entity name (in full, all languages)
+R
+Registry + self-declared
+[VER] [EVIDENCE]
+Trading name(s)
+C
+Self-declared
+ 
+Registration number
+R
+Registry
+[IMM] [EVIDENCE]
+Jurisdiction of incorporation
+R
+Registry
+[IMM] [EVIDENCE]
+Registered address
+R
+Registry + document
+[VER]
+Principal place of business
+R
+Self-declared
+May differ from registered address
+Date of incorporation
+R
+Registry
+[IMM] [EVIDENCE]
+Legal form (LLC, PJSC, LP, Foundation, etc.)
+R
+Registry
+[EVIDENCE]
+Sector / primary business activity
+R
+Self-declared + licence
+Input to risk scoring. DNFBP classification checked.
+Regulated entity status
+C
+Self-declared + regulator lookup
+Affects EDD and risk. [EVIDENCE]
+Listed entity status and exchange
+C
+Self-declared
+Affects UBO exemption eligibility
+Group structure (parent, subsidiaries)
+C
+Self-declared
+Required for corporate clients with group relationships
+Corporate tax registration number (UAE FTA)
+C
+Self-declared
+Required for UAE-incorporated entities
+VAT registration number
+C
+Self-declared
+ 
+Contact person (primary)
+R
+Self-declared
+Not a UBO by default
+Expected transaction profile
+R
+Self-declared
+Volume, frequency, currency, counterparties
+ 
+4.2.2 UBO Data Requirements
+Requirement
+Threshold / Rule
+Jurisdiction Reference
+System Logic
+UBO identification threshold
+25% default; configurable down to 10% or up
+UAE Cab. Res. 109/2023; ADGM Co. Regs 2020; FATF R.24
+M-04 applies configured threshold. Below-threshold indirect owners may be flagged for review.
+Control-based UBO
+Persons with control irrespective of ownership %
+UAE AML Law Art. 4; ADGM rules
+M-04 collects board control, veto rights, contractual control declarations.
+Indirect ownership resolution
+Multi-layer corporate chains
+All jurisdictions
+Recursive algorithm: each corporate layer adds new sub-entity requiring KYB. Loops detected and flagged.
+Listed entity exemption
+Regulated market listing with disclosure obligations
+Most jurisdictions
+Exemption requires: exchange name, listing date, regulator, attestation. MLRO approval for activation.
+UBO data collected per individual
+Full individual KYC (M-02) + ownership percentage + source of ownership interest
+All jurisdictions
+Each UBO creates an individual KYC record linked to the corporate KYB record.
+UBO register format
+Data fields per UAE Cabinet Resolution 109/2023
+UAE; ADGM; DIFC Co. Law Art. 119
+System generates compliant UBO register on demand.
+UBO update window
+15 days from any ownership change (UAE)
+UAE Cab. Res. 109/2023
+M-14 monitors for change triggers. Update workflow auto-initiated.
+ 
+4.3 M-08 — Risk Scoring Engine Data Design
+The risk score is a composite numeric value (0-100) produced by weighted aggregation across five risk dimensions. All inputs, weights, and outputs are stored as an immutable risk assessment record at each computation event.
+ 
+Dimension
+Sub-factors
+Default Weight
+Config?
+Customer risk
+Entity type, nationality, dual nationality, PEP status, sector, occupation, DNFBP classification, politically exposed relationship
+30%
+Yes — per tenant
+Geographic risk
+Country of incorporation, country of residence, countries of operation, FATF list status, UN/EU/OFAC sanctioned country
+25%
+Yes
+Product / service risk
+Product type, transaction volume, frequency, currency, payment method (crypto, cash, wire)
+20%
+Yes
+Channel risk
+Remote / face-to-face, introducers, referral source, digital / paper
+10%
+Yes
+Relationship risk
+Length of relationship, historical compliance, previous incidents, connected party risk, third-party introductions
+15%
+Yes
+ 
+4.4 M-12 — Audit Trail Data Design
+Every event written to the audit trail is append-only and cannot be modified or deleted within the retention period. The audit trail schema is designed to satisfy the evidentiary standards of English common law courts and UAE regulatory authority review.
+ 
+Event Category
+Mandatory Fields
+Retention Class
+Customer data field change
+Timestamp (UTC), actor ID, actor role, field name, old value (hashed if PII), new value (hashed if PII), change reason, session ID
+CLASS-A: Full regulatory retention period
+Document uploaded
+Timestamp, actor ID, document type, file hash (SHA-256), storage reference, OCR result reference
+CLASS-A
+Document reviewed / accepted / rejected
+Timestamp, actor ID, decision, rationale, reference to original upload event
+CLASS-A
+Screening initiated
+Timestamp, entity ID, list versions queried, search parameters used
+CLASS-A
+Screening hit generated
+Timestamp, hit ID, source list, matched entity, matched fields, score
+CLASS-A
+Screening hit resolved
+Timestamp, actor ID, resolution (true match / false positive), rationale
+CLASS-A
+Risk score computed
+Timestamp, score value, factor breakdown, rule set version, inputs used
+CLASS-A
+Case created / updated
+Timestamp, case ID, actor ID, action, status before/after, notes
+CLASS-A
+Approval decision
+Timestamp, actor ID, role, decision, case ID, override flag if applicable
+CLASS-A [IMM]
+Consent captured
+Timestamp, customer ID, purpose code, version of notice, lawful basis, IP address
+CLASS-A
+Consent withdrawn
+Timestamp, customer ID, purpose code, withdrawal method
+CLASS-A
+Admin configuration change
+Timestamp, admin actor ID, module, parameter name, old/new value, tenant ID
+CLASS-B: Internal governance retention
+System error / failure event
+Timestamp, service name, error code, request ID, stack trace (sanitised)
+CLASS-C: Operational retention
+ 
+
+SECTION 05
+Technical and Infrastructure Requirements
+ 
+5.1 Architecture Principles
+Multi-tenancy
+Full logical isolation between tenants. Separate encryption keys per tenant. No shared data spaces. Tenant ID stamped on all records. API keys scoped to tenant.
+API-first
+Every platform function is exposed via versioned REST API before any UI is built on top. External integrations and white-label deployments consume the same API surface.
+Event-driven core
+All cross-module communication via an internal event bus (Kafka or equivalent). Modules publish domain events and subscribe to events they need. No direct inter-module database calls.
+Stateless services
+All application services are horizontally scalable and stateless. State lives in the data layer. Session state in Redis with configurable TTL.
+Zero-trust network
+Service-to-service authentication via mutual TLS and short-lived JWT tokens. No implicit trust within the perimeter.
+Immutable audit core
+The audit trail service is write-only via API. No service has direct database write access to the audit table. Admin cannot delete audit records through any UI surface.
+Privacy by design
+PII is classified at field level before storage. Encryption, masking, and minimisation decisions are made at schema design time, not as post-hoc additions.
+Data residency compliance
+Storage backend must support region-pinned data placement. UAE customer data: UAE region. KSA customer data: KSA region (mandatory under KSA PDPL). Cross-border transfer controls enforced at API gateway.
+ 
+5.2 Multi-Tenant Architecture
+Layer
+Isolation Mechanism
+Notes
+Application layer
+Tenant ID injected at API gateway. All request contexts carry tenant scope. Middleware enforces tenant boundary on every DB query.
+Tenant impersonation by super-admin logged and limited.
+Database layer
+Schema-per-tenant (PostgreSQL schemas) for relational data. Row-level security as secondary control.
+Document storage: separate S3 bucket or prefix per tenant with bucket-level encryption.
+Encryption
+Per-tenant encryption key in KMS (AWS KMS or Azure Key Vault). Key rotation per tenant on schedule or on demand.
+Key compromise at one tenant does not expose others.
+Configuration
+M-15 configuration stored per tenant. Runtime resolution: tenant ID → configuration store → applied config.
+Super-tenant (platform operator) can push config templates but cannot access tenant data.
+Audit trail
+Tenant ID partitions all audit records. Tenant cannot query another tenant's audit records.
+Platform operator has read-only cross-tenant audit access for support purposes — logged.
+ 
+5.3 Role-Based Access Control (RBAC)
+Role
+Module Access
+Data Access
+Notes
+Platform Super-Admin
+M-15 (all tenants), M-12 (read)
+Configuration only. Cannot read customer PII.
+MFA mandatory. All actions logged. Access reviewed quarterly.
+Tenant Admin
+M-15 (own tenant), M-10, M-11
+All customer records for own tenant. Cannot delete audit records.
+MFA mandatory.
+MLRO / Compliance
+M-06, M-07, M-10, M-11, M-12, M-14
+Full customer record. SAR records. Audit trail read.
+Highest data access. Actions logged at field level.
+Senior Reviewer
+M-05, M-06, M-10, M-11
+Customer record in assigned cases. Cannot view SAR status.
+ 
+Analyst (Reviewer)
+M-10 (assigned cases), M-09 (read)
+Customer record in assigned cases. Documents. Screening results.
+Cannot approve without second reviewer if risk band High+.
+Onboarding Agent
+M-01, M-09 (upload only)
+Can initiate and assist with onboarding. Cannot see EDD data.
+For assisted onboarding channels.
+Reporting / Read-Only
+M-12 (read), M-08 (aggregates)
+Aggregate and anonymised data only. No individual PII.
+Finance, compliance reporting function.
+API Integration User
+Scoped per integration
+Scoped to permitted customer IDs and operations.
+Machine identity, not human. JWT with short TTL.
+ 
+5.4 Encryption Requirements
+Data Category
+At Rest
+In Transit
+Customer PII (name, DOB, address, ID numbers)
+AES-256 at field level using per-tenant KMS key
+TLS 1.3 minimum on all connections
+Biometric data (face image, liveness result)
+AES-256 with separate biometric key. Isolated storage bucket.
+TLS 1.3. No biometric data in logs.
+Identity documents (images, PDFs)
+AES-256. Document-level encryption. Hash stored separately.
+TLS 1.3. Signed S3 URLs for temporary access (15-min TTL).
+Screening results
+AES-256
+TLS 1.3
+Audit trail records
+AES-256. Hash chain for tamper evidence.
+TLS 1.3. Internal only — not exposed externally.
+Encryption keys (KMS)
+Hardware Security Module (HSM) backed. Keys never exported in plaintext.
+KMS accessed over private VPC endpoint.
+Database connection strings / API credentials
+Secrets manager (AWS Secrets Manager or HashiCorp Vault). Rotated automatically.
+Internal VPC only.
+ 
+5.5 Audit Logging and Tamper Resistance
+The audit trail is the regulatory and legal backbone of the platform. Its integrity is non-negotiable. The following design patterns must be implemented.
+ 
+Append-only write model
+The audit log table has no UPDATE or DELETE permissions granted to any application service identity. Only an INSERT-only service account can write. Deletion is physically impossible during retention period.
+Hash chaining
+Each audit record includes the SHA-256 hash of the previous record in the same tenant partition. Modification of any historic record breaks the chain and is detectable.
+Immutable object storage backup
+Daily export to S3 with Object Lock (WORM mode) enabled. Retention period matched to regulatory requirement. Tamper detection via hash verification on restore.
+Timestamp integrity
+All timestamps from authoritative NTP source. UTC standard. Timestamps are set by the audit service, not by the calling service — prevents manipulation.
+Admin action logging
+All M-15 configuration changes are written to the audit trail with before/after state. Platform super-admin actions are logged to a separate, immutable cross-tenant audit log.
+Regulatory export
+Audit trail can be exported as signed, structured PDF or JSON-L report for regulator submission. Export event itself is logged.
+ 
+5.6 Rules Engine Design
+The rules engine evaluates business logic at workflow decision nodes. Rules are authored in M-15 by admin users with no code required. The engine evaluates rules in the following order: structural rules (mandatory) → jurisdiction rules → tenant-specific rules → product rules.
+ 
+Rule types supported
+Conditional (if/then/else), threshold-based, list membership, date/time based, score-range based, multi-condition AND/OR/NOT.
+Rule inputs
+Any field collected in any module, system-generated risk scores, screening results, document statuses, computed values, and external API responses.
+Rule outputs
+Workflow routing decision, field requirement change, document requirement change, notification trigger, case escalation trigger, risk score adjustment.
+Rule conflict resolution
+Priority ordering per rule set. Higher specificity (product + entity + jurisdiction) overrides lower specificity (tenant default). Conflict logging to audit trail.
+Rule version control
+Every change to a rule set creates a new version. Historic rule versions retained. Rules applied at onboarding are locked to the version in effect at that time.
+Testing
+Sandbox mode allows rule evaluation against test data sets before production deployment. Test results saved and reviewable.
+ 
+
+SECTION 06
+Data Retention and Protection
+ 
+6.1 Data Classification Framework
+Classification
+Data Category
+Handling
+Examples
+Tier 1 — Critical PII
+Identity and biometric data
+Field-level encryption. Isolated storage. Highest access controls. Minimised retention.
+Biometric image, face scan result, passport scan, Emirates ID
+Tier 2 — Sensitive PII
+Identity attributes and financial profile data
+Field-level encryption. Role-based access. Standard retention.
+Name, DOB, nationality, address, tax ID, source of funds
+Tier 3 — Regulatory Record
+Compliance decisions and records
+Encrypted at rest. Immutable. Cannot be deleted within retention period.
+KYC status, risk score, screening result, approval decision, audit log
+Tier 4 — Operational
+System and process data
+Standard encryption. Accessible to operations team. Shorter retention.
+Session logs, API access logs, system events, configuration change log
+Tier 5 — Public / Non-personal
+Registry and reference data
+No special handling required.
+Commercial registry data, sanction list data, risk country lists
+ 
+6.2 Retention Schedule by Record Type
+Retention periods are driven by the most stringent applicable regulatory requirement across the jurisdictions in which the tenant operates. Longer periods override shorter ones in all cases.
+ 
+ 
+[LEGAL REVIEW REQUIRED] The retention periods below reflect the current regulatory requirements of UAE Federal AML Law (Art. 14), ADGM AML Rules (Rule 10.3), DIFC AML Module (AML-10), KSA SAMA AML Rules, and the UAE PDPL (Federal Decree-Law No. 45 of 2021). Actual retention periods must be confirmed by the tenant's legal and compliance team and may differ based on specific product categories, sector regulations, and applicable court orders.
+ 
+Record Type
+Minimum Retention
+Maximum Retention
+Jurisdiction Basis
+Post-Retention Action
+KYC/CDD record — customer data
+5 years from end of relationship
+10 years
+UAE AML Law Art. 14; ADGM Rule 10.3(1)
+Anonymise or securely delete per controller decision
+Transaction records
+5 years from transaction date
+10 years
+UAE AML Law Art. 14(2); DFSA AML-10
+Archive to cold storage, then delete
+Audit trail records
+5 years minimum
+Indefinite for SAR-related records
+Evidentiary purposes; regulatory requirement
+Archive to WORM storage. Cannot be deleted if subject to investigation.
+Document images (passport, ID)
+5 years from end of relationship
+10 years
+UAE AML Law Art. 14; KSA SAMA Art. 13
+Secure deletion with certificate
+Biometric data
+5 years from onboarding
+Match KYC record
+UAE PDPL Art. 21; ADGM DPR 2021
+Priority for deletion on relationship end
+Consent records
+Duration of processing + 3 years
+Match KYC record
+UAE PDPL; ADGM DPR 2021; DIFC PDPL
+Retain proof of consent even after data deleted
+Screening results
+5 years
+10 years
+AML obligations; evidentiary
+Archive
+SAR / STR records
+8 years minimum
+Indefinite if investigation active
+UAE AML Law; ADGM rules; English law precedent
+Legal hold — no deletion without regulator authorisation
+Employee access logs
+3 years
+5 years
+Employment law; data protection
+Delete
+System / error logs
+90 days
+1 year
+Operational requirement
+Delete
+ 
+6.3 Data Minimisation and Handling Rules
+Collection minimisation
+Only collect data required for the specific compliance purpose. No speculative collection. Each field must have a documented legal basis and purpose before addition to any form.
+Biometric data isolation
+Biometric raw data (facial images, scans) stored in a physically separate storage layer with separate encryption key. Not accessible to application layer — only to identity verification service via one-way API.
+PII in logs — prohibition
+No PII (name, DOB, ID number, address, email) may appear in application logs, error messages, or system monitoring outputs. Log references use tokenised customer IDs only.
+Pseudonymisation in analytics
+All analytics and reporting outputs use pseudonymised or anonymised data. Real customer PII never appears in dashboards, exports, or reports accessible to analyst-level roles.
+Data masking in non-production
+Development, staging, and testing environments must use synthetic data or masked production data. Real PII is never copied to non-production environments.
+Cross-border transfer controls
+Transfer of personal data outside the originating jurisdiction is restricted. UAE data to non-adequacy countries requires explicit consent or Standard Contractual Clauses equivalent. KSA PDPL requires data localisation for sensitive data — no transfer without SDAIA approval. ADGM DPR 2021 requires transfer mechanisms equivalent to GDPR Chapter V.
+ 
+6.4 Data Subject Rights Design
+The platform must support data subject rights requests under the UAE PDPL, ADGM DPR 2021, DIFC PDPL 2020, and KSA PDPL 2023. The following capabilities must be built into the consent and privacy module.
+ 
+Right
+System Requirement
+AML Conflict Resolution
+Right of access
+Customer can request full record of their personal data. System generates structured data export within 30 days.
+AML records can be provided to customer. SAR status cannot be disclosed (tipping-off).
+Right to rectification
+Customer can request correction of inaccurate data. Correction creates new record version. Original retained in audit trail.
+KYC data corrections trigger re-verification. Compliance team notified.
+Right to erasure
+Customer can request deletion of data where legal basis has ended. System generates deletion request for compliance team review.
+AML / regulatory retention obligations override erasure rights. System must document the override basis. Data that cannot be deleted is documented as restricted.
+Right to restriction
+Processing can be restricted while accuracy is disputed or objection is pending.
+AML screening and monitoring cannot be restricted.
+Right to object
+Customer can object to processing based on legitimate interest.
+Statutory AML processing cannot be objected to. Commercial processing can.
+Right to portability
+Customer can receive their data in machine-readable format.
+AML-derived records not included in portability export.
+ 
+
+SECTION 07
+APIs and Integrations
+ 
+7.1 Core Internal API Surface
+All platform capabilities are exposed via a versioned REST API. GraphQL is available as a secondary query layer for complex relational data (customer records, case records). All endpoints require authenticated tenant-scoped JWT tokens.
+ 
+API Domain
+Endpoint Group
+Notes
+Onboarding
+/v1/onboarding — initiate, resume, complete, status
+Idempotent session token. Supports resumable flows.
+Customer Record
+/v1/customers — create, read, update, search, export
+Full CRUD except delete (soft-delete with retention enforcement).
+KYC Verification
+/v1/kyc — submit, status, result, re-verify
+Idempotent. Async processing with webhook notification.
+KYB / UBO
+/v1/kyb — entity submit, UBO tree, registry check, status
+UBO tree returned as nested JSON with ownership percentages.
+Documents
+/v1/documents — upload, retrieve (signed URL), status, verify
+Multipart upload. Signed S3 URL issued for retrieval. 15-min TTL.
+Screening
+/v1/screening — initiate, results, resolve-hit, batch
+Async. Webhook on completion. Hit management endpoints.
+Risk Score
+/v1/risk — compute, latest, history, factor-breakdown
+On-demand compute or retrieve cached. Factor breakdown for explainability.
+Cases
+/v1/cases — create, assign, update, close, search
+Case management. Analyst and MLRO queue management.
+Approvals
+/v1/approvals — pending, decide, history
+Workflow-specific. Role-gated. Decision is immutable once recorded.
+Audit Trail
+/v1/audit — query, export, stream (webhook)
+Read-only. Tenant-scoped. Filtered by date, event type, actor.
+Consent
+/v1/consent — capture, withdraw, status, export
+ 
+Monitoring
+/v1/monitoring — schedule, trigger, alert, status
+ 
+Admin Config
+/v1/admin — flows, rules, templates, settings
+Tenant-admin scoped. Super-admin additional scope.
+Webhooks
+/v1/webhooks — register, list, test, delete
+Event-based outbound notifications to registered endpoints.
+ 
+7.2 Essential External Integrations
+Integration Category
+Function
+Examples / Providers
+Classification
+Identity Verification (IDV)
+Document OCR, liveness, biometric face match, authenticity checks
+Jumio, Onfido, iProov, Sumsub, Veriff, SmileID
+ESSENTIAL — No KYC without this.
+Sanctions & PEP Screening
+Global sanctions, PEP, RCA lists. Adverse media.
+Dow Jones Risk & Compliance, Refinitiv World-Check, ComplyAdvantage, ACAMS, LexisNexis RiskView
+ESSENTIAL — AML obligation.
+Commercial Registry / Corporate Data
+Entity verification, director/officer data, registry status
+Companies House (UK), RAKEZ/ADGM/JAFZA portals, Bureau van Dijk, Dun & Bradstreet, Kyckr
+ESSENTIAL for corporate KYB.
+Address Verification
+Address validation, geocoding, deliverability
+Google Maps API, Loqate, Melissa Data, PostGrid
+IMPORTANT — required for address verification.
+E-Signature / Consent Capture
+Legally binding e-signature on declarations, T&Cs, consent forms
+DocuSign, Adobe Sign, HelloSign, YouSign
+ESSENTIAL for regulated onboarding.
+Notification Service
+Email, SMS, WhatsApp, in-app notifications for onboarding status, document requests, approvals
+AWS SES, Twilio, MessageBird, WhatsApp Business API
+ESSENTIAL for workflow communications.
+CRM Integration
+Customer record sync, lead and onboarding pipeline management
+HubSpot, Salesforce, Zoho CRM (API / webhook)
+IMPORTANT for operational management.
+KMS / Secret Management
+Encryption key management, secrets rotation
+AWS KMS, Azure Key Vault, HashiCorp Vault
+ESSENTIAL — core infrastructure.
+Cloud Storage
+Document storage, audit archive, backup
+AWS S3 (with Object Lock), Azure Blob, GCP Cloud Storage
+ESSENTIAL — core infrastructure.
+Observability / Monitoring
+Application performance, error tracking, alerting
+Datadog, New Relic, AWS CloudWatch, Sentry
+ESSENTIAL for production operations.
+ 
+7.3 Optional Ecosystem Integrations
+Integration
+Use Case
+Target Tenant Verticals
+UAE goAML portal (AMLSCU)
+STR/SAR filing direct submission integration
+All UAE-licensed tenants
+UAE MOE / FTA registry APIs
+Corporate tax status, VAT registration verification
+UAE corporate clients
+DIFC / ADGM portal APIs
+Entity status, authorised activity, registered representative
+ADGM / DIFC entities
+Credit bureau / financial score
+Affordability assessment, financial risk signals for consumer-facing products
+Fintech, lending, insurance
+Core banking / ERP integration
+Sync customer onboarding status to CBS or ERP for account activation
+Banks, NBFIs, financial services
+Blockchain / distributed ledger
+Tokenised identity, verifiable credentials for reusable KYC
+Enterprise, Web3 fintech
+Fraud detection engine
+Device fingerprinting, behavioural biometrics, IP risk scoring
+Fintech, marketplace, e-commerce
+Video KYC platform
+Regulated video-based KYC for jurisdictions requiring it
+India VCIP-regulated products; ADGM video KYC
+SWIFT KYC Registry
+Correspondent banking KYC exchange
+Banking sector tenants
+Open banking / PSD2
+Bank-verified identity, income verification via open banking
+EU/UK-adjacent fintech
+VARA / FSRA API
+Crypto/digital asset entity regulatory status check
+Digital assets, Web3 fintech
+ 
+
+SECTION 08
+Admin Configuration Layer
+M-15 is the platform's no-code/low-code control centre. It determines how every other module behaves for a given tenant, customer type, product, and jurisdiction combination. All configuration is versioned, audit-logged, and resolvable at runtime.
+ 
+8.1 Configuration Hierarchy
+Configuration resolves from most specific to least specific. The most specific applicable configuration wins.
+ 
+Level 1 — Platform Defaults
+Baseline configuration applied to all tenants. Set by platform operator. Cannot be overridden below compliance baseline. Examples: minimum retention periods, mandatory screening lists, UBO threshold floor.
+Level 2 — Tenant Configuration
+Tenant-level customisation. Applies to all products and customer types for that tenant unless overridden at lower level. Examples: brand settings, default language, primary jurisdiction rules.
+Level 3 — Product Configuration
+Per-product rules. A tenant may operate multiple products (e.g. corporate account, personal account, investment product) with different onboarding requirements. Examples: document requirements, CDD level, approval path.
+Level 4 — Customer Type Configuration
+Rules applied per entity type (individual / corporate / trust / fund / HNWI). Can override product-level where entity-specific rules apply. Examples: UBO depth, EDD triggers, risk weight adjustments.
+Level 5 — Jurisdiction Override
+Jurisdiction-specific rules applied when a customer is from or operating in a specific country. Applied on top of product and customer type config. Examples: FATF high-risk country EDD requirement, KSA-specific document type, UAE QFZP treatment.
+ 
+8.2 Workflow Builder Configuration
+Configuration Object
+Admin Controls
+Validation Rules
+Onboarding flow template
+Create, clone, activate, deactivate. Assign to product/customer type/jurisdiction combination.
+A flow must have at least: consent step, identity step, screening step, and decision step. Cannot activate without compliance review flag.
+Step sequencing
+Drag-and-drop step ordering. Steps can be required or optional. Conditional skip logic configurable.
+Consent step must always be first. Screening must precede approval. Order validated on save.
+Form fields per step
+Add/remove fields. Set required/optional/conditional. Set validation rule per field. Set display logic.
+Mandatory regulatory fields (nationality, DOB, source of funds) cannot be made optional.
+Document requirements
+Configure which document types are accepted per customer type and jurisdiction. Set primary and fallback document types.
+At least one government-issued photo ID must be primary for individual KYC.
+Risk scoring weights
+Adjust dimension weights within permitted ranges. Set risk band score boundaries. Set auto-approval threshold.
+Weights must sum to 100%. Cannot set auto-approval threshold above 40 (medium-risk boundary).
+Approval path design
+Configure stages, required roles per stage, sequential vs parallel, escalation triggers, SLA per stage.
+EDD approvals must have at least MLRO as one approver. Cannot configure single-approver path for high-risk.
+Notification templates
+Edit copy and triggers for email, SMS, and in-app notifications. Set language variants.
+Cannot remove regulatory-required notifications (e.g. rejection reason, data subject rights information).
+Retention settings
+Configure post-relationship data handling (anonymise vs delete). Must be within platform minimum.
+Cannot set retention below regulatory minimum. Override requires platform super-admin approval.
+White-label branding
+Upload logo, set primary/secondary colours, configure custom domain, set font preferences.
+Applied to UI layer only. Audit trail and regulatory outputs retain platform branding.
+ 
+8.3 Industry Template Library
+M-15 ships with a set of pre-built, compliance-reviewed templates that tenants can clone and customise. Each template is a complete workflow configuration for a specific industry and jurisdiction combination.
+ 
+Template Name
+Intended Industry
+Pre-configured Elements
+UAE Fintech — Standard Individual
+UAE-licensed fintech, payment institutions
+UAE CDD requirements, CBUAE Open Finance data fields, UAE passport/Emirates ID, goAML reference, English + Arabic UI
+UAE Corporate Onboarding — ADGM
+ADGM-regulated entities, holding companies
+ADGM AML Rules configuration, RSC and Foundation entity types, FSRA regulatory status check, 25% UBO threshold, English law declarations
+UAE Corporate Onboarding — Free Zone
+UAE free zone entities
+All 45+ free zone entity types, MOA/AOA document requirement, MOHRE registration check, UAE CT registration field
+KSA SAMA — Financial Institution
+KSA-licensed banks and NBFIs
+SAMA AML Manual data fields, Saudi ID / Iqama document types, Absher integration point, Arabic primary UI, data localisation flag
+GCC HNWI / Family Office
+Private wealth, family office, ADGM Foundation
+Source of wealth EDD, ADGM Foundation structure, PEP-extended screening, senior management approval required, coordinated multi-jurisdiction flag
+UAE DNFBP — Corporate Services
+Licensed CSPs, real estate agents, precious metals
+DNFBP classification trigger, enhanced AML policy requirements, MLRO mandatory field, goAML registration field, specific prohibited activities check
+Marketplace / E-commerce
+Online marketplaces with seller and buyer KYC
+Simplified individual KYC for low-value, tiered upgrade path by transaction volume, fraud detection integration point, card payment risk fields
+Crypto / Digital Assets — ADGM FSRA
+VARA-regulated and FSRA-regulated digital asset firms
+VARA/FSRA licence requirement, EDD default for all customers, enhanced source of funds for crypto, blockchain address collection, NFT / token classification
+ 
+
+SECTION 09
+Industry Adaptability
+The platform is designed to serve multiple verticals without platform rebuilding. Industry adaptation is achieved through the combination of: (a) configurable workflow templates, (b) jurisdiction overlays, (c) conditional field and document logic, (d) risk weight customisation, and (e) modular integration hookups.
+ 
+9.1 Vertical Adaptation Matrix
+Vertical
+Key Differentiators vs Generic KYC
+Modules Requiring Vertical-Specific Config
+Integration Additions
+Fintech / Payments
+Transaction volume limits by verification tier. Payment method risk (crypto, cash). Regulatory licensing status check. PCI-adjacent data handling.
+M-01 (tiered onboarding), M-08 (transaction risk), M-14 (real-time monitoring)
+Fraud engine, open banking, core banking API, CBUAE API
+Corporate Services (CSPs)
+Onboarding of other businesses as end-clients. Complex UBO chains. DNFBP self-classification. Own AML policy implementation. Nested KYC responsibility.
+M-03/M-04 (UBO depth), M-06 (EDD default for corporate), M-11 (MLRO-mandatory)
+UAE goAML STR, MOE / MOHRE registry
+Real Estate
+Property value threshold triggers. Beneficial owner of SPV. Source of funds traced to property value. Agent KYC separate from buyer KYC. RERA / DLD notifications.
+M-04 (SPV UBO), M-06 (property value EDD), M-09 (title deed, SPA)
+DLD API, RERA system, property valuation data
+Professional Services (Law / Audit)
+Matter-specific KYC. Client type affects privilege considerations. Professional regulatory body reference. Source of funds for retainer / trust accounts.
+M-01 (matter-linked session), M-02/M-03, M-13 (professional privilege overlay)
+Bar association / regulatory body verification
+Insurance
+Policyholder vs beneficiary KYC. Beneficial owner of policy. Claims history. Politically exposed policyholder flags. Mortality and longevity data (sensitive).
+M-02 (beneficiary flows), M-04 (policy UBO), M-08 (insurance risk factors)
+Insurance bureau, claims database, reinsurer KYC
+Digital Assets / Web3
+Blockchain address collection and VASP screening. EDD as default. Source of crypto wealth. Travel Rule compliance. VARA / FSRA / DFSA regulatory status.
+M-07 (blockchain screening), M-06 (EDD default), M-08 (crypto risk weight)
+Chainalysis, Elliptic, TRM Labs, VARA API, FSRA sandbox
+Marketplaces
+Tiered KYC by transaction volume. Seller vs buyer different requirements. Light-touch individual KYC at lower tiers. Upgrade path without re-entering data.
+M-01 (tier escalation flow), M-08 (simplified scoring at tier 1)
+Fraud engine, payment gateway risk signals
+Family Office / Private Wealth
+Multi-generational ownership structures. Foundation / trust as legal vehicle. Cross-border succession planning data. Private bank co-KYC coordination.
+M-04 (foundation/trust UBO logic), M-06 (HNWI EDD mandatory), M-03 (Foundation entity type)
+Private bank API, trust company reference, ADGM Foundation registry
+ 
+9.2 How Vertical Adaptation Works Without Rebuilding
+Step 1 — Template selection
+Tenant admin selects the closest matching industry template from the M-15 library. This loads a pre-validated baseline configuration.
+Step 2 — Field customisation
+Tenant adds, removes, or reorders fields relevant to their product using the form builder. Compliance-mandatory fields cannot be removed.
+Step 3 — Document requirements
+Tenant configures acceptable document types, optional documents, and conditional document logic (e.g. "if activity is trading, require commercial licence").
+Step 4 — Risk weight calibration
+Tenant adjusts risk scoring weights to reflect their product risk profile within the permitted bands. MLRO approval required to activate.
+Step 5 — Integration hookup
+Tenant configures API keys for their chosen IDV provider, screening provider, and notification service via M-15 integration settings.
+Step 6 — Jurisdiction overlay
+If the tenant operates in multiple jurisdictions, jurisdiction-specific rule overlays are applied on top of the base template. Each overlay addresses country-specific document types, data fields, screening lists, and approval requirements.
+Step 7 — Test and activate
+Workflow is tested in sandbox mode against representative customer profiles. MLRO or compliance officer reviews and activates.
+ 
+9.3 Jurisdiction-Specific Design Notes
+ 
+[LEGAL REVIEW REQUIRED] The following is a summary of key jurisdiction-specific design considerations. These are design inputs, not legal advice. Each jurisdiction's requirements must be confirmed with qualified legal and compliance counsel before production deployment in that jurisdiction.
+ 
+Jurisdiction
+Key Design Requirement
+System Configuration Impact
+UAE Federal (CBUAE-regulated)
+Federal Decree-Law No. 20 of 2019 AML framework. Cabinet Decision 10/2019 Executive Regulations. CBUAE Reg. No. 1/CN/BSD/MAD/2019. 5-year minimum retention. goAML STR portal. DNFBPs subject to AML law.
+Mandatory: UAE passport/Emirates ID document types. DNFBP classification field. goAML STR integration point. 5-year minimum retention config. UBO at 25% per Cabinet Resolution 109/2023.
+ADGM (Abu Dhabi Global Market)
+ADGM AML/CFT Rules 2019 (as amended). Companies Regulations 2020. ADGM DPR 2021. English common law. FSRA oversight. UBO register mandatory. Foundation law distinct from company law.
+ADGM entity type library including Foundation and RSC. FSRA regulatory status check integration. English law declaration templates. ADGM DPR 2021 consent architecture. ADGM-specific UBO register output format.
+DIFC (Dubai International Financial Centre)
+DFSA Rulebook — AML Module (AML). DIFC Companies Law (as amended). DIFC PDPL 2020. No simplified CDD available. EDD for any relationship with enhanced risk indicators.
+DFSA compliance template: no SDD option. EDD triggers more sensitive. DIFC PDPL 2020 data protection config (consent, cross-border). DFSA-regulated entity flag in M-03.
+KSA (Saudi Arabia)
+Saudi AML Law Royal Decree M/31 (2017). SAMA AML Rules 2023. KSA PDPL 2023 (effective 2023). Mandatory data localisation for personal data. Arabic as primary language requirement. Absher identity verification system.
+KSA data residency: separate KSA-region storage bucket. Absher API integration point for Saudi nationals. Arabic primary UI. Saudi ID (Iqama for residents) as primary document. PDPL 2023 consent logic: explicit consent required for sensitive data, no legitimate interest basis.
+Cross-border / multi-jurisdiction
+FATF Recommendations apply as baseline. Double Taxation Agreement network relevant to customer tax declarations. Transfer of personal data regulated by each jurisdiction.
+Transfer mechanism selection in M-13: determine applicable basis per data destination. Jurisdiction flag on each customer record. Applicable rule set resolved at runtime per customer jurisdiction.
+ 
+
+SECTION 10
+Implementation Approach and Design Assumptions
+ 
+10.1 Recommended Delivery Sequence
+Phase 1 — MVP (Months 1-4)
+M-01, M-02 (individual KYC), M-07 (screening — OFAC/UN/EU minimum), M-08 (basic 3-dimension risk score), M-09 (document upload), M-10 (basic case management), M-11 (single-stage approval), M-12 (audit trail), M-13 (consent capture), M-15 (basic admin config). Covers: individual customer onboarding with compliance baseline.
+Phase 2 — Core Platform (Months 5-8)
+M-03/M-04 (corporate KYB + UBO), M-05/M-06 (CDD/EDD differentiation), M-08 (5-dimension scoring with configurable weights), M-14 (periodic review), M-07 (adverse media + PEP database), M-11 (multi-stage approval paths), M-15 (workflow builder — full feature). Covers: corporate onboarding and risk-differentiated CDD/EDD.
+Phase 3 — Enterprise Scale (Months 9-12)
+ML-assisted risk scoring, video KYC, blockchain address screening, cross-border transfer orchestration, advanced analytics, bulk management tools, registry API integrations, mobile SDK, white-label deployment framework. Covers: enterprise clients, complex structures, advanced operational maturity.
+ 
+10.2 Stated Design Assumptions
+The following design assumptions have been made in producing this document. Where assumptions may not hold for a specific deployment, the affected sections are marked for re-evaluation.
+ 
+Assumption
+Impact if Incorrect
+Section Affected
+UBO default threshold is 25% per UAE Cabinet Resolution 109/2023.
+If tenant jurisdiction or product requires lower threshold (e.g. 10% for FATF RBA high-risk), M-04 configuration must be adjusted.
+4.2, 8.2
+Biometric liveness is always required for individual KYC.
+Some jurisdictions or product types permit document-only KYC for low-value products. SDD configuration in M-15 should be activated where legally permitted.
+3.2, 4.1
+Screening lists include at minimum: OFAC SDN, UN Consolidated, EU Consolidated, UK HM Treasury. Additional lists (OFAC CAPTA, UAE Executive Office, Saudi SAFIU) added by tenant config.
+If tenant operates in jurisdiction with mandatory list (e.g. UAE Executive Office list is mandatory for UAE-licensed entities), that list must be activated as non-optional.
+3.4, M-07
+The platform operates as a SaaS multi-tenant deployment on cloud infrastructure (AWS primary, Azure secondary).
+On-premise or private cloud deployment requires architecture review for network security, KMS design, and observability tooling.
+5.1, 5.4
+The tenant's MLRO is responsible for compliance configuration decisions. The platform provides the tooling — not the compliance advice.
+Tenants without a qualified MLRO must appoint one before activating AML-obligated features.
+8.2, all
+English as the primary system language. Arabic as first-priority secondary.
+Russian, French, or other languages required by specific tenants should be scoped at contract stage. UI translation layer is separate from compliance logic.
+M-01, M-15
+SAR/STR filing is the responsibility of the tenant, not the platform. The platform provides the case management and documentation tools to support the filing decision.
+The platform is not a reporting institution — it is a technology provider. Legal obligation to file remains with the licensed tenant.
+2.4, M-10
+ 
+10.3 Areas Requiring Legal Sign-Off Before Production
+Area
+Concern
+Who Reviews
+Priority
+Simplified Due Diligence activation
+Permissibility and eligible categories vary significantly by jurisdiction and product type.
+Tenant MLRO + legal counsel + regulator guidance
+High
+Biometric data storage and retention
+Specific rules under UAE PDPL, KSA PDPL, ADGM DPR for biometric as sensitive personal data.
+Data protection counsel per jurisdiction
+High
+Cross-border data transfer mechanisms
+Standard Contractual Clauses equivalents, adequacy decisions, and consent requirements differ per jurisdiction pair.
+Data protection counsel
+High
+SAR / STR workflow design
+Tipping-off prohibition requirements must be reflected in system design — particularly what status is visible to non-MLRO roles.
+Tenant MLRO + legal counsel
+High
+PEP onboarding — senior management approval requirement
+Specific requirement under FATF R.12 and local implementing regulation. Who qualifies as senior management must be defined.
+Tenant MLRO + Board
+High
+Retention periods by jurisdiction
+Regulatory retention periods used in this document are based on primary AML legislation. Sector-specific regulations may impose longer periods.
+Legal counsel per jurisdiction and sector
+Medium
+Automated decision-making disclosure
+Where risk scoring leads to automated rejection, data protection law (ADGM DPR, DIFC PDPL, KSA PDPL) may require disclosure and human review option.
+Data protection counsel
+Medium
+Video KYC regulatory approval
+Video KYC is not universally accepted as compliant in all jurisdictions. Regulator guidance or no-objection may be required.
+Legal counsel + relevant regulator
+Medium
+ 
+10.4 Glossary — Regulatory Terms Used
+AML
+Anti-Money Laundering
+CFT
+Countering the Financing of Terrorism
+CDD
+Customer Due Diligence
+EDD
+Enhanced Due Diligence
+KYC
+Know Your Customer
+KYB
+Know Your Business
+UBO
+Ultimate Beneficial Owner
+PEP
+Politically Exposed Person
+SAR / STR
+Suspicious Activity Report / Suspicious Transaction Report
+DNFBP
+Designated Non-Financial Business or Profession
+MLRO
+Money Laundering Reporting Officer
+FATF
+Financial Action Task Force
+QFZP
+Qualifying Free Zone Person (UAE Corporate Tax)
+ADGM
+Abu Dhabi Global Market
+DIFC
+Dubai International Financial Centre
+FSRA
+Financial Services Regulatory Authority (ADGM)
+DFSA
+Dubai Financial Services Authority (DIFC)
+CBUAE
+Central Bank of the United Arab Emirates
+SAMA
+Saudi Arabian Monetary Authority
+PDPL
+Personal Data Protection Law
+DPR
+Data Protection Regulations (ADGM)
+VASP
+Virtual Asset Service Provider
+VARA
+Virtual Assets Regulatory Authority (Dubai)
+SDD
+Simplified Due Diligence
+RBA
+Risk-Based Approach
+WORM
+Write Once Read Many (immutable storage)
+MRZ
+Machine Readable Zone (passport)
+OCR
+Optical Character Recognition
+IDV
+Identity Verification
+JWT
+JSON Web Token
+KMS
+Key Management Service
+TLS
+Transport Layer Security
+RBAC
+Role-Based Access Control
+ 
+ 
+ 
+TruVis International Services
+Where Trust Creates True Vision
+ 
+Modular KYC / AML / Onboarding Infrastructure — PRD v1.0 — 2026
+Level 36, Tower 3, Etihad Towers, Abu Dhabi, UAE  ·  info@truvis.ae  ·  www.TruVis.ae
+Confidential and Proprietary — Not for External Distribution
+ 
+Confidential — Internal Use Only​KYC/AML Onboarding PRD v1.0
