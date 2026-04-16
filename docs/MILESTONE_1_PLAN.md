@@ -10,7 +10,7 @@
 
 Build and prove the compliance backbone before any customer data flows:
 
-1. **Project scaffold** — Next.js 14 App Router, TypeScript strict, Tailwind CSS, shadcn/ui, Zod
+1. **Project scaffold** — Next.js 16 App Router, TypeScript strict, Tailwind CSS, shadcn/ui, Zod
 2. **Supabase project** — CLI setup, extensions (pgcrypto, pg_cron, uuid-ossp), migrations baseline
 3. **Vercel environments** — Production + staging from `main`/`staging` branches
 4. **Core DB tables** — `tenants`, `users`, `user_roles`, `roles`, `audit_log`

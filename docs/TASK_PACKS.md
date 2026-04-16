@@ -22,7 +22,7 @@ Build the security and compliance backbone. No customer data flows until this is
 - Admin configuration UI
 
 ### Context
-- Stack: Next.js 14 App Router, TypeScript (strict), Tailwind CSS, shadcn/ui, Zod
+- Stack: Next.js 16 App Router, TypeScript (strict), Tailwind CSS, shadcn/ui, Zod
 - Database: Supabase Postgres (shared schema + RLS)
 - Auth: Supabase Auth (email+password + TOTP MFA)
 - Hosting: Vercel (App Router deployment)

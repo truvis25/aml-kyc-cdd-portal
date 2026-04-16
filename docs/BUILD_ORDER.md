@@ -32,7 +32,7 @@
 ### PHASE 1 — MILESTONE 1 (Sequential — no parallelism until T03 onwards)
 
 ```
-M1-T01  Initialize Next.js 14 project
+M1-T01  Initialize Next.js 16 project
    ↓
 M1-T02  Create folder structure (app/, modules/, lib/, components/, supabase/, tests/)
    ↓

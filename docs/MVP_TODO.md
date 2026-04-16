@@ -19,9 +19,9 @@
 
 ### EPIC 1.1 · Project Scaffolding & Environment Setup
 
-#### Task 1.1.1 — Initialize Next.js 14 App Router Project
+#### Task 1.1.1 — Initialize Next.js 16 App Router Project
 - **Task ID:** M1-T01
-- **Title:** Initialize Next.js 14 (App Router) with Tailwind CSS, shadcn/ui, Zod, TypeScript
+- **Title:** Initialize Next.js 16 (App Router) with Tailwind CSS, shadcn/ui, Zod, TypeScript
 - **Purpose:** Establish the frontend and API layer scaffold
 - **Why it matters:** All modules build on this foundation; wrong scaffold = expensive rework
 - **Dependencies:** None

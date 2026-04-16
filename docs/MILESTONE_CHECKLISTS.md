@@ -10,7 +10,7 @@
 Establish the security and compliance backbone before any customer data flows. Authentication, role-based access control, Row Level Security, and the immutable audit trail must be proven before any onboarding code is written.
 
 ### 2. Milestone Scope
-- Next.js 14 App Router project scaffold (Tailwind, shadcn/ui, TypeScript, Zod)
+- Next.js 16 App Router project scaffold (Tailwind, shadcn/ui, TypeScript, Zod)
 - Supabase CLI project initialisation with extensions (pgcrypto, pg_cron, uuid-ossp)
 - Vercel production + staging deployment environments
 - Database migrations: `tenants`, `users`, `user_roles`, `roles`, `audit_log`
@@ -31,7 +31,7 @@ Establish the security and compliance backbone before any customer data flows. A
 ### 3. Milestone Task List
 | Task ID | Title | Status |
 |---|---|---|
-| M1-T01 | Initialize Next.js 14 App Router project | `todo` |
+| M1-T01 | Initialize Next.js 16 App Router project | `todo` |
 | M1-T02 | Create canonical folder structure | `todo` |
 | M1-T03 | Supabase CLI initialisation + extensions | `todo` |
 | M1-T04 | Vercel project setup + environments | `todo` |
