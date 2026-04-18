@@ -1,0 +1,13 @@
+-- Historical reconciliation migration.
+-- Version: 20260224221451
+--
+-- Why this file exists:
+-- - The linked remote project contains migration version `20260224221451`
+--   in `supabase_migrations.schema_migrations`.
+-- - That version is not present in this repository's local migrations history.
+-- - Keeping this versioned file in git restores deterministic migration history
+--   and avoids unsafe blind history repair.
+--
+-- Intentional no-op:
+-- - The original SQL for this historical remote migration is unavailable in repo history.
+-- - This file is intentionally empty to preserve version continuity only.
