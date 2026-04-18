@@ -1,0 +1,446 @@
+// This is your Prisma schema file
+// AML/KYC/CDD Compliance Portal
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  CLIENT
+  RELATIONSHIP_MANAGER
+  KYC_ANALYST
+  MLRO
+  COMPLIANCE_ADMIN
+  AUDITOR
+}
+
+enum OnboardingStatus {
+  NEW
+  EMAIL_VERIFIED
+  MOBILE_VERIFIED
+  IN_PROGRESS
+  DOCUMENTS_UPLOADED
+  ID_VERIFIED
+  SCREENING_COMPLETED
+  RISK_ASSESSED
+  PENDING_RM_REVIEW
+  PENDING_MLRO
+  APPROVED
+  REJECTED
+  ACTIVE
+  CLOSED
+}
+
+enum ClientType {
+  INDIVIDUAL
+  LEGAL_ENTITY
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum DocumentType {
+  PASSPORT
+  PROOF_OF_ADDRESS
+  CERTIFICATE_OF_INCORPORATION
+  MOA_AOA
+  SHAREHOLDER_REGISTER
+  OWNERSHIP_CHART
+  EDD_DOCUMENT
+  BANK_STATEMENT
+  VIDEO_KYC
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum ScreeningStatus {
+  PENDING
+  CLEAR
+  HIT
+  DISMISSED
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  DOCUMENT_UPLOAD
+  DOCUMENT_DELETE
+  RISK_SCORE_CHANGE
+  STATUS_CHANGE
+  APPROVAL
+  REJECTION
+  EXPORT
+  SCREENING_RUN
+  NOTE_ADDED
+  USER_CREATED
+  USER_UPDATED
+  CONFIG_CHANGED
+  SAR_CREATED
+  SAR_EXPORTED
+}
+
+enum PurposeOfRelationship {
+  CORPORATE_SERVICES
+  ASSET_MANAGEMENT
+  TRUST_SERVICES
+  LEGAL_SERVICES
+  ACCOUNTING_SERVICES
+  REAL_ESTATE
+  INVESTMENT
+  TRADING
+  OTHER
+}
+
+// ─────────────────────────────────────────────
+// USERS (STAFF & CLIENTS)
+// ─────────────────────────────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
+  role             UserRole
+  firstName        String
+  lastName         String
+  phone            String?
+  mfaEnabled       Boolean   @default(false)
+  mfaSecret        String?
+  isActive         Boolean   @default(true)
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  managedClients       Client[]         @relation("RelationshipManager")
+  reviewedClients      Client[]         @relation("ReviewedBy")
+  auditLogs            AuditLog[]
+  uploadedDocuments    Document[]
+  riskScoreChanges     RiskScore[]
+  sarDrafts            SAR[]
+  notes                ClientNote[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ─────────────────────────────────────────────
+// CLIENTS
+// ─────────────────────────────────────────────
+
+model Client {
+  id                    String             @id @default(cuid())
+  clientType            ClientType
+  status                OnboardingStatus   @default(NEW)
+  riskLevel             RiskLevel?
+  riskScore             Int?
+
+  // Individual fields
+  fullName              String?
+  dateOfBirth           DateTime?
+  nationality           String?
+  passportNumber        String?
+  passportExpiry        DateTime?
+  residentialAddress    Json?
+  occupation            String?
+  taxResidence          String?
+  purposeOfRelationship PurposeOfRelationship?
+
+  // Legal entity fields
+  companyName           String?
+  jurisdiction          String?
+  registrationNumber    String?
+  dateOfIncorporation   DateTime?
+  registeredAddress     Json?
+  businessActivity      String?
+
+  // Metadata
+  emailVerifiedAt       DateTime?
+  mobileVerifiedAt      DateTime?
+  approvedAt            DateTime?
+  rejectedAt            DateTime?
+  rejectionReason       String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  // Relations
+  relationshipManagerId String?
+  relationshipManager   User?              @relation("RelationshipManager", fields: [relationshipManagerId], references: [id])
+  reviewedById          String?
+  reviewedBy            User?              @relation("ReviewedBy", fields: [reviewedById], references: [id])
+
+  directors             Director[]
+  authorizedSignatories AuthorizedSignatory[]
+  ubos                  UBO[]
+  documents             Document[]
+  screeningResults      ScreeningResult[]
+  riskScores            RiskScore[]
+  auditLogs             AuditLog[]
+  statusHistory         StatusHistory[]
+  notes                 ClientNote[]
+  sars                  SAR[]
+
+  @@index([status])
+  @@index([clientType])
+  @@index([riskLevel])
+  @@index([relationshipManagerId])
+}
+
+// ─────────────────────────────────────────────
+// DIRECTORS & SIGNATORIES & UBOs
+// ─────────────────────────────────────────────
+
+model Director {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id])
+  fullName     String
+  nationality  String?
+  dob          DateTime?
+  passportNum  String?
+  passportExp  DateTime?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([clientId])
+}
+
+model AuthorizedSignatory {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id])
+  fullName     String
+  nationality  String?
+  passportNum  String?
+  email        String?
+  createdAt    DateTime @default(now())
+
+  @@index([clientId])
+}
+
+model UBO {
+  id                  String   @id @default(cuid())
+  clientId            String
+  client              Client   @relation(fields: [clientId], references: [id])
+  fullName            String
+  nationality         String?
+  dob                 DateTime?
+  passportNum         String?
+  ownershipPercentage Float
+  isPEP               Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// ─────────────────────────────────────────────
+// DOCUMENTS
+// ─────────────────────────────────────────────
+
+model Document {
+  id              String         @id @default(cuid())
+  clientId        String
+  client          Client         @relation(fields: [clientId], references: [id])
+  uploadedById    String
+  uploadedBy      User           @relation(fields: [uploadedById], references: [id])
+  documentType    DocumentType
+  status          DocumentStatus @default(PENDING)
+  fileName        String
+  fileSize        Int
+  mimeType        String
+  storageKey      String
+  sha256Checksum  String
+  virusScanPassed Boolean?
+  uploadedFromIp  String?
+  expiresAt       DateTime?
+  verifiedAt      DateTime?
+  rejectedReason  String?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([clientId])
+  @@index([documentType])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// SCREENING RESULTS
+// ─────────────────────────────────────────────
+
+model ScreeningResult {
+  id             String          @id @default(cuid())
+  clientId       String
+  client         Client          @relation(fields: [clientId], references: [id])
+  screeningType  String          // SANCTIONS, PEP, ADVERSE_MEDIA
+  provider       String
+  status         ScreeningStatus @default(PENDING)
+  hitDetails     Json?
+  rawResponse    Json?
+  dismissedById  String?
+  dismissedAt    DateTime?
+  dismissalNote  String?
+  runAt          DateTime        @default(now())
+
+  @@index([clientId])
+  @@index([screeningType])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// RISK SCORES
+// ─────────────────────────────────────────────
+
+model RiskScore {
+  id                      String    @id @default(cuid())
+  clientId                String
+  client                  Client    @relation(fields: [clientId], references: [id])
+  calculatedById          String
+  calculatedBy            User      @relation(fields: [calculatedById], references: [id])
+  score                   Int
+  riskLevel               RiskLevel
+  countryRisk             Int
+  clientTypeRisk          Int
+  ownershipComplexityRisk Int
+  pepHitRisk              Int
+  sanctionsHitRisk        Int
+  documentVerificationRisk Int
+  transactionExposureRisk Int
+  notes                   String?
+  calculatedAt            DateTime  @default(now())
+
+  @@index([clientId])
+}
+
+// ─────────────────────────────────────────────
+// STATUS HISTORY (IMMUTABLE)
+// ─────────────────────────────────────────────
+
+model StatusHistory {
+  id         String           @id @default(cuid())
+  clientId   String
+  client     Client           @relation(fields: [clientId], references: [id])
+  fromStatus OnboardingStatus?
+  toStatus   OnboardingStatus
+  changedById String?
+  reason     String?
+  metadata   Json?
+  changedAt  DateTime         @default(now())
+
+  @@index([clientId])
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOGS (IMMUTABLE)
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id])
+  clientId   String?
+  client     Client?     @relation(fields: [clientId], references: [id])
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// CLIENT NOTES
+// ─────────────────────────────────────────────
+
+model ClientNote {
+  id         String   @id @default(cuid())
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id])
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  content    String
+  isInternal Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// ─────────────────────────────────────────────
+// SAR (SUSPICIOUS ACTIVITY REPORTS)
+// ─────────────────────────────────────────────
+
+model SAR {
+  id              String    @id @default(cuid())
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id])
+  createdById     String
+  createdBy       User      @relation(fields: [createdById], references: [id])
+  referenceNumber String    @unique
+  status          String    @default("DRAFT") // DRAFT, SUBMITTED, FILED
+  subject         String
+  narrative       String    @db.Text
+  suspiciousActivity Json?
+  evidenceBundleKey String?
+  exportedAt      DateTime?
+  submittedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// RISK ENGINE CONFIG
+// ─────────────────────────────────────────────
+
+model RiskEngineConfig {
+  id          String   @id @default(cuid())
+  configKey   String   @unique
+  configValue Json
+  description String?
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// COUNTRY RISK RATINGS
+// ─────────────────────────────────────────────
+
+model CountryRisk {
+  id         String   @id @default(cuid())
+  countryCode String  @unique
+  countryName String
+  riskScore   Int
+  fatfStatus  String?
+  notes       String?
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@index([countryCode])
+}
