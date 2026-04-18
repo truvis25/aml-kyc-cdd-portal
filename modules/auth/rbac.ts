@@ -47,8 +47,11 @@ export type Permission =
   | 'admin:activate_workflow'
   | 'admin:view_all_tenants'
   // Onboarding permissions
-  | 'onboarding:initiate'
-  | 'onboarding:assist_customer'
+  | 'onboarding:create'
+  | 'onboarding:read'
+  | 'onboarding:write'
+  | 'onboarding:initiate'    // legacy alias — kept for compatibility
+  | 'onboarding:assist_customer' // legacy alias — kept for compatibility
   // Reporting permissions
   | 'reporting:read_aggregate';
 
@@ -68,9 +71,13 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'admin:manage_users',
     'admin:manage_config',
     'admin:activate_workflow',
+    'onboarding:create',
+    'onboarding:read',
+    'onboarding:write',
     'cases:read_all',
     'customers:read_all',
     'documents:read',
+    'documents:upload',
     'screening:read',
     'risk:read',
     'audit:read',
@@ -137,8 +144,12 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
 
   [Role.ONBOARDING_AGENT]: [
+    'onboarding:create',
+    'onboarding:read',
+    'onboarding:write',
     'onboarding:initiate',
     'onboarding:assist_customer',
+    'documents:read',
     'documents:upload',
     // Onboarding agent CANNOT view EDD data
     // Onboarding agent CANNOT make compliance decisions
