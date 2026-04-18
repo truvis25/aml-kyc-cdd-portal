@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+function getAuthErrorMessage(search: string) {
+  const authError = new URLSearchParams(search).get('error');
+
+  if (authError === 'session_invalid') {
+    return 'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.';
+  }
+
+  if (authError === 'session_refresh_failed') {
+    return 'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.';
+  }
+
+  return null;
+}
 
 export default function SignInPage() {
   const router = useRouter();
