@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+function getAuthErrorMessage(search: string) {
+  const authError = new URLSearchParams(search).get('error');
+
+  if (authError === 'session_invalid') {
+    return 'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.';
+  }
+
+  if (authError === 'session_refresh_failed') {
+    return 'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.';
+  }
+
+  return null;
+}
 
 export default function SignInPage() {
   const router = useRouter();
@@ -13,25 +27,9 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   // Generic error message — never reveal whether email exists or not
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const authError = params.get('error');
-
-    if (authError === 'session_invalid') {
-      setError(
-        'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.'
-      );
-      return;
-    }
-
-    if (authError === 'session_refresh_failed') {
-      setError(
-        'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.'
-      );
-    }
-  }, []);
+  const [error, setError] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : getAuthErrorMessage(window.location.search)
+  );
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
