@@ -92,6 +92,7 @@ BEGIN
     'authenticated',
     'authenticated',
     'admin@truvis-test.local',
+    -- LOCAL DEV ONLY — never use this credential in staging or production
     crypt('AdminPass123!', gen_salt('bf', 10)),
     NOW(),
     '{"provider":"email","providers":["email"]}'::jsonb,
@@ -114,7 +115,7 @@ BEGIN
   SELECT id INTO v_role_id FROM roles WHERE name = 'tenant_admin';
 
   IF v_role_id IS NULL THEN
-    RAISE EXCEPTION 'tenant_admin role not found — migration 0018_seed_roles must run before seed';
+    RAISE EXCEPTION 'tenant_admin role not found -- migration 0018_seed_roles must run before seed';
   END IF;
 
   IF NOT EXISTS (
