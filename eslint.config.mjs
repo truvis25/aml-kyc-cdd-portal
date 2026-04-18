@@ -13,12 +13,15 @@ const eslintConfig = defineConfig([
     "supabase/functions/**",
   ]),
   {
+    // Apply to all source files but explicitly exclude app/api/ route handlers,
+    // which are the only permitted location for createAdminClient() usage.
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["app/api/**"],
     rules: {
-      // Prevent the service-role admin client from being imported anywhere in app/.
-      // API routes (app/api/) are the sole exception and must import it explicitly
-      // with a documented justification comment.
-      // Architecture rule: lib/supabase/admin.ts must never be used in client components,
-      // server components, or middleware — only in app/api/** route handlers.
+      // Block service-role admin client imports everywhere except app/api/ route handlers.
+      // app/api/ is excluded above — that is the sole authorised boundary.
+      // Architecture rule: lib/supabase/admin.ts must never appear in client components,
+      // server components, shared modules, or middleware.
       "no-restricted-imports": [
         "error",
         {
