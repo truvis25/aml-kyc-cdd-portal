@@ -1,11 +1,11 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { CreateDocumentParams, Document } from './documents.types';
 
 const STORAGE_BUCKET = 'kyc-documents';
 const SIGNED_URL_TTL_SECONDS = 15 * 60; // 15 minutes — compliance requirement
 
 export async function createDocumentRecord(params: CreateDocumentParams): Promise<Document> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('documents')
@@ -28,7 +28,7 @@ export async function createDocumentRecord(params: CreateDocumentParams): Promis
 }
 
 export async function getDocumentById(id: string, tenant_id: string): Promise<Document | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('documents')
@@ -45,7 +45,7 @@ export async function getDocumentsByCustomer(
   customer_id: string,
   tenant_id: string
 ): Promise<Document[]> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('documents')
@@ -61,7 +61,7 @@ export async function getDocumentsByCustomer(
 export async function createSignedUploadUrl(
   storage_path: string
 ): Promise<string> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKET)
@@ -74,7 +74,7 @@ export async function createSignedUploadUrl(
 export async function createSignedDownloadUrl(
   storage_path: string
 ): Promise<string> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKET)
@@ -91,7 +91,7 @@ export async function appendDocumentEvent(
   actor_id: string | null,
   payload: Record<string, unknown> = {}
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from('document_events').insert({
     document_id,
@@ -109,7 +109,7 @@ export async function updateDocumentStatus(
   tenant_id: string,
   status: 'uploaded' | 'verified' | 'rejected' | 'expired'
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('documents')

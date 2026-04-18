@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { AnalystActions } from '@/components/cases/analyst-actions';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { hasPermission } from '@/modules/auth/rbac';
@@ -55,10 +54,9 @@ export default async function CaseDetailPage({ params }: Props) {
   const tenant_id = claims?.tenant_id;
   if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
-  const adminClient = createAdminClient();
 
   // Fetch case
-  const { data: rawCase } = await adminClient
+  const { data: rawCase } = await supabase
     .from('cases')
     .select('*')
     .eq('id', caseId)
@@ -74,16 +72,16 @@ export default async function CaseDetailPage({ params }: Props) {
 
   // Fetch related data in parallel
   const [eventsResult, riskResult, documentsResult] = await Promise.all([
-    adminClient
+    supabase
       .from('case_events')
       .select('*')
       .eq('case_id', caseId)
       .eq('tenant_id', tenant_id)
       .order('created_at', { ascending: true }),
     case_.risk_assessment_id
-      ? adminClient.from('risk_assessments').select('*').eq('id', case_.risk_assessment_id).maybeSingle()
+      ? supabase.from('risk_assessments').select('*').eq('id', case_.risk_assessment_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    adminClient
+    supabase
       .from('documents')
       .select('id, document_type, file_name, status, uploaded_at')
       .eq('customer_id', case_.customer_id)
