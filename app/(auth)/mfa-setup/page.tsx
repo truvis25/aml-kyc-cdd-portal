@@ -24,6 +24,20 @@ export default function MfaSetupPage() {
     setError(null);
 
     const supabase = createClient();
+
+    const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (!factorsError) {
+      const existingVerifiedTotp = factorsData?.totp.find((factor) => factor.status === 'verified');
+      if (existingVerifiedTotp) {
+        setFactorId(existingVerifiedTotp.id);
+        setQrCode(null);
+        setSecret(null);
+        setStep('verify');
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data, error: enrollError } = await supabase.auth.mfa.enroll({
       factorType: 'totp',
       issuer: 'TruVis AML Platform',
@@ -137,20 +151,28 @@ export default function MfaSetupPage() {
             </div>
           )}
 
-          {step === 'verify' && qrCode && (
+          {step === 'verify' && (
             <div className="space-y-4">
-              <p className="text-sm text-gray-700">
-                Scan this QR code with your authenticator app:
-              </p>
-              {/* QR code displayed as SVG/image from Supabase */}
-              <div className="flex justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrCode}
-                  alt="MFA QR Code"
-                  className="w-48 h-48 border border-gray-200 rounded"
-                />
-              </div>
+              {qrCode ? (
+                <>
+                  <p className="text-sm text-gray-700">
+                    Scan this QR code with your authenticator app:
+                  </p>
+                  {/* QR code displayed as SVG/image from Supabase */}
+                  <div className="flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrCode}
+                      alt="MFA QR Code"
+                      className="w-48 h-48 border border-gray-200 rounded"
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-700">
+                  Enter the latest 6-digit code from your authenticator app.
+                </p>
+              )}
               {secret && (
                 <details className="text-xs text-gray-500">
                   <summary className="cursor-pointer">Can&apos;t scan? Enter key manually</summary>

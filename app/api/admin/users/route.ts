@@ -77,17 +77,41 @@ export async function POST(request: NextRequest) {
 
     const invitedUserId = inviteData.user.id;
 
-    // 6. Create user profile record
-    const { error: userInsertError } = await supabase.from('users').insert({
-      id: invitedUserId,
-      tenant_id: auth.user.tenant_id,
-      display_name: display_name ?? null,
-      mfa_enabled: false,
-      status: 'active',
-    });
+    // 6. Create user profile record with service role (RLS-safe server boundary).
+    const { data: existingUser, error: existingUserError } = await adminClient
+      .from('users')
+      .select('tenant_id')
+      .eq('id', invitedUserId)
+      .maybeSingle();
 
-    if (userInsertError) {
-      console.error('User insert error:', userInsertError.message);
+    if (existingUserError) {
+      console.error('User lookup error:', existingUserError.message);
+      return NextResponse.json(
+        { error: 'Failed to validate existing user record. Please try again.' },
+        { status: 500 }
+      );
+    }
+
+    if (existingUser && existingUser.tenant_id !== auth.user.tenant_id) {
+      return NextResponse.json(
+        { error: 'User already belongs to a different tenant.' },
+        { status: 409 }
+      );
+    }
+
+    const { error: userUpsertError } = await adminClient.from('users').upsert(
+      {
+        id: invitedUserId,
+        tenant_id: auth.user.tenant_id,
+        display_name: display_name ?? null,
+        mfa_enabled: false,
+        status: 'active',
+      },
+      { onConflict: 'id' }
+    );
+
+    if (userUpsertError) {
+      console.error('User upsert error:', userUpsertError.message);
       return NextResponse.json(
         { error: 'Failed to create user record. Please try again.' },
         { status: 500 }
@@ -95,19 +119,44 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Create user_roles record (pre-assigned role — not self-selected)
-    const { error: roleInsertError } = await supabase.from('user_roles').insert({
-      user_id: invitedUserId,
-      tenant_id: auth.user.tenant_id,
-      role_id: roleData.id,
-      granted_by: auth.user.id,
-    });
+    const { data: existingActiveRole, error: existingRoleError } = await adminClient
+      .from('user_roles')
+      .select('role_id')
+      .eq('user_id', invitedUserId)
+      .eq('tenant_id', auth.user.tenant_id)
+      .is('revoked_at', null)
+      .maybeSingle();
 
-    if (roleInsertError) {
-      console.error('Role insert error:', roleInsertError.message);
+    if (existingRoleError) {
+      console.error('Role lookup error:', existingRoleError.message);
       return NextResponse.json(
-        { error: 'Failed to assign role. Please try again.' },
+        { error: 'Failed to validate role assignment. Please try again.' },
         { status: 500 }
       );
+    }
+
+    if (existingActiveRole && existingActiveRole.role_id !== roleData.id) {
+      return NextResponse.json(
+        { error: 'User already has an active role. Revoke it before assigning a new one.' },
+        { status: 409 }
+      );
+    }
+
+    if (!existingActiveRole) {
+      const { error: roleInsertError } = await adminClient.from('user_roles').insert({
+        user_id: invitedUserId,
+        tenant_id: auth.user.tenant_id,
+        role_id: roleData.id,
+        granted_by: auth.user.id,
+      });
+
+      if (roleInsertError) {
+        console.error('Role insert error:', roleInsertError.message);
+        return NextResponse.json(
+          { error: 'Failed to assign role. Please try again.' },
+          { status: 500 }
+        );
+      }
     }
 
     // 8. Emit audit event
@@ -119,7 +168,7 @@ export async function POST(request: NextRequest) {
       actor_id: auth.user.id,
       actor_role: auth.user.role,
       payload: {
-        invited_email: email, // email is OK in audit — it's not PII in this context
+        invited_user_id: invitedUserId,
         assigned_role: role,
         invited_by_role: auth.user.role,
       },

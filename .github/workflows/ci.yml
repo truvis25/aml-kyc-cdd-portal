@@ -1,8 +1,5 @@
 name: CI
 
-# Runs on every push and PR. Vercel handles deployments separately via
-# its GitHub app integration — no deploy step is needed here.
-
 on:
   push:
     branches: ['**']
@@ -31,21 +28,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
-      - name: Install backend dependencies
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
         run: npm ci
-        working-directory: backend
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-      - name: Lint backend
+      - name: Lint
         run: npm run lint
-        working-directory: backend
-      - name: Lint frontend
-        run: npm run lint
-        working-directory: frontend
 
   typecheck:
     name: Type Check
@@ -56,24 +43,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
-      - name: Install backend dependencies
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
         run: npm ci
-        working-directory: backend
-      - name: Generate Prisma client
-        run: npm run prisma:generate
-        working-directory: backend
-      - name: Typecheck backend
-        run: npx tsc --noEmit
-        working-directory: backend
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-      - name: Typecheck frontend
-        run: npx tsc --noEmit
-        working-directory: frontend
+      - name: Typecheck
+        run: npm run typecheck
 
   test:
     name: Unit Tests
@@ -84,18 +58,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
-      - name: Install backend dependencies
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
         run: npm ci
-        working-directory: backend
-      - name: Generate Prisma client
-        run: npm run prisma:generate
-        working-directory: backend
-      - name: Run backend tests
+      - name: Run unit tests
         run: npm run test
-        working-directory: backend
 
   build:
     name: Build Check
@@ -107,30 +74,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
-      - name: Install backend dependencies
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
         run: npm ci
-        working-directory: backend
-      - name: Generate Prisma client
-        run: npm run prisma:generate
-        working-directory: backend
-      - name: Build backend
+      - name: Build app
         run: npm run build
-        working-directory: backend
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-      - name: Build frontend
-        run: npm run build
-        working-directory: frontend
         env:
-          # These GitHub secrets must be set to the STAGING Supabase project values.
-          # Go to: GitHub repo → Settings → Secrets and variables → Actions
-          # Required secrets: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          #                   SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_APP_URL
-          # NEXT_PUBLIC_* values are not sensitive but stored as secrets for easy rotation.
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
