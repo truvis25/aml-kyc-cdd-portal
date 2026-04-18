@@ -6,11 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit/",
     "test:watch": "vitest tests/unit/",
-    "typecheck": "tsc --noEmit"
+    "test:coverage": "vitest run --coverage",
+    "validate:env": "node scripts/check-env.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:push:dry": "supabase db push --dry-run",
+    "db:migrate:list": "supabase migration list"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
