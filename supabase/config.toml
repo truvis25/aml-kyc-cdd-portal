@@ -55,7 +55,7 @@ additional_redirect_urls = ["http://localhost:3000"]
 # JWT expiry in seconds (1 hour). Middleware refreshes before expiry on each request.
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
-refreshed_token_reuse_interval = 10
+refresh_token_reuse_interval = 10
 # Disabled — users are provisioned only via the invitation flow (inviteUserByEmail).
 # Direct self-signup is not permitted in this platform.
 enable_signup = false
