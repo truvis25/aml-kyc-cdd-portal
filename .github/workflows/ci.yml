@@ -31,8 +31,21 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
-      - run: npm run lint
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Lint backend
+        run: npm run lint
+        working-directory: backend
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: frontend
 
   typecheck:
     name: Type Check
@@ -43,8 +56,24 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+        working-directory: backend
+      - name: Typecheck backend
+        run: npx tsc --noEmit
+        working-directory: backend
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Typecheck frontend
+        run: npx tsc --noEmit
+        working-directory: frontend
 
   test:
     name: Unit Tests
@@ -55,8 +84,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
-      - run: npm run test
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+        working-directory: backend
+      - name: Run backend tests
+        run: npm run test
+        working-directory: backend
 
   build:
     name: Build Check
@@ -68,9 +107,24 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
-      - name: Build
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+        working-directory: backend
+      - name: Build backend
         run: npm run build
+        working-directory: backend
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
         env:
           # These GitHub secrets must be set to the STAGING Supabase project values.
           # Go to: GitHub repo → Settings → Secrets and variables → Actions
