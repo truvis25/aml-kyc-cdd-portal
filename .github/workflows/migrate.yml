@@ -32,6 +32,11 @@ on:
         type: boolean
         default: true
 
+env:
+  # actions/checkout@v4 runs its internal JavaScript on Node.js 20 (deprecated).
+  # Force Node.js 24 runtime for all JavaScript actions until v5 is available.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   migrate:
     name: ${{ inputs.dry_run == true && 'Dry Run' || 'Apply' }} → ${{ inputs.environment }}

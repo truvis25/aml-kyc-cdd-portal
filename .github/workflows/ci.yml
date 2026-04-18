@@ -14,7 +14,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
+  # actions/checkout and actions/setup-node are pinned at v4, which runs its
+  # internal JavaScript on Node.js 20. GitHub has deprecated that runtime.
+  # This variable instructs the Actions runner to use Node.js 24 for all
+  # JavaScript actions until v5 releases are available.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   lint:
