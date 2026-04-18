@@ -113,9 +113,6 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'cases:add_note',
     'cases:request_additional_info',
     'cases:escalate',
-    'cases:approve_standard',
-    'cases:approve_high_risk',
-    'cases:reject',
     // Senior reviewer CANNOT view SAR status
     'customers:read_assigned',
     'customers:read_edd_data',
@@ -131,9 +128,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'cases:add_note',
     'cases:request_additional_info',
     'cases:escalate',
-    'cases:approve_standard',
-    // Analyst CANNOT approve high-risk cases solo
-    'cases:reject',
+    // Analyst cannot record final approval decisions
     // Analyst CANNOT view SAR status
     'customers:read_assigned',
     // Analyst CANNOT read EDD data

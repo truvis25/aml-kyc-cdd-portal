@@ -13,8 +13,8 @@ describe('RBAC — hasPermission', () => {
       expect(hasPermission(Role.ANALYST, 'cases:request_additional_info')).toBe(true);
     });
 
-    it('can approve_standard cases', () => {
-      expect(hasPermission(Role.ANALYST, 'cases:approve_standard')).toBe(true);
+    it('CANNOT approve_standard cases', () => {
+      expect(hasPermission(Role.ANALYST, 'cases:approve_standard')).toBe(false);
     });
 
     it('CANNOT approve_high_risk cases', () => {

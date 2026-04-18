@@ -35,6 +35,20 @@ export async function getCaseById(id: string, tenant_id: string): Promise<Case |
   return data as Case | null;
 }
 
+export async function getCaseBySessionId(session_id: string, tenant_id: string): Promise<Case | null> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from('cases')
+    .select('*')
+    .eq('session_id', session_id)
+    .eq('tenant_id', tenant_id)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to fetch case by session: ${error.message}`);
+  return data as Case | null;
+}
+
 export async function listCases(
   tenant_id: string,
   filters: { assigned_to?: string; queue?: string; status?: string }

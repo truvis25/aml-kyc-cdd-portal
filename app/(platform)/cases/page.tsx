@@ -26,6 +26,21 @@ const STATUS_BADGE: Record<string, string> = {
   closed: 'bg-gray-50 border-gray-200 text-gray-600',
 };
 
+interface CaseListRow {
+  id: string;
+  status: string;
+  queue: string;
+  opened_at: string;
+  risk_assessment_id: string | null;
+  assigned_to: string | null;
+}
+
+interface RiskLookupRow {
+  id: string;
+  composite_score: number;
+  risk_band: RiskBand;
+}
+
 export default async function CasesPage({ searchParams }: Props) {
   const filters = await searchParams;
 
@@ -45,10 +60,7 @@ export default async function CasesPage({ searchParams }: Props) {
   const isAnalystOnly = role === 'analyst' || role === 'onboarding_agent' || role === 'read_only';
   let q = adminClient
     .from('cases')
-    .select(`
-      id, status, queue, opened_at, customer_id, assigned_to,
-      risk_assessments (composite_score, risk_band)
-    `)
+    .select('id, status, queue, opened_at, risk_assessment_id, assigned_to')
     .eq('tenant_id', tenant_id)
     .order('opened_at', { ascending: false })
     .limit(50);
@@ -57,7 +69,21 @@ export default async function CasesPage({ searchParams }: Props) {
   if (filters.queue) q = q.eq('queue', filters.queue);
   if (filters.status) q = q.eq('status', filters.status);
 
-  const { data: cases } = await q;
+  const { data: rawCases } = await q;
+  const cases = (rawCases ?? []) as unknown as CaseListRow[];
+  const riskIds = [...new Set(cases.map((c) => c.risk_assessment_id).filter(Boolean))] as string[];
+  const riskById = new Map<string, RiskLookupRow>();
+
+  if (riskIds.length > 0) {
+    const { data: risks } = await adminClient
+      .from('risk_assessments')
+      .select('id, composite_score, risk_band')
+      .in('id', riskIds);
+
+    for (const risk of (risks ?? []) as unknown as RiskLookupRow[]) {
+      riskById.set(risk.id, risk);
+    }
+  }
 
   return (
     <div>
@@ -88,7 +114,7 @@ export default async function CasesPage({ searchParams }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {cases.map((c) => {
-                const riskData = Array.isArray(c.risk_assessments) ? c.risk_assessments[0] : c.risk_assessments;
+                const riskData = c.risk_assessment_id ? riskById.get(c.risk_assessment_id) : undefined;
                 const statusStyle = STATUS_BADGE[c.status] ?? STATUS_BADGE.open;
                 return (
                   <tr key={c.id} className="hover:bg-gray-50">

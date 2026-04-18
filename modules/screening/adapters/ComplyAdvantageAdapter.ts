@@ -46,7 +46,7 @@ export class ComplyAdvantageAdapter implements ScreeningAdapter {
     const search = data.content?.data;
 
     const hits = ((search?.hits as Record<string, unknown>[] | undefined) ?? []).map((hit) => ({
-      hit_type: ((hit.doc as Record<string, unknown>)?.types as string[] | undefined)?.[0] ?? 'watchlist',
+      hit_type: mapHitType(((hit.doc as Record<string, unknown>)?.types as string[] | undefined)?.[0]),
       match_name: String(hit.match_name ?? ''),
       match_score: Number(hit.score ?? 0) * 100,
       raw_data: hit as Record<string, unknown>,
@@ -73,4 +73,12 @@ export class ComplyAdvantageAdapter implements ScreeningAdapter {
       completed_at: new Date().toISOString(),
     };
   }
+}
+
+function mapHitType(value: string | undefined): 'pep' | 'sanction' | 'adverse_media' | 'watchlist' {
+  const normalized = value?.toLowerCase() ?? '';
+  if (normalized === 'pep') return 'pep';
+  if (normalized === 'sanction' || normalized === 'sanctions') return 'sanction';
+  if (normalized === 'adverse_media' || normalized === 'adverse media') return 'adverse_media';
+  return 'watchlist';
 }

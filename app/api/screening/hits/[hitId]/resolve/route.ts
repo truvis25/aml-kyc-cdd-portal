@@ -4,6 +4,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { createAdminClient } from '@/lib/supabase/admin';
 import * as audit from '@/modules/audit/audit.service';
+import { AuditEntityType, AuditEventType } from '@/lib/constants/events';
 
 const ResolveSchema = z.object({
   resolution: z.enum(['confirmed_match', 'false_positive', 'escalated']),
@@ -50,18 +51,20 @@ export async function POST(
       .single();
 
     if (error) throw new Error(error.message);
+    const resolution = data as { id: string };
 
     // Update hit status
     await supabase
       .from('screening_hits')
       .update({ status: parsed.data.resolution })
-      .eq('id', hitId);
+      .eq('id', hitId)
+      .eq('tenant_id', auth.user.tenant_id);
 
     await audit.emit({
       tenant_id: auth.user.tenant_id,
-      event_type: 'screening.hit_resolved',
-      entity_type: 'screening_hit_resolutions',
-      entity_id: data.id,
+      event_type: AuditEventType.SCREENING_HIT_RESOLVED,
+      entity_type: AuditEntityType.SCREENING_HIT,
+      entity_id: resolution.id,
       actor_id: auth.user.id,
       actor_role: auth.user.role,
       payload: { hit_id: hitId, resolution: parsed.data.resolution },

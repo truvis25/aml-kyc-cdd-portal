@@ -70,12 +70,14 @@ export class WorkflowEngine {
     if (!current) throw new Error(`Step not found: ${step_result.step_id}`);
 
     const next = current.next ? WorkflowEngine.getStep(definition, current.next) : null;
+    const new_status = next === null || next.type === 'completion' ? 'submitted' : undefined;
 
     const updated = await advanceSession(
       session_id,
       tenant_id,
       step_result.step_id,
-      next?.id ?? null
+      next?.id ?? null,
+      new_status
     );
 
     return { session: updated, next_step: next };

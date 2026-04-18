@@ -49,8 +49,9 @@ export async function appendCustomerData(
     .single();
 
   if (fetchError) throw new Error(`Failed to fetch customer version: ${fetchError.message}`);
+  const customerRow = customer as { latest_version: number | null };
 
-  const next_version = (customer.latest_version ?? 0) + 1;
+  const next_version = (customerRow.latest_version ?? 0) + 1;
 
   const { data, error } = await supabase
     .from('customer_data_versions')
