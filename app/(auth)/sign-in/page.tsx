@@ -27,9 +27,25 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   // Generic error message — never reveal whether email exists or not
-  const [error, setError] = useState<string | null>(() =>
-    typeof window === 'undefined' ? null : getAuthErrorMessage(window.location.search)
-  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('error');
+
+    if (authError === 'session_invalid') {
+      setError(
+        'Your account is not fully configured. This usually means your user profile or role assignment is missing. Please contact your administrator — signing in again will not resolve this.'
+      );
+      return;
+    }
+
+    if (authError === 'session_refresh_failed') {
+      setError(
+        'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.'
+      );
+    }
+  }, []);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
