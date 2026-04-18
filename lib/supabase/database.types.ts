@@ -14,6 +14,17 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      [key: string]: {
+        Row: Record<string, unknown>;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: {
+          foreignKeyName: string;
+          columns: string[];
+          referencedRelation: string;
+          referencedColumns: string[];
+        }[];
+      };
       tenants: {
         Row: {
           id: string;

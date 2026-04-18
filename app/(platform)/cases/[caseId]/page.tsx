@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AnalystActions } from '@/components/cases/analyst-actions';
@@ -6,9 +7,39 @@ import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { hasPermission } from '@/modules/auth/rbac';
 import type { Role } from '@/lib/constants/roles';
 import type { RiskBand } from '@/modules/risk/risk.types';
+import type { CaseEvent } from '@/modules/cases/cases.types';
 
 interface Props {
   params: Promise<{ caseId: string }>;
+}
+
+interface CaseDetailRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  session_id: string | null;
+  risk_assessment_id: string | null;
+  queue: string;
+  status: string;
+  assigned_to: string | null;
+  sar_flagged: boolean;
+}
+
+interface DocumentRow {
+  id: string;
+  document_type: string;
+  file_name: string;
+  status: string;
+  uploaded_at: string;
+}
+
+interface RiskRow {
+  id: string;
+  composite_score: number;
+  risk_band: RiskBand;
+  customer_score: number | null;
+  geographic_score: number | null;
+  product_score: number | null;
 }
 
 export default async function CaseDetailPage({ params }: Props) {
@@ -27,12 +58,13 @@ export default async function CaseDetailPage({ params }: Props) {
   const adminClient = createAdminClient();
 
   // Fetch case
-  const { data: case_ } = await adminClient
+  const { data: rawCase } = await adminClient
     .from('cases')
     .select('*')
     .eq('id', caseId)
     .eq('tenant_id', tenant_id)
     .maybeSingle();
+  const case_ = (rawCase ?? null) as CaseDetailRow | null;
 
   if (!case_) notFound();
 
@@ -58,9 +90,9 @@ export default async function CaseDetailPage({ params }: Props) {
       .eq('tenant_id', tenant_id),
   ]);
 
-  const events = eventsResult.data ?? [];
-  const riskAssessment = riskResult.data;
-  const documents = documentsResult.data ?? [];
+  const events = (eventsResult.data ?? []) as unknown as CaseEvent[];
+  const riskAssessment = (riskResult.data ?? null) as RiskRow | null;
+  const documents = (documentsResult.data ?? []) as unknown as DocumentRow[];
 
   const canViewSar = role === 'mlro' || role === 'platform_super_admin';
   const canApprove = hasPermission(role, 'cases:approve_standard');
@@ -73,10 +105,15 @@ export default async function CaseDetailPage({ params }: Props) {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-sm text-gray-500 mb-1">
-              <a href="/cases" className="text-blue-600 hover:underline">Cases</a> /
-              <span className="ml-1 font-mono">{caseId.slice(0, 8)}…</span>
-            </p>
+            <nav aria-label="Breadcrumb" className="mb-1">
+              <ol className="flex items-center text-sm text-gray-500">
+                <li>
+                  <Link href="/cases" className="text-blue-600 hover:underline">Cases</Link>
+                </li>
+                <li className="mx-1" aria-hidden="true">/</li>
+                <li className="font-mono">{caseId.slice(0, 8)}…</li>
+              </ol>
+            </nav>
             <h1 className="text-2xl font-semibold text-gray-900">Case Review</h1>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
@@ -171,11 +208,11 @@ export default async function CaseDetailPage({ params }: Props) {
                         <p className="text-xs font-medium text-gray-900 capitalize">
                           {event.event_type.replace(/_/g, ' ')}
                         </p>
-                        {event.payload?.note && (
-                          <p className="mt-0.5 text-sm text-gray-600">{String(event.payload.note)}</p>
+                        {typeof event.payload?.note === 'string' && (
+                          <p className="mt-0.5 text-sm text-gray-600">{event.payload.note}</p>
                         )}
-                        {event.payload?.rationale && (
-                          <p className="mt-0.5 text-sm text-gray-600">{String(event.payload.rationale)}</p>
+                        {typeof event.payload?.rationale === 'string' && (
+                          <p className="mt-0.5 text-sm text-gray-600">{event.payload.rationale}</p>
                         )}
                         <p className="mt-1 text-xs text-gray-400">
                           {new Date(event.created_at).toLocaleString()}

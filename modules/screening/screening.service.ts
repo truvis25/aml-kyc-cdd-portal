@@ -13,7 +13,7 @@ import type { ScreeningAdapter, ScreeningParams } from './screening.types';
 
 function getAdapter(): ScreeningAdapter {
   const nodeEnv = process.env.NODE_ENV;
-  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+  if (nodeEnv !== 'production') {
     return new MockScreeningAdapter();
   }
   const key = process.env.COMPLY_ADVANTAGE_API_KEY;
