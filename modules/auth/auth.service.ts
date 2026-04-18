@@ -20,7 +20,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   const claims = claimsData.claims as Record<string, unknown>;
   const tenantId = claims?.tenant_id as string | undefined;
   const role = claims?.role as Role | undefined;
-  const mfaVerified = Boolean(claims?.mfa_verified);
+  const mfaVerified = claims?.aal === 'aal2';
 
   if (!tenantId || !role) return null;
 

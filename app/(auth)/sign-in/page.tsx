@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { type Role, MFA_REQUIRED_ROLES } from '@/lib/constants/roles';
 
 function getAuthErrorMessage(search: string) {
   const authError = new URLSearchParams(search).get('error');
@@ -17,35 +18,48 @@ function getAuthErrorMessage(search: string) {
   if (authError === 'session_refresh_failed') {
     return 'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.';
   }
+  if (authError === 'mfa_required') {
+    return 'Multi-factor verification is required for your role. Sign in and complete verification.';
+  }
 
   return null;
+}
+
+function getSafeRedirectTo(search: string) {
+  const redirectTo = new URLSearchParams(search).get('redirectTo');
+  if (!redirectTo) return '/dashboard';
+
+  try {
+    const redirectUrl = new URL(redirectTo, window.location.origin);
+    if (redirectUrl.origin === window.location.origin) {
+      return `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`;
+    }
+  } catch {
+    // Fallback handled below.
+  }
+
+  return '/dashboard';
 }
 
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [pendingMfaFactorId, setPendingMfaFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Generic error message — never reveal whether email exists or not
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const authError = params.get('error');
-
-    if (authError === 'session_invalid') {
-      setError(
-        'Your account is not fully configured. This usually means your user profile or role assignment is missing. Please contact your administrator — signing in again will not resolve this.'
-      );
-      return;
-    }
-
-    if (authError === 'session_refresh_failed') {
-      setError(
-        'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.'
-      );
-    }
+    setError(getAuthErrorMessage(window.location.search));
   }, []);
+
+  function navigatePostSignIn() {
+    const safeRedirectTo = getSafeRedirectTo(window.location.search);
+    router.push(safeRedirectTo);
+    router.refresh();
+  }
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -53,12 +67,12 @@ export default function SignInPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (signInError) {
+    if (signInError || !signInData.session) {
       // Generic error — do NOT differentiate between wrong email and wrong password
       // This prevents user enumeration attacks
       setError('Invalid email or password. Please try again.');
@@ -66,22 +80,55 @@ export default function SignInPage() {
       return;
     }
 
-    // Redirect to dashboard on success
-    // Middleware will check MFA requirement and redirect to /mfa-setup if needed
-    const redirectTo = new URLSearchParams(window.location.search).get('redirectTo');
-    let safeRedirectTo = '/dashboard';
-    if (redirectTo) {
-      try {
-        const redirectUrl = new URL(redirectTo, window.location.origin);
-        if (redirectUrl.origin === window.location.origin) {
-          safeRedirectTo = `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`;
+    const { data: claimsData } = await supabase.auth.getClaims();
+    const claims = (claimsData?.claims ?? {}) as { role?: Role };
+
+    if (claims.role && MFA_REQUIRED_ROLES.includes(claims.role)) {
+      const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (!aalError && aalData?.currentLevel !== 'aal2' && aalData?.nextLevel === 'aal2') {
+        const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+        const factor = factorsError
+          ? null
+          : factorsData?.totp.find((f) => f.status === 'verified') ?? null;
+
+        if (factor) {
+          setPendingMfaFactorId(factor.id);
+          setLoading(false);
+          return;
         }
-      } catch {
-        safeRedirectTo = '/dashboard';
+
+        router.push('/mfa-setup');
+        router.refresh();
+        setLoading(false);
+        return;
       }
     }
-    router.push(safeRedirectTo);
-    router.refresh();
+
+    navigatePostSignIn();
+    setLoading(false);
+  }
+
+  async function handleMfaVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingMfaFactorId) return;
+
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: pendingMfaFactorId,
+      code: mfaCode,
+    });
+
+    if (verifyError) {
+      setError('Invalid code. Please check your authenticator app and try again.');
+      setLoading(false);
+      return;
+    }
+
+    navigatePostSignIn();
+    setLoading(false);
   }
 
   return (
@@ -96,45 +143,93 @@ export default function SignInPage() {
 
           <h2 className="text-xl font-medium text-gray-900 mb-6">Sign in to your account</h2>
 
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-red-50 border border-red-200 p-3">
-                <p className="text-sm text-red-700">{error}</p>
+          {pendingMfaFactorId ? (
+            <form onSubmit={handleMfaVerify} className="space-y-4">
+              <p className="text-sm text-gray-700">
+                Enter the 6-digit code from your authenticator app to complete sign-in.
+              </p>
+              <div className="space-y-1">
+                <Label htmlFor="mfa-code">Authentication code</Label>
+                <Input
+                  id="mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  disabled={loading}
+                  autoComplete="one-time-code"
+                />
               </div>
-            )}
+              {error && (
+                <div className="rounded-md bg-red-50 border border-red-200 p-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Button type="submit" className="w-full" disabled={loading || mfaCode.length !== 6}>
+                  {loading ? 'Verifying…' : 'Verify and continue'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={loading}
+                  onClick={async () => {
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    setPendingMfaFactorId(null);
+                    setMfaCode('');
+                  }}
+                >
+                  Back to sign-in
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="email">Email address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  disabled={loading}
+                />
+              </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
+              <div className="space-y-1">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-md bg-red-50 border border-red-200 p-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing in…' : 'Sign in'}
+              </Button>
+            </form>
+          )}
 
           <p className="mt-6 text-xs text-gray-500 text-center">
             Access is by invitation only. Contact your administrator to request access.

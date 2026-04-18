@@ -103,10 +103,11 @@ export async function middleware(request: NextRequest) {
       tenant_id?: string;
       role?: Role;
       mfa_verified?: boolean;
+      aal?: string;
     };
 
     const role = claims.role;
-    const mfaVerified = Boolean(claims.mfa_verified);
+    const mfaVerified = claims.aal === 'aal2';
 
     // Fail closed: if JWT is missing enriched claims the Custom Access Token
     // Hook either failed or the user has no active role assignment.
@@ -122,7 +123,10 @@ export async function middleware(request: NextRequest) {
     const roleMfaRequired = role ? MFA_REQUIRED_ROLES.includes(role) : false;
 
     if ((requiresMfa || roleMfaRequired) && !mfaVerified) {
-      return NextResponse.redirect(new URL('/mfa-setup', request.url));
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('redirectTo', pathname);
+      signInUrl.searchParams.set('error', 'mfa_required');
+      return NextResponse.redirect(signInUrl);
     }
 
     // Admin-only path check
