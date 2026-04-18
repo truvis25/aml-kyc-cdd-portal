@@ -80,7 +80,7 @@ export default function SignInPage() {
       return;
     }
 
-    const { data: claimsData } = await supabase.auth.getClaims();
+    const { data: claimsData } = await supabase.auth.getClaims(signInData.session.access_token);
     const claims = (claimsData?.claims ?? {}) as { role?: Role };
 
     if (claims.role && MFA_REQUIRED_ROLES.includes(claims.role)) {
