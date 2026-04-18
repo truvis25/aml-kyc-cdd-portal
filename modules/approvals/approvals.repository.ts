@@ -1,8 +1,8 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { Approval, RecordApprovalParams } from './approvals.types';
 
 export async function insertApproval(params: RecordApprovalParams): Promise<Approval> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('approvals')
@@ -25,7 +25,7 @@ export async function getApprovalByCaseId(
   case_id: string,
   tenant_id: string
 ): Promise<Approval | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('approvals')

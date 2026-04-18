@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { Customer, CustomerDataVersion } from './kyc.types';
 import type { KycIdentityInput } from '@/lib/validations/kyc';
 
@@ -6,7 +6,7 @@ export async function createCustomer(
   tenant_id: string,
   customer_type: 'individual' | 'corporate' = 'individual'
 ): Promise<Customer> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('customers')
@@ -19,7 +19,7 @@ export async function createCustomer(
 }
 
 export async function getCustomerById(id: string, tenant_id: string): Promise<Customer | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('customers')
@@ -38,7 +38,7 @@ export async function appendCustomerData(
   fields: Partial<KycIdentityInput>,
   submitted_by: string
 ): Promise<CustomerDataVersion> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Get next version number atomically
   const { data: customer, error: fetchError } = await supabase
@@ -81,7 +81,7 @@ export async function getLatestCustomerData(
   customer_id: string,
   tenant_id: string
 ): Promise<CustomerDataVersion | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('customer_data_versions')
@@ -101,7 +101,7 @@ export async function updateCustomerStatus(
   tenant_id: string,
   status: Customer['status']
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('customers')

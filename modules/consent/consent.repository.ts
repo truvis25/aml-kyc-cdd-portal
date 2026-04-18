@@ -1,8 +1,8 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { CaptureConsentParams, ConsentRecord } from './consent.types';
 
 export async function insertConsentRecord(params: CaptureConsentParams): Promise<ConsentRecord> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Mask IP to /24
   const maskedIp = params.ip_address ? maskIp(params.ip_address) : null;
@@ -31,7 +31,7 @@ export async function getLatestConsent(
   customer_id: string,
   tenant_id: string
 ): Promise<ConsentRecord | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('consent_records')

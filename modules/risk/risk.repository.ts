@@ -1,8 +1,8 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { RiskAssessment } from './risk.types';
 
 export async function insertRiskAssessment(params: Omit<RiskAssessment, 'id' | 'assessed_at'>): Promise<RiskAssessment> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('risk_assessments')
@@ -29,7 +29,7 @@ export async function getLatestRiskAssessment(
   customer_id: string,
   tenant_id: string
 ): Promise<RiskAssessment | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('risk_assessments')

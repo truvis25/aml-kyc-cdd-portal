@@ -1,8 +1,8 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { Case, CaseEvent, CreateCaseParams, AddCaseEventParams } from './cases.types';
 
 export async function createCase(params: CreateCaseParams): Promise<Case> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('cases')
@@ -22,7 +22,7 @@ export async function createCase(params: CreateCaseParams): Promise<Case> {
 }
 
 export async function getCaseById(id: string, tenant_id: string): Promise<Case | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('cases')
@@ -36,7 +36,7 @@ export async function getCaseById(id: string, tenant_id: string): Promise<Case |
 }
 
 export async function getCaseBySessionId(session_id: string, tenant_id: string): Promise<Case | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('cases')
@@ -53,7 +53,7 @@ export async function listCases(
   tenant_id: string,
   filters: { assigned_to?: string; queue?: string; status?: string }
 ): Promise<Case[]> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   let q = supabase
     .from('cases')
@@ -76,7 +76,7 @@ export async function updateCaseStatus(
   status: Case['status'],
   assigned_to?: string
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const update: Record<string, unknown> = {
     status,
     updated_at: new Date().toISOString(),
@@ -96,7 +96,7 @@ export async function updateCaseStatus(
 }
 
 export async function appendCaseEvent(params: AddCaseEventParams): Promise<CaseEvent> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('case_events')
@@ -116,7 +116,7 @@ export async function appendCaseEvent(params: AddCaseEventParams): Promise<CaseE
 }
 
 export async function getCaseEvents(case_id: string, tenant_id: string): Promise<CaseEvent[]> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('case_events')

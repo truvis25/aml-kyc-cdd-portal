@@ -1,4 +1,4 @@
--- Migration: 0007_harden_audit_trigger_payloads.sql
+-- Migration: 0017_harden_audit_trigger_payloads.sql
 -- Purpose:
 --   1) Remove PII-rich row snapshots from trigger-generated audit payloads
 --   2) Make audit trigger fail closed (do not swallow audit write failures)

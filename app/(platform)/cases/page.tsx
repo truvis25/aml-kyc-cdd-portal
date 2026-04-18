@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import { CaseFilters } from '@/components/cases/case-filters';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
@@ -54,11 +53,10 @@ export default async function CasesPage({ searchParams }: Props) {
   const tenant_id = claims?.tenant_id;
   if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
-  const adminClient = createAdminClient();
 
   // Build query — analysts see only assigned cases
   const isAnalystOnly = role === 'analyst' || role === 'onboarding_agent' || role === 'read_only';
-  let q = adminClient
+  let q = supabase
     .from('cases')
     .select('id, status, queue, opened_at, risk_assessment_id, assigned_to')
     .eq('tenant_id', tenant_id)
@@ -75,7 +73,7 @@ export default async function CasesPage({ searchParams }: Props) {
   const riskById = new Map<string, RiskLookupRow>();
 
   if (riskIds.length > 0) {
-    const { data: risks } = await adminClient
+    const { data: risks } = await supabase
       .from('risk_assessments')
       .select('id, composite_score, risk_band')
       .in('id', riskIds);

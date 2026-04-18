@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Role } from '@/lib/constants/roles';
@@ -25,15 +24,14 @@ export default async function DashboardPage() {
   let unresolvedHits = 0;
 
   if (tenant_id) {
-    const adminClient = createAdminClient();
     const [casesResult, sessionsResult, docsResult, hitsResult] = await Promise.all([
-      adminClient.from('cases').select('id', { count: 'exact', head: true })
+      supabase.from('cases').select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant_id).eq('status', 'open'),
-      adminClient.from('onboarding_sessions').select('id', { count: 'exact', head: true })
+      supabase.from('onboarding_sessions').select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant_id).eq('status', 'in_progress'),
-      adminClient.from('documents').select('id', { count: 'exact', head: true })
+      supabase.from('documents').select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant_id).eq('status', 'uploaded'),
-      adminClient.from('screening_hits').select('id', { count: 'exact', head: true })
+      supabase.from('screening_hits').select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant_id).eq('status', 'pending'),
     ]);
     pendingCases = casesResult.count ?? 0;

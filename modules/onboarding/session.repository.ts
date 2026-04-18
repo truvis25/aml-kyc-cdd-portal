@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { OnboardingSession } from './onboarding.types';
 
 export async function createSession(params: {
@@ -7,7 +7,7 @@ export async function createSession(params: {
   workflow_id: string;
   first_step: string;
 }): Promise<OnboardingSession> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('onboarding_sessions')
@@ -28,7 +28,7 @@ export async function createSession(params: {
 }
 
 export async function getSessionById(id: string, tenant_id: string): Promise<OnboardingSession | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('onboarding_sessions')
@@ -48,7 +48,7 @@ export async function advanceSession(
   next_step: string | null,
   new_status?: OnboardingSession['status']
 ): Promise<OnboardingSession> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const session = await getSessionById(session_id, tenant_id);
   if (!session) throw new Error('Session not found');
@@ -78,7 +78,7 @@ export async function getWorkflowDefinition(
   tenant_id: string,
   customer_type: string
 ): Promise<{ id: string; definition: Record<string, unknown> } | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Prefer tenant-specific, fall back to platform default
   const { data, error } = await supabase

@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { ScreeningJob, ScreeningHit } from './screening.types';
 
 export async function createScreeningJob(params: {
@@ -8,7 +8,7 @@ export async function createScreeningJob(params: {
   external_job_id?: string;
   requested_by: string;
 }): Promise<ScreeningJob> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('screening_jobs')
@@ -33,7 +33,7 @@ export async function updateScreeningJob(
   status: ScreeningJob['status'],
   external_job_id?: string
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from('screening_jobs')
     .update({
@@ -54,7 +54,7 @@ export async function insertScreeningHits(
   hits: Omit<ScreeningHit, 'id'>[]
 ): Promise<void> {
   if (hits.length === 0) return;
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const rows = hits.map((h) => ({
     tenant_id,
@@ -72,7 +72,7 @@ export async function insertScreeningHits(
 }
 
 export async function getScreeningJobById(job_id: string, tenant_id: string): Promise<ScreeningJob | null> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('screening_jobs')
     .select('*')
@@ -85,7 +85,7 @@ export async function getScreeningJobById(job_id: string, tenant_id: string): Pr
 }
 
 export async function getHitsByJobId(job_id: string, tenant_id: string) {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('screening_hits')
     .select('*')
