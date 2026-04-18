@@ -27,3 +27,17 @@ export const PLATFORM_ROLES: Role[] = [
   Role.ONBOARDING_AGENT,
   Role.READ_ONLY,
 ];
+
+// Roles assignable by a tenant-scoped admin.
+export const TENANT_ADMIN_ASSIGNABLE_ROLES: Role[] = [
+  Role.TENANT_ADMIN,
+  Role.MLRO,
+  Role.SENIOR_REVIEWER,
+  Role.ANALYST,
+  Role.ONBOARDING_AGENT,
+  Role.READ_ONLY,
+];
+
+export function canManageCrossTenantUsers(role: Role): boolean {
+  return role === Role.PLATFORM_SUPER_ADMIN;
+}

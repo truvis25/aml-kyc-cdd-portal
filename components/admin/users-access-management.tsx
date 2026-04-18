@@ -35,13 +35,13 @@ export function UsersAccessManagement() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const [roleSelections, setRoleSelections] = useState<Record<string, Role>>({});
-  const [tenantSelections, setTenantSelections] = useState<Record<string, string>>({});
+  const [roleOverrides, setRoleOverrides] = useState<Record<string, Role>>({});
+  const [tenantOverrides, setTenantOverrides] = useState<Record<string, string>>({});
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await fetch('/api/admin/users', { cache: 'no-store' });
+    const res = await fetch('/api/admin/users');
     const payload = await res.json();
 
     if (!res.ok) {
@@ -55,33 +55,28 @@ export function UsersAccessManagement() {
   }, []);
 
   useEffect(() => {
-    void loadUsers();
+    const timer = window.setTimeout(() => {
+      void loadUsers();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadUsers]);
 
-  const users = data?.users ?? [];
-  const roles = data?.roles ?? [];
-  const tenants = data?.tenants ?? [];
+  const users = useMemo(() => data?.users ?? [], [data?.users]);
+  const roles = useMemo(() => data?.roles ?? [], [data?.roles]);
+  const tenants = useMemo(() => data?.tenants ?? [], [data?.tenants]);
   const canManageCrossTenant = data?.can_manage_cross_tenant ?? false;
-
-  useEffect(() => {
-    if (!data) return;
-    const nextRoles: Record<string, Role> = {};
-    const nextTenants: Record<string, string> = {};
-    data.users.forEach((user) => {
-      if (user.active_role) nextRoles[user.id] = user.active_role;
-      else if (roles[0]) nextRoles[user.id] = roles[0].name;
-
-      const defaultTenant = user.tenant?.id ?? tenants[0]?.id;
-      if (defaultTenant) nextTenants[user.id] = defaultTenant;
-    });
-    setRoleSelections(nextRoles);
-    setTenantSelections(nextTenants);
-  }, [data, roles, tenants]);
 
   const selectedUser = useMemo(
     () => users.find((u) => u.id === selectedUserId) ?? null,
     [users, selectedUserId]
   );
+  const firstAssignableRole = roles[0]?.name ?? null;
+  const selectedRole = selectedUser
+    ? roleOverrides[selectedUser.id] ?? selectedUser.active_role ?? firstAssignableRole
+    : null;
+  const selectedTenantId = selectedUser
+    ? tenantOverrides[selectedUser.id] ?? selectedUser.tenant?.id ?? tenants[0]?.id
+    : undefined;
 
   async function runAction(userId: string, body: Record<string, unknown>, successMessage: string) {
     setPendingAction(userId);
@@ -235,9 +230,9 @@ export function UsersAccessManagement() {
               <label className="text-sm font-medium text-gray-700">Tenant assignment</label>
               <select
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                value={tenantSelections[selectedUser.id] ?? ''}
+                value={selectedTenantId ?? ''}
                 onChange={(e) =>
-                  setTenantSelections((prev) => ({ ...prev, [selectedUser.id]: e.target.value }))
+                  setTenantOverrides((prev) => ({ ...prev, [selectedUser.id]: e.target.value }))
                 }
                 disabled={!selectedUser.has_auth_user || pendingAction === selectedUser.id}
               >
@@ -253,12 +248,12 @@ export function UsersAccessManagement() {
                 disabled={
                   pendingAction === selectedUser.id ||
                   !selectedUser.has_auth_user ||
-                  !tenantSelections[selectedUser.id]
+                  !selectedTenantId
                 }
                 onClick={() =>
                   void runAction(
                     selectedUser.id,
-                    { action: 'assign_tenant', tenant_id: tenantSelections[selectedUser.id] },
+                    { action: 'assign_tenant', tenant_id: selectedTenantId },
                     'Tenant assignment updated.'
                   )
                 }
@@ -273,9 +268,9 @@ export function UsersAccessManagement() {
               </label>
               <select
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                value={roleSelections[selectedUser.id] ?? ''}
+                value={selectedRole ?? ''}
                 onChange={(e) =>
-                  setRoleSelections((prev) => ({ ...prev, [selectedUser.id]: e.target.value as Role }))
+                  setRoleOverrides((prev) => ({ ...prev, [selectedUser.id]: e.target.value as Role }))
                 }
                 disabled={pendingAction === selectedUser.id}
               >
@@ -287,13 +282,13 @@ export function UsersAccessManagement() {
               </select>
               <Button
                 size="sm"
-                disabled={pendingAction === selectedUser.id || !roleSelections[selectedUser.id]}
+                disabled={pendingAction === selectedUser.id || !selectedRole}
                 onClick={() =>
                   void runAction(
                     selectedUser.id,
                     {
                       action: selectedUser.has_active_user_role ? 'change_role' : 'assign_role',
-                      role: roleSelections[selectedUser.id],
+                      role: selectedRole,
                     },
                     'Role assignment updated.'
                   )
@@ -331,8 +326,8 @@ export function UsersAccessManagement() {
                     selectedUser.id,
                     {
                       action: 'repair_provisioning',
-                      tenant_id: tenantSelections[selectedUser.id],
-                      role: roleSelections[selectedUser.id],
+                      tenant_id: selectedTenantId,
+                      role: selectedRole,
                     },
                     'Provisioning repaired.'
                   )

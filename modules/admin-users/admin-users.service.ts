@@ -1,6 +1,12 @@
 import { AuditEntityType, AuditEventType } from '@/lib/constants/events';
-import { Role } from '@/lib/constants/roles';
+import {
+  Role,
+  TENANT_ADMIN_ASSIGNABLE_ROLES,
+  canManageCrossTenantUsers,
+} from '@/lib/constants/roles';
+import type { Database } from '@/lib/supabase/database.types';
 import { emit } from '@/modules/audit/audit.service';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   ListManagedUsersResult,
   ManageUserAction,
@@ -17,15 +23,21 @@ interface ActorContext {
 
 interface ListManagedUsersParams {
   actor: ActorContext;
-  adminClient: any;
+  adminClient: AdminClient;
 }
 
 interface ManageUserAccessParams {
   actor: ActorContext;
   userId: string;
   action: ManageUserAction;
-  adminClient: any;
+  adminClient: AdminClient;
 }
+
+type AdminClient = SupabaseClient<Database>;
+type RoleAction = Extract<
+  ManageUserAction,
+  { action: 'assign_role' } | { action: 'change_role' } | { action: 'repair_provisioning' }
+>;
 
 interface PublicUserRow {
   id: string;
@@ -52,27 +64,19 @@ interface AuthUserView {
   email_confirmed_at: string | null;
 }
 
-const TENANT_ADMIN_ASSIGNABLE_ROLES: Role[] = [
-  Role.TENANT_ADMIN,
-  Role.MLRO,
-  Role.SENIOR_REVIEWER,
-  Role.ANALYST,
-  Role.ONBOARDING_AGENT,
-  Role.READ_ONLY,
-];
-
-function canManageCrossTenant(actorRole: Role): boolean {
-  return actorRole === Role.PLATFORM_SUPER_ADMIN;
-}
-
 function isRoleAssignableByActor(actorRole: Role, role: Role): boolean {
-  if (actorRole === Role.PLATFORM_SUPER_ADMIN) return true;
+  if (canManageCrossTenantUsers(actorRole)) return true;
   return TENANT_ADMIN_ASSIGNABLE_ROLES.includes(role);
 }
 
-async function getAuthUserById(adminClient: any, userId: string): Promise<AuthUserView | null> {
+async function getAuthUserById(adminClient: AdminClient, userId: string): Promise<AuthUserView | null> {
   const { data, error } = await adminClient.auth.admin.getUserById(userId);
-  if (error || !data?.user) return null;
+  if (error || !data?.user) {
+    if (error) {
+      console.warn(`Admin users auth lookup failed: ${error.message}`);
+    }
+    return null;
+  }
 
   return {
     id: data.user.id,
@@ -103,15 +107,29 @@ function toAuthStatus(authUser: AuthUserView | null): ManagedUserRecord['auth_st
 }
 
 function ensureTenantScope(actor: ActorContext, tenantId: string): void {
-  if (canManageCrossTenant(actor.role)) return;
+  if (canManageCrossTenantUsers(actor.role)) return;
   if (tenantId !== actor.tenant_id) {
     throw new ForbiddenOperationError('You can only manage users in your own tenant.');
   }
 }
 
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function resolveRequestedRole(action: RoleAction): Role {
+  if (action.action === 'repair_provisioning') {
+    if (!action.role) {
+      throw new InvalidOperationError('Role is required for this action.');
+    }
+    return action.role;
+  }
+  return action.role;
+}
+
 export async function listManagedUsers(params: ListManagedUsersParams): Promise<ListManagedUsersResult> {
   const { actor, adminClient } = params;
-  const crossTenant = canManageCrossTenant(actor.role);
+  const crossTenant = canManageCrossTenantUsers(actor.role);
 
   const tenantQuery = adminClient.from('tenants').select('id, name, slug');
   const { data: tenantRows, error: tenantError } = crossTenant
@@ -120,7 +138,7 @@ export async function listManagedUsers(params: ListManagedUsersParams): Promise<
 
   if (tenantError) throw new Error(`Failed to read tenants: ${tenantError.message}`);
 
-  const tenants: ManagedTenant[] = (tenantRows ?? []).map((t: any) => ({
+  const tenants: ManagedTenant[] = (tenantRows ?? []).map((t: { id: string; name: string; slug: string }) => ({
     id: t.id,
     name: t.name,
     slug: t.slug,
@@ -134,7 +152,10 @@ export async function listManagedUsers(params: ListManagedUsersParams): Promise<
     .order('name', { ascending: true });
   if (roleError) throw new Error(`Failed to read roles: ${roleError.message}`);
 
-  const roles: ManagedRole[] = (roleRows ?? []).map((r: any) => ({ id: r.id, name: r.name as Role }));
+  const roles: ManagedRole[] = (roleRows ?? []).map((r: { id: string; name: string }) => ({
+    id: r.id,
+    name: r.name as Role,
+  }));
   const roleNameById = new Map(roles.map((r) => [r.id, r.name]));
 
   let appUsers: PublicUserRow[] = [];
@@ -164,8 +185,7 @@ export async function listManagedUsers(params: ListManagedUsersParams): Promise<
       .in('tenant_id', tenantIds)
       .eq('event_type', AuditEventType.USER_INVITED)
       .eq('entity_type', AuditEntityType.USER)
-      .order('event_time', { ascending: false })
-      .limit(500);
+      .order('event_time', { ascending: false });
     if (inviteError) throw new Error(`Failed to read invite audit events: ${inviteError.message}`);
     invitedAuditRows = (inviteRows ?? []) as Array<{ tenant_id: string; entity_id: string; event_time: string }>;
   }
@@ -211,26 +231,26 @@ export async function listManagedUsers(params: ListManagedUsersParams): Promise<
     };
   });
 
-  users.sort((a, b) => {
-    if (!a.created_at && !b.created_at) return 0;
-    if (!a.created_at) return 1;
-    if (!b.created_at) return -1;
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  const sortableUsers = users.map((user) => ({
+    user,
+    sortKey: user.created_at ? new Date(user.created_at).getTime() : Number.NEGATIVE_INFINITY,
+  }));
+  sortableUsers.sort((a, b) => b.sortKey - a.sortKey);
+  const sortedUsers = sortableUsers.map((entry) => entry.user);
 
   const assignableRoles = crossTenant
     ? roles
     : roles.filter((role) => TENANT_ADMIN_ASSIGNABLE_ROLES.includes(role.name));
 
   return {
-    users,
+    users: sortedUsers,
     tenants,
     roles: assignableRoles,
     can_manage_cross_tenant: crossTenant,
   };
 }
 
-async function resolveRoleId(adminClient: any, role: Role): Promise<string> {
+async function resolveRoleId(adminClient: AdminClient, role: Role): Promise<string> {
   const { data, error } = await adminClient.from('roles').select('id').eq('name', role).single();
   if (error || !data?.id) {
     throw new InvalidOperationError('Requested role was not found.');
@@ -239,7 +259,7 @@ async function resolveRoleId(adminClient: any, role: Role): Promise<string> {
 }
 
 async function getActiveRoleForTenant(
-  adminClient: any,
+  adminClient: AdminClient,
   userId: string,
   tenantId: string
 ): Promise<ActiveRoleRow | null> {
@@ -255,7 +275,11 @@ async function getActiveRoleForTenant(
   return (data as ActiveRoleRow | null) ?? null;
 }
 
-async function ensureNoCrossTenantActiveRole(adminClient: any, userId: string, tenantId: string): Promise<void> {
+async function ensureNoCrossTenantActiveRole(
+  adminClient: AdminClient,
+  userId: string,
+  tenantId: string
+): Promise<void> {
   const { data, error } = await adminClient
     .from('user_roles')
     .select('id, tenant_id')
@@ -263,7 +287,9 @@ async function ensureNoCrossTenantActiveRole(adminClient: any, userId: string, t
     .is('revoked_at', null);
   if (error) throw new Error(`Failed to validate active role assignments: ${error.message}`);
 
-  const hasOtherTenantRole = (data ?? []).some((r: any) => r.tenant_id !== tenantId);
+  const hasOtherTenantRole = ((data ?? []) as Array<{ tenant_id: string }>).some(
+    (r) => r.tenant_id !== tenantId
+  );
   if (hasOtherTenantRole) {
     throw new ConflictOperationError(
       'User has an active role assignment in another tenant. Revoke it before changing tenant.'
@@ -272,7 +298,7 @@ async function ensureNoCrossTenantActiveRole(adminClient: any, userId: string, t
 }
 
 async function upsertPublicUser(
-  adminClient: any,
+  adminClient: AdminClient,
   userId: string,
   tenantId: string,
   authUser: AuthUserView | null
@@ -356,7 +382,7 @@ export async function manageUserAccess(params: ManageUserAccessParams): Promise<
 
     const { error } = await adminClient
       .from('user_roles')
-      .update({ revoked_at: new Date().toISOString() })
+      .update({ revoked_at: nowIso() })
       .eq('id', activeRole.id)
       .is('revoked_at', null);
     if (error) throw new Error(`Failed to revoke role assignment: ${error.message}`);
@@ -378,10 +404,15 @@ export async function manageUserAccess(params: ManageUserAccessParams): Promise<
     return { message: 'Active role assignment revoked.' };
   }
 
-  const requestedRole = action.action === 'repair_provisioning' ? action.role : action.role;
-  if (!requestedRole) {
-    throw new InvalidOperationError('Role is required for this action.');
+  if (
+    action.action !== 'assign_role' &&
+    action.action !== 'change_role' &&
+    action.action !== 'repair_provisioning'
+  ) {
+    throw new InvalidOperationError('Invalid role operation.');
   }
+
+  const requestedRole = resolveRequestedRole(action);
   if (!isRoleAssignableByActor(actor.role, requestedRole)) {
     throw new ForbiddenOperationError('You are not allowed to assign this role.');
   }
@@ -401,7 +432,7 @@ export async function manageUserAccess(params: ManageUserAccessParams): Promise<
 
     const { error: revokeError } = await adminClient
       .from('user_roles')
-      .update({ revoked_at: new Date().toISOString() })
+      .update({ revoked_at: nowIso() })
       .eq('id', activeRole.id)
       .is('revoked_at', null);
     if (revokeError) throw new Error(`Failed to revoke previous role assignment: ${revokeError.message}`);

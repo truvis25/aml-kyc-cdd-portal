@@ -1,21 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserPlus } from 'lucide-react';
-import type { Role } from '@/lib/constants/roles';
+import { Role } from '@/lib/constants/roles';
 
 const ROLES = [
-  { value: 'platform_super_admin', label: 'Platform Super Admin' },
-  { value: 'mlro', label: 'MLRO / Compliance Officer' },
-  { value: 'senior_reviewer', label: 'Senior Reviewer' },
-  { value: 'analyst', label: 'Analyst' },
-  { value: 'onboarding_agent', label: 'Onboarding Agent' },
-  { value: 'read_only', label: 'Read Only / Reporting' },
-  { value: 'tenant_admin', label: 'Tenant Admin' },
-].map((role) => ({ ...role, value: role.value as Role }));
+  { value: Role.PLATFORM_SUPER_ADMIN, label: 'Platform Super Admin' },
+  { value: Role.MLRO, label: 'MLRO / Compliance Officer' },
+  { value: Role.SENIOR_REVIEWER, label: 'Senior Reviewer' },
+  { value: Role.ANALYST, label: 'Analyst' },
+  { value: Role.ONBOARDING_AGENT, label: 'Onboarding Agent' },
+  { value: Role.READ_ONLY, label: 'Read Only / Reporting' },
+  { value: Role.TENANT_ADMIN, label: 'Tenant Admin' },
+];
 
 type TenantOption = {
   id: string;
@@ -32,23 +32,28 @@ interface InviteUserFormProps {
 export function InviteUserForm({ tenants, canManageCrossTenant, onInvited }: InviteUserFormProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<Role>('analyst');
+  const [role, setRole] = useState<Role>(Role.ANALYST);
   const [displayName, setDisplayName] = useState('');
   const [tenantId, setTenantId] = useState<string>(tenants[0]?.id ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!tenantId && tenants.length > 0) {
-      setTenantId(tenants[0].id);
-    }
-  }, [tenantId, tenants]);
+  const selectableRoles = useMemo(
+    () => ROLES.filter((r) => canManageCrossTenant || r.value !== Role.PLATFORM_SUPER_ADMIN),
+    [canManageCrossTenant]
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const targetTenantId = tenantId || tenants[0]?.id;
+    if (canManageCrossTenant && !targetTenantId) {
+      setError('No tenant available for assignment.');
+      setLoading(false);
+      return;
+    }
 
     const res = await fetch('/api/admin/users', {
       method: 'POST',
@@ -56,7 +61,7 @@ export function InviteUserForm({ tenants, canManageCrossTenant, onInvited }: Inv
       body: JSON.stringify({
         email,
         role,
-        tenant_id: canManageCrossTenant ? tenantId : undefined,
+        tenant_id: canManageCrossTenant ? targetTenantId : undefined,
         display_name: displayName || undefined,
       }),
     });
@@ -76,7 +81,7 @@ export function InviteUserForm({ tenants, canManageCrossTenant, onInvited }: Inv
       setOpen(false);
       setSuccess(false);
       setEmail('');
-      setRole('analyst');
+      setRole(Role.ANALYST);
       setDisplayName('');
       setTenantId(tenants[0]?.id ?? '');
     }, 2000);
@@ -139,7 +144,7 @@ export function InviteUserForm({ tenants, canManageCrossTenant, onInvited }: Inv
                 onChange={(e) => setRole(e.target.value as Role)}
                 disabled={loading}
               >
-                {ROLES.filter((r) => canManageCrossTenant || r.value !== 'platform_super_admin').map((r) => (
+                {selectableRoles.map((r) => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
@@ -180,7 +185,7 @@ export function InviteUserForm({ tenants, canManageCrossTenant, onInvited }: Inv
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || (canManageCrossTenant && tenants.length === 0)}>
                 {loading ? 'Sending…' : 'Send invitation'}
               </Button>
             </div>

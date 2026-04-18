@@ -7,36 +7,19 @@ import { AuditEventType, AuditEntityType } from '@/lib/constants/events';
 // Admin client is intentionally used here for auth.admin.inviteUserByEmail.
 // API routes are server-only — the service role key is never exposed to the browser.
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Role } from '@/lib/constants/roles';
+import {
+  Role,
+  TENANT_ADMIN_ASSIGNABLE_ROLES,
+  canManageCrossTenantUsers,
+} from '@/lib/constants/roles';
 import { listManagedUsers } from '@/modules/admin-users/admin-users.service';
 
 const InviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
-  role: z.enum([
-    'platform_super_admin',
-    'tenant_admin',
-    'mlro',
-    'senior_reviewer',
-    'analyst',
-    'onboarding_agent',
-    'read_only',
-  ]),
+  role: z.nativeEnum(Role),
   display_name: z.string().min(1).max(100).optional(),
   tenant_id: z.string().uuid().optional(),
 });
-
-const TENANT_ADMIN_ASSIGNABLE_ROLES: Role[] = [
-  Role.TENANT_ADMIN,
-  Role.MLRO,
-  Role.SENIOR_REVIEWER,
-  Role.ANALYST,
-  Role.ONBOARDING_AGENT,
-  Role.READ_ONLY,
-];
-
-function isCrossTenantAdmin(role: Role) {
-  return role === Role.PLATFORM_SUPER_ADMIN;
-}
 
 export async function GET() {
   try {
@@ -86,14 +69,14 @@ export async function POST(request: NextRequest) {
     const { email, role, display_name, tenant_id } = parsed.data;
     const targetTenantId = tenant_id ?? auth.user.tenant_id;
 
-    if (!isCrossTenantAdmin(auth.user.role) && targetTenantId !== auth.user.tenant_id) {
+    if (!canManageCrossTenantUsers(auth.user.role) && targetTenantId !== auth.user.tenant_id) {
       return NextResponse.json(
         { error: 'You can only invite users to your own tenant.' },
         { status: 403 }
       );
     }
 
-    if (!isCrossTenantAdmin(auth.user.role) && !TENANT_ADMIN_ASSIGNABLE_ROLES.includes(role as Role)) {
+    if (!canManageCrossTenantUsers(auth.user.role) && !TENANT_ADMIN_ASSIGNABLE_ROLES.includes(role)) {
       return NextResponse.json(
         { error: 'You are not allowed to assign this role.' },
         { status: 403 }
