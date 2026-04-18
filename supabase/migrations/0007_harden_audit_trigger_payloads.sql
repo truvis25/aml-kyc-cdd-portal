@@ -47,7 +47,7 @@ BEGIN
     TG_TABLE_NAME,
     v_entity_id,
     auth.uid(),
-    auth.jwt() ->> 'role',
+    COALESCE(auth.jwt() ->> 'role', 'system'),
     jsonb_build_object(
       'source', 'db_trigger',
       'operation', lower(TG_OP)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ function getAuthErrorMessage(search: string) {
 }
 
 function getSafeRedirectTo(search: string) {
+  if (typeof window === 'undefined') return '/dashboard';
+
   const redirectTo = new URLSearchParams(search).get('redirectTo');
   if (!redirectTo) return '/dashboard';
 
@@ -46,14 +48,12 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
-  const [pendingMfaFactorId, setPendingMfaFactorId] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Generic error message — never reveal whether email exists or not
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setError(getAuthErrorMessage(window.location.search));
-  }, []);
+  const [error, setError] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : getAuthErrorMessage(window.location.search)
+  );
 
   function navigatePostSignIn() {
     const safeRedirectTo = getSafeRedirectTo(window.location.search);
@@ -92,7 +92,7 @@ export default function SignInPage() {
           : factorsData?.totp.find((f) => f.status === 'verified') ?? null;
 
         if (factor) {
-          setPendingMfaFactorId(factor.id);
+          setMfaFactorId(factor.id);
           setLoading(false);
           return;
         }
@@ -110,14 +110,14 @@ export default function SignInPage() {
 
   async function handleMfaVerify(e: React.FormEvent) {
     e.preventDefault();
-    if (!pendingMfaFactorId) return;
+    if (!mfaFactorId) return;
 
     setLoading(true);
     setError(null);
 
     const supabase = createClient();
     const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({
-      factorId: pendingMfaFactorId,
+      factorId: mfaFactorId,
       code: mfaCode,
     });
 
@@ -143,7 +143,7 @@ export default function SignInPage() {
 
           <h2 className="text-xl font-medium text-gray-900 mb-6">Sign in to your account</h2>
 
-          {pendingMfaFactorId ? (
+          {mfaFactorId ? (
             <form onSubmit={handleMfaVerify} className="space-y-4">
               <p className="text-sm text-gray-700">
                 Enter the 6-digit code from your authenticator app to complete sign-in.
@@ -162,7 +162,11 @@ export default function SignInPage() {
                   placeholder="000000"
                   disabled={loading}
                   autoComplete="one-time-code"
+                  aria-describedby="mfa-code-help"
                 />
+                <p id="mfa-code-help" className="text-xs text-gray-500">
+                  Enter exactly 6 digits to enable verification.
+                </p>
               </div>
               {error && (
                 <div className="rounded-md bg-red-50 border border-red-200 p-3">
@@ -181,7 +185,7 @@ export default function SignInPage() {
                   onClick={async () => {
                     const supabase = createClient();
                     await supabase.auth.signOut();
-                    setPendingMfaFactorId(null);
+                    setMfaFactorId(null);
                     setMfaCode('');
                   }}
                 >

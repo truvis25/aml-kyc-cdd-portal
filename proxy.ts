@@ -107,6 +107,7 @@ export async function middleware(request: NextRequest) {
     };
 
     const role = claims.role;
+    // Supabase AAL claim: 'aal1' (password-only) or 'aal2' (MFA-verified).
     const mfaVerified = claims.aal === 'aal2';
 
     // Fail closed: if JWT is missing enriched claims the Custom Access Token
