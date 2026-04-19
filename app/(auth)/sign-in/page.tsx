@@ -21,7 +21,7 @@ export default function SignInPage() {
 
     if (authError === 'session_invalid') {
       setError(
-        'Your account is not fully configured. This usually means your user profile or role assignment is missing. Please contact your administrator — signing in again will not resolve this.'
+        'Your session is missing required claims. This usually means the Custom Access Token Hook is not registered in the Supabase Dashboard, or your user profile / role assignment is missing. If the hook was just registered, sign out below and sign in again.'
       );
       return;
     }
@@ -114,6 +114,20 @@ export default function SignInPage() {
             {error && (
               <div className="rounded-md bg-red-50 border border-red-200 p-3">
                 <p className="text-sm text-red-700">{error}</p>
+                {new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('error') === 'session_invalid' && (
+                  <button
+                    type="button"
+                    className="mt-2 text-xs text-red-600 underline hover:no-underline"
+                    onClick={async () => {
+                      const supabase = createClient();
+                      await supabase.auth.signOut({ scope: 'local' });
+                      setError(null);
+                      window.history.replaceState({}, '', '/sign-in');
+                    }}
+                  >
+                    Sign out and try again
+                  </button>
+                )}
               </div>
             )}
 

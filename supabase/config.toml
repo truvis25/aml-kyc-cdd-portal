@@ -72,6 +72,18 @@ enable_confirmations = false
 secure_password_change = true
 max_frequency = "1s"
 
+# Custom Access Token Hook — enriches every issued JWT with tenant_id, role,
+# mfa_verified, and permissions[] from the DB. Created by migration 0005.
+# Without this stanza the local Auth service never calls the function and all
+# JWTs are issued without custom claims, causing the middleware to block login.
+#
+# Remote projects: register the same function in
+#   Supabase Dashboard → Authentication → Hooks → Custom Access Token Hook
+#   → select function: custom_access_token_hook
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
 [auth.mfa]
 max_enrolled_factors = 5
 

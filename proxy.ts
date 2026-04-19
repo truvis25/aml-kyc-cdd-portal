@@ -23,6 +23,12 @@ const PUBLIC_PATHS = [
   '/sign-up',
   '/auth/callback',
   '/auth/confirm',
+  // MFA setup must be reachable by users whose role requires MFA but haven't
+  // completed setup yet. Without this, the middleware redirects /mfa-setup →
+  // /mfa-setup infinitely (roleMfaRequired && !mfaVerified on every hop).
+  // The page and API route have their own auth checks via requireAuth().
+  '/mfa-setup',
+  '/api/auth/mfa',
 ];
 
 // Routes requiring specific roles
