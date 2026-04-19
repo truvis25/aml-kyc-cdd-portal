@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Json } from '@/lib/supabase/database.types';
 import type { RiskAssessment } from './risk.types';
 
 export async function insertRiskAssessment(params: Omit<RiskAssessment, 'id' | 'assessed_at'>): Promise<RiskAssessment> {
@@ -14,7 +15,7 @@ export async function insertRiskAssessment(params: Omit<RiskAssessment, 'id' | '
       customer_score: params.customer_score,
       geographic_score: params.geographic_score,
       product_score: params.product_score,
-      factor_breakdown: params.factor_breakdown,
+      factor_breakdown: params.factor_breakdown as unknown as Json,
       version: params.version,
       assessed_by: params.assessed_by,
     })
@@ -22,7 +23,7 @@ export async function insertRiskAssessment(params: Omit<RiskAssessment, 'id' | '
     .single();
 
   if (error) throw new Error(`Failed to insert risk assessment: ${error.message}`);
-  return data as RiskAssessment;
+  return data as unknown as RiskAssessment;
 }
 
 export async function getLatestRiskAssessment(

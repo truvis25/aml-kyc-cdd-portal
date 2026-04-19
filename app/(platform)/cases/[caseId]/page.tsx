@@ -171,11 +171,11 @@ export default async function CaseDetailPage({ params }: Props) {
                         <p className="text-xs font-medium text-gray-900 capitalize">
                           {event.event_type.replace(/_/g, ' ')}
                         </p>
-                        {event.payload?.note && (
-                          <p className="mt-0.5 text-sm text-gray-600">{String(event.payload.note)}</p>
+                        {!!(event.payload as Record<string, unknown>)?.note && (
+                          <p className="mt-0.5 text-sm text-gray-600">{String((event.payload as Record<string, unknown>).note)}</p>
                         )}
-                        {event.payload?.rationale && (
-                          <p className="mt-0.5 text-sm text-gray-600">{String(event.payload.rationale)}</p>
+                        {!!(event.payload as Record<string, unknown>)?.rationale && (
+                          <p className="mt-0.5 text-sm text-gray-600">{String((event.payload as Record<string, unknown>).rationale)}</p>
                         )}
                         <p className="mt-1 text-xs text-gray-400">
                           {new Date(event.created_at).toLocaleString()}

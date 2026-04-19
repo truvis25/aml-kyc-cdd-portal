@@ -17,6 +17,7 @@ export default async function OnboardingStartPage({ params }: Props) {
   } catch {
     redirect('/sign-in');
   }
+  if (!auth) redirect('/sign-in');
 
   try {
     assertPermission(auth.user.role, 'onboarding:create');

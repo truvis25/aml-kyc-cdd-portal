@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { Case, CaseEvent, CreateCaseParams, AddCaseEventParams } from './cases.types';
+import type { Json } from '@/lib/supabase/database.types';
+import type { Case, CaseEvent, CaseQueue, CaseStatus, CreateCaseParams, AddCaseEventParams } from './cases.types';
 
 export async function createCase(params: CreateCaseParams): Promise<Case> {
   const supabase = createAdminClient();
@@ -48,8 +49,8 @@ export async function listCases(
     .order('opened_at', { ascending: false });
 
   if (filters.assigned_to) q = q.eq('assigned_to', filters.assigned_to);
-  if (filters.queue) q = q.eq('queue', filters.queue);
-  if (filters.status) q = q.eq('status', filters.status);
+  if (filters.queue) q = q.eq('queue', filters.queue as CaseQueue);
+  if (filters.status) q = q.eq('status', filters.status as CaseStatus);
 
   const { data, error } = await q;
   if (error) throw new Error(`Failed to list cases: ${error.message}`);
@@ -63,18 +64,15 @@ export async function updateCaseStatus(
   assigned_to?: string
 ): Promise<void> {
   const supabase = createAdminClient();
-  const update: Record<string, unknown> = {
-    status,
-    updated_at: new Date().toISOString(),
-  };
-  if (assigned_to !== undefined) update.assigned_to = assigned_to;
-  if (status === 'approved' || status === 'rejected' || status === 'closed') {
-    update.closed_at = new Date().toISOString();
-  }
 
   const { error } = await supabase
     .from('cases')
-    .update(update)
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+      ...(assigned_to !== undefined ? { assigned_to } : {}),
+      ...((status === 'approved' || status === 'rejected' || status === 'closed') ? { closed_at: new Date().toISOString() } : {}),
+    })
     .eq('id', id)
     .eq('tenant_id', tenant_id);
 
@@ -92,7 +90,7 @@ export async function appendCaseEvent(params: AddCaseEventParams): Promise<CaseE
       event_type: params.event_type,
       actor_id: params.actor_id,
       actor_role: params.actor_role,
-      payload: params.payload ?? {},
+      payload: (params.payload ?? {}) as Json,
     })
     .select()
     .single();

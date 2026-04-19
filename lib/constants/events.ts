@@ -83,6 +83,7 @@ export enum AuditEntityType {
   CONSENT = 'consent_records',
   SCREENING_JOB = 'screening_jobs',
   SCREENING_HIT = 'screening_hits',
+  SCREENING_HIT_RESOLUTION = 'screening_hit_resolutions',
   RISK_ASSESSMENT = 'risk_assessments',
   CASE = 'cases',
   APPROVAL = 'approvals',

@@ -37,6 +37,7 @@ export default async function DocumentsPage({ params }: Props) {
   } catch {
     redirect('/sign-in');
   }
+  if (!auth) redirect('/sign-in');
 
   const { session } = await getSessionState(sessionId, auth.user.tenant_id);
   if (!session) notFound();

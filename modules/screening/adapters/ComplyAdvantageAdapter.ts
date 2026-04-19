@@ -1,4 +1,9 @@
-import type { ScreeningAdapter, ScreeningParams, ScreeningResult } from '../screening.types';
+import type { ScreeningAdapter, ScreeningParams, ScreeningResult, HitType } from '../screening.types';
+
+function toHitType(raw: string | undefined): HitType {
+  if (raw === 'pep' || raw === 'sanction' || raw === 'adverse_media') return raw;
+  return 'watchlist';
+}
 
 export class ComplyAdvantageAdapter implements ScreeningAdapter {
   private readonly apiKey: string;
@@ -46,7 +51,7 @@ export class ComplyAdvantageAdapter implements ScreeningAdapter {
     const search = data.content?.data;
 
     const hits = ((search?.hits as Record<string, unknown>[] | undefined) ?? []).map((hit) => ({
-      hit_type: ((hit.doc as Record<string, unknown>)?.types as string[] | undefined)?.[0] ?? 'watchlist',
+      hit_type: toHitType(((hit.doc as Record<string, unknown>)?.types as string[] | undefined)?.[0]),
       match_name: String(hit.match_name ?? ''),
       match_score: Number(hit.score ?? 0) * 100,
       raw_data: hit as Record<string, unknown>,

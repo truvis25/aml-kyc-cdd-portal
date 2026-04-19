@@ -6,6 +6,7 @@ import { CaseFilters } from '@/components/cases/case-filters';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import type { Role } from '@/lib/constants/roles';
 import type { RiskBand } from '@/modules/risk/risk.types';
+import type { CaseQueue, CaseStatus } from '@/modules/cases/cases.types';
 
 interface SearchParams {
   queue?: string;
@@ -54,8 +55,8 @@ export default async function CasesPage({ searchParams }: Props) {
     .limit(50);
 
   if (isAnalystOnly) q = q.eq('assigned_to', user.id);
-  if (filters.queue) q = q.eq('queue', filters.queue);
-  if (filters.status) q = q.eq('status', filters.status);
+  if (filters.queue) q = q.eq('queue', filters.queue as CaseQueue);
+  if (filters.status) q = q.eq('status', filters.status as CaseStatus);
 
   const { data: cases } = await q;
 

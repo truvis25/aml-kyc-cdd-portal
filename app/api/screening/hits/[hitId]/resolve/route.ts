@@ -4,6 +4,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { createAdminClient } from '@/lib/supabase/admin';
 import * as audit from '@/modules/audit/audit.service';
+import { AuditEventType, AuditEntityType } from '@/lib/constants/events';
 
 const ResolveSchema = z.object({
   resolution: z.enum(['confirmed_match', 'false_positive', 'escalated']),
@@ -59,8 +60,8 @@ export async function POST(
 
     await audit.emit({
       tenant_id: auth.user.tenant_id,
-      event_type: 'screening.hit_resolved',
-      entity_type: 'screening_hit_resolutions',
+      event_type: AuditEventType.SCREENING_HIT_RESOLVED,
+      entity_type: AuditEntityType.SCREENING_HIT_RESOLUTION,
       entity_id: data.id,
       actor_id: auth.user.id,
       actor_role: auth.user.role,

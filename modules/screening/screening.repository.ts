@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Json } from '@/lib/supabase/database.types';
 import type { ScreeningJob, ScreeningHit } from './screening.types';
 
 export async function createScreeningJob(params: {
@@ -63,8 +64,8 @@ export async function insertScreeningHits(
     hit_type: h.hit_type,
     match_name: h.match_name,
     match_score: h.match_score,
-    raw_data: h.raw_data,
-    status: 'pending',
+    raw_data: h.raw_data as unknown as Json,
+    status: 'pending' as const,
   }));
 
   const { error } = await supabase.from('screening_hits').insert(rows);

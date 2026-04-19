@@ -84,7 +84,7 @@ export async function getWorkflowDefinition(
   const { data, error } = await supabase
     .from('workflow_definitions')
     .select('id, definition')
-    .eq('customer_type', customer_type)
+    .eq('customer_type', customer_type as 'individual' | 'corporate')
     .eq('is_active', true)
     .or(`tenant_id.eq.${tenant_id},tenant_id.is.null`)
     .order('tenant_id', { ascending: false }) // tenant-specific first (non-null sorts after null)

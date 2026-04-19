@@ -24,6 +24,7 @@ export default async function ConsentPage({ params }: Props) {
   } catch {
     redirect('/sign-in');
   }
+  if (!auth) redirect('/sign-in');
 
   const { session } = await getSessionState(sessionId, auth.user.tenant_id);
   if (!session) notFound();

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Json } from '@/lib/supabase/database.types';
 import type { CreateDocumentParams, Document } from './documents.types';
 
 const STORAGE_BUCKET = 'kyc-documents';
@@ -98,7 +99,7 @@ export async function appendDocumentEvent(
     tenant_id,
     event_type,
     actor_id,
-    payload,
+    payload: payload as Json,
   });
 
   if (error) throw new Error(`Failed to append document event: ${error.message}`);

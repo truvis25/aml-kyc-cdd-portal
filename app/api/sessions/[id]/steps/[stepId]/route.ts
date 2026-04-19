@@ -5,7 +5,7 @@ import { assertPermission } from '@/modules/auth/rbac';
 import { submitStep } from '@/modules/onboarding/onboarding.service';
 
 const StepSubmitSchema = z.object({
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(
