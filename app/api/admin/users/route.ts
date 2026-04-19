@@ -1,33 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/modules/auth/auth.service';
-import { assertPermission } from '@/modules/auth/rbac';
+import { assertPermission, PermissionDeniedError } from '@/modules/auth/rbac';
 import { emit } from '@/modules/audit/audit.service';
 import { AuditEventType, AuditEntityType } from '@/lib/constants/events';
-import { createClient as createServerClient } from '@/lib/supabase/server';
 // Admin client is intentionally used here for auth.admin.inviteUserByEmail.
 // API routes are server-only — the service role key is never exposed to the browser.
 import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  Role,
+  TENANT_ADMIN_ASSIGNABLE_ROLES,
+  canManageCrossTenantUsers,
+} from '@/lib/constants/roles';
+import { listManagedUsers } from '@/modules/admin-users/admin-users.service';
 
 const InviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
-  role: z.enum([
-    'tenant_admin',
-    'mlro',
-    'senior_reviewer',
-    'analyst',
-    'onboarding_agent',
-    'read_only',
-  ]),
+  role: z.nativeEnum(Role),
   display_name: z.string().min(1).max(100).optional(),
+  tenant_id: z.string().uuid().optional(),
 });
+
+export async function GET() {
+  try {
+    const auth = await requireAuth();
+    assertPermission(auth.user.role, 'admin:manage_users');
+
+    const adminClient = createAdminClient();
+    const result = await listManagedUsers({
+      actor: {
+        id: auth.user.id,
+        tenant_id: auth.user.tenant_id,
+        role: auth.user.role,
+      },
+      adminClient,
+    });
+
+    return NextResponse.json(result);
+  } catch (err) {
+    if (err instanceof Response) return err;
+    if (err instanceof PermissionDeniedError) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    console.error('GET /api/admin/users error:', err instanceof Error ? err.message : 'Unknown error');
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate
     const auth = await requireAuth();
 
-    // 2. Authorize — only tenant_admin and platform_super_admin can invite
+    // 2. Authorize
     assertPermission(auth.user.role, 'admin:manage_users');
 
     // 3. Parse and validate input
@@ -41,11 +66,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, role, display_name } = parsed.data;
+    const { email, role, display_name, tenant_id } = parsed.data;
+    const targetTenantId = tenant_id ?? auth.user.tenant_id;
+
+    if (!canManageCrossTenantUsers(auth.user.role) && targetTenantId !== auth.user.tenant_id) {
+      return NextResponse.json(
+        { error: 'You can only invite users to your own tenant.' },
+        { status: 403 }
+      );
+    }
+
+    if (!canManageCrossTenantUsers(auth.user.role) && !TENANT_ADMIN_ASSIGNABLE_ROLES.includes(role)) {
+      return NextResponse.json(
+        { error: 'You are not allowed to assign this role.' },
+        { status: 403 }
+      );
+    }
+
+    const adminClient = createAdminClient();
 
     // 4. Look up the role_id for the requested role
-    const supabase = await createServerClient();
-    const { data: roleData, error: roleError } = await supabase
+    const { data: roleData, error: roleError } = await adminClient
       .from('roles')
       .select('id')
       .eq('name', role)
@@ -56,7 +97,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Send invitation via Supabase Auth (requires service role)
-    const adminClient = createAdminClient();
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
@@ -92,9 +132,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (existingUser && existingUser.tenant_id !== auth.user.tenant_id) {
+    if (existingUser && existingUser.tenant_id !== targetTenantId) {
       return NextResponse.json(
-        { error: 'User already belongs to a different tenant.' },
+        { error: 'User is already assigned to a different tenant.' },
         { status: 409 }
       );
     }
@@ -102,7 +142,7 @@ export async function POST(request: NextRequest) {
     const { error: userUpsertError } = await adminClient.from('users').upsert(
       {
         id: invitedUserId,
-        tenant_id: auth.user.tenant_id,
+        tenant_id: targetTenantId,
         display_name: display_name ?? null,
         mfa_enabled: false,
         status: 'active',
@@ -123,7 +163,7 @@ export async function POST(request: NextRequest) {
       .from('user_roles')
       .select('role_id')
       .eq('user_id', invitedUserId)
-      .eq('tenant_id', auth.user.tenant_id)
+      .eq('tenant_id', targetTenantId)
       .is('revoked_at', null)
       .maybeSingle();
 
@@ -145,7 +185,7 @@ export async function POST(request: NextRequest) {
     if (!existingActiveRole) {
       const { error: roleInsertError } = await adminClient.from('user_roles').insert({
         user_id: invitedUserId,
-        tenant_id: auth.user.tenant_id,
+        tenant_id: targetTenantId,
         role_id: roleData.id,
         granted_by: auth.user.id,
       });
@@ -161,7 +201,7 @@ export async function POST(request: NextRequest) {
 
     // 8. Emit audit event
     await emit({
-      tenant_id: auth.user.tenant_id,
+      tenant_id: targetTenantId,
       event_type: AuditEventType.USER_INVITED,
       entity_type: AuditEntityType.USER,
       entity_id: invitedUserId,
@@ -169,6 +209,7 @@ export async function POST(request: NextRequest) {
       actor_role: auth.user.role,
       payload: {
         invited_user_id: invitedUserId,
+        tenant_id: targetTenantId,
         assigned_role: role,
         invited_by_role: auth.user.role,
       },
@@ -181,6 +222,9 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Handle permission denied
     if (err instanceof Response) return err;
+    if (err instanceof PermissionDeniedError) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     console.error('Invite handler error:', err instanceof Error ? err.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
