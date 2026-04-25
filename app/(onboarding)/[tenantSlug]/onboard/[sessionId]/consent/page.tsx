@@ -66,7 +66,6 @@ export default async function ConsentPage({ params }: Props) {
             Please review and consent to the following before we proceed.
           </p>
           <ConsentForm
-            tenantSlug={tenantSlug}
             sessionId={sessionId}
             customerId={session.customer_id}
             nextStepPath={nextStepPath}

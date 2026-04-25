@@ -51,7 +51,8 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
     const hasBankData = Object.values(bankAccount).some(Boolean);
 
     // Remove flat bank_account keys from data before spreading
-    const { 'bank_account.iban': _i, 'bank_account.bank_name': _b, 'bank_account.account_number': _a, 'bank_account.swift_code': _s, ...restData } = data;
+    const bankKeys = ['bank_account.iban', 'bank_account.bank_name', 'bank_account.account_number', 'bank_account.swift_code'];
+    const restData = Object.fromEntries(Object.entries(data).filter(([k]) => !bankKeys.includes(k)));
 
     const payload = {
       ...restData,
