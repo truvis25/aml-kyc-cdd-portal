@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,19 +10,20 @@ import { Label } from '@/components/ui/label';
 import { type Role, MFA_REQUIRED_ROLES } from '@/lib/constants/roles';
 
 function getAuthErrorMessage(search: string) {
-  const authError = new URLSearchParams(search).get('error');
+  const params = new URLSearchParams(search);
+  const authError = params.get('error');
 
-  if (authError === 'session_invalid') {
-    return 'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.';
-  }
+  if (authError === 'session_invalid') return 'Unable to verify your session. Please sign in again or contact your administrator if the problem persists.';
+  if (authError === 'session_refresh_failed') return 'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.';
+  if (authError === 'mfa_required') return 'Multi-factor verification is required for your role. Sign in and complete verification.';
+  if (authError === 'auth_callback_failed') return 'The password reset link is invalid or has expired. Please request a new one.';
 
-  if (authError === 'session_refresh_failed') {
-    return 'Your MFA setup is complete, but your session could not be refreshed. Please sign in again.';
-  }
-  if (authError === 'mfa_required') {
-    return 'Multi-factor verification is required for your role. Sign in and complete verification.';
-  }
+  return null;
+}
 
+function getSuccessMessage(search: string) {
+  const success = new URLSearchParams(search).get('success');
+  if (success === 'password_reset') return 'Your password has been updated. You can now sign in with your new password.';
   return null;
 }
 
@@ -53,6 +55,9 @@ export default function SignInPage() {
   // Generic error message — never reveal whether email exists or not
   const [error, setError] = useState<string | null>(() =>
     typeof window === 'undefined' ? null : getAuthErrorMessage(window.location.search)
+  );
+  const [successMessage] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : getSuccessMessage(window.location.search)
   );
 
   function navigatePostSignIn() {
@@ -143,6 +148,12 @@ export default function SignInPage() {
 
           <h2 className="text-xl font-medium text-gray-900 mb-6">Sign in to your account</h2>
 
+          {successMessage && (
+            <div className="rounded-md bg-green-50 border border-green-200 p-3 mb-4">
+              <p className="text-sm text-green-700">{successMessage}</p>
+            </div>
+          )}
+
           {mfaFactorId ? (
             <form onSubmit={handleMfaVerify} className="space-y-4">
               <p className="text-sm text-gray-700">
@@ -210,7 +221,15 @@ export default function SignInPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
