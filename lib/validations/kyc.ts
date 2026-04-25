@@ -3,6 +3,13 @@ import { z } from 'zod';
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD');
 const iso2 = z.string().length(2).toUpperCase();
 
+export const BankAccountSchema = z.object({
+  iban:           z.string().min(5).max(34).optional(),
+  bank_name:      z.string().min(2).max(200).optional(),
+  account_number: z.string().min(3).max(50).optional(),
+  swift_code:     z.string().min(8).max(11).optional(),
+}).optional();
+
 export const KycIdentitySchema = z.object({
   full_name: z.string().min(2).max(200),
   date_of_birth: isoDate,
@@ -28,6 +35,7 @@ export const KycIdentitySchema = z.object({
   dual_nationality: iso2.optional().nullable(),
   source_of_funds: z.string().min(2).max(500),
   purpose_of_relationship: z.string().min(2).max(500),
+  bank_account: BankAccountSchema,
 });
 
 export type KycIdentityInput = z.infer<typeof KycIdentitySchema>;

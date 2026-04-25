@@ -26,7 +26,7 @@ export interface OnboardingSession {
 export interface WorkflowStep {
   id: string;
   title: string;
-  type: 'consent' | 'kyc_form' | 'document_upload' | 'completion';
+  type: 'consent' | 'kyc_form' | 'kyb_form' | 'document_upload' | 'completion';
   required: boolean;
   fields?: string[];
   document_requirements?: DocumentRequirement[];

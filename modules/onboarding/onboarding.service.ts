@@ -8,22 +8,34 @@ import { computeRiskScore, getLatestAssessment } from '@/modules/risk/risk.servi
 import { initiateScreening } from '@/modules/screening/screening.service';
 import { openCase, riskBandToQueue } from '@/modules/cases/cases.service';
 import { getCaseBySessionId } from '@/modules/cases/cases.repository';
+import { initiateBusiness } from '@/modules/kyb/kyb.service';
+import { getBusinessByCustomerId, updateBusinessStatus } from '@/modules/kyb/kyb.repository';
+import { updateCustomerStatus } from '@/modules/kyc-individual/kyc.repository';
 import type { OnboardingSession, WorkflowStep, StepResult } from './onboarding.types';
 
 export async function initiateSession(
   tenant_id: string,
-  actor_id: string
+  actor_id: string,
+  customer_type: 'individual' | 'corporate' = 'individual'
 ): Promise<{ session: OnboardingSession; first_step: WorkflowStep }> {
-  const { workflow_id, definition } = await WorkflowEngine.loadDefinition(tenant_id, 'individual');
+  const { workflow_id, definition } = await WorkflowEngine.loadDefinition(tenant_id, customer_type);
   const first_step = WorkflowEngine.getFirstStep(definition);
 
-  const customer = await createCustomer(tenant_id, 'individual');
+  const customer = await createCustomer(tenant_id, customer_type);
+
+  const step_data: Record<string, unknown> = { customer_type };
+
+  if (customer_type === 'corporate') {
+    const business = await initiateBusiness(tenant_id, customer.id, actor_id);
+    step_data.business_id = business.id;
+  }
 
   const session = await createSession({
     tenant_id,
     customer_id: customer.id,
     workflow_id,
     first_step: first_step.id,
+    step_data,
   });
 
   await audit.emit({
@@ -32,7 +44,7 @@ export async function initiateSession(
     entity_type: AuditEntityType.SESSION,
     entity_id: session.id,
     actor_id,
-    payload: { customer_id: customer.id, workflow_id },
+    payload: { customer_id: customer.id, workflow_id, customer_type },
   });
 
   return { session, first_step };
@@ -75,6 +87,13 @@ async function finalizeSubmittedSession(
   tenant_id: string,
   actor_id: string
 ): Promise<void> {
+  const customer_type = (session.step_data as { customer_type?: string })?.customer_type ?? 'individual';
+
+  if (customer_type === 'corporate') {
+    await finalizeSubmittedKybSession(session, tenant_id, actor_id);
+    return;
+  }
+
   await markSubmitted(session.customer_id, tenant_id, actor_id);
 
   const latestData = await getLatestCustomerData(session.customer_id, tenant_id);
@@ -119,7 +138,6 @@ async function finalizeSubmittedSession(
   );
 
   const queue = riskBandToQueue(assessment.risk_band);
-  // Low-risk submissions stay out of the compliance case queue in MVP.
   if (!queue) return;
 
   const existingCase = await getCaseBySessionId(session.id, tenant_id);
@@ -132,6 +150,36 @@ async function finalizeSubmittedSession(
       session_id: session.id,
       risk_assessment_id: assessment.id,
       queue,
+    },
+    actor_id
+  );
+}
+
+async function finalizeSubmittedKybSession(
+  session: OnboardingSession,
+  tenant_id: string,
+  actor_id: string
+): Promise<void> {
+  // Mark customer as submitted
+  await updateCustomerStatus(session.customer_id, tenant_id, 'submitted');
+
+  // Mark the business record as submitted
+  const business = await getBusinessByCustomerId(session.customer_id, tenant_id);
+  if (business) {
+    await updateBusinessStatus(business.id, tenant_id, 'submitted');
+  }
+
+  // Corporate KYB goes directly to a standard manual review case (no automated screening in MVP)
+  const existingCase = await getCaseBySessionId(session.id, tenant_id);
+  if (existingCase) return;
+
+  await openCase(
+    {
+      tenant_id,
+      customer_id: session.customer_id,
+      session_id: session.id,
+      risk_assessment_id: undefined,
+      queue: 'standard',
     },
     actor_id
   );

@@ -1,16 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { getSessionState } from '@/modules/onboarding/onboarding.service';
-import { ConsentForm } from '@/components/onboarding/consent-form';
+import { BusinessForm } from '@/components/onboarding/business-form';
 import { ProgressIndicator } from '@/components/onboarding/progress-indicator';
 
-const INDIVIDUAL_STEPS = [
-  { id: 'consent', title: 'Consent' },
-  { id: 'identity', title: 'Identity' },
-  { id: 'documents', title: 'Documents' },
-];
-
-const CORPORATE_STEPS = [
+const STEPS = [
   { id: 'consent', title: 'Consent' },
   { id: 'business-info', title: 'Business Info' },
   { id: 'documents', title: 'Documents' },
@@ -20,7 +14,7 @@ interface Props {
   params: Promise<{ tenantSlug: string; sessionId: string }>;
 }
 
-export default async function ConsentPage({ params }: Props) {
+export default async function BusinessPage({ params }: Props) {
   const { tenantSlug, sessionId } = await params;
 
   let auth;
@@ -33,43 +27,51 @@ export default async function ConsentPage({ params }: Props) {
   const { session } = await getSessionState(sessionId, auth.user.tenant_id);
   if (!session) notFound();
 
+  // Guard: consent must be completed first
+  if (!session.completed_steps.includes('consent')) {
+    redirect(`/${tenantSlug}/onboard/${sessionId}/consent`);
+  }
+
+  // Guard: this page is only for corporate sessions
+  const customerType = (session.step_data as { customer_type?: string })?.customer_type;
+  if (customerType !== 'corporate') {
+    redirect(`/${tenantSlug}/onboard/${sessionId}/identity`);
+  }
+
+  // Guard: already submitted
   if (session.status === 'submitted' || session.status === 'approved') {
     redirect(`/${tenantSlug}/onboard/${sessionId}/complete`);
   }
 
-  const customerType = (session.step_data as { customer_type?: string })?.customer_type ?? 'individual';
-  const isCorporate = customerType === 'corporate';
-  const steps = isCorporate ? CORPORATE_STEPS : INDIVIDUAL_STEPS;
-  const nextStepPath = isCorporate
-    ? `/${tenantSlug}/onboard/${sessionId}/business`
-    : `/${tenantSlug}/onboard/${sessionId}/identity`;
+  const businessIdRaw = (session.step_data as { business_id?: string })?.business_id;
+  if (!businessIdRaw) {
+    redirect(`/${tenantSlug}/onboard/${sessionId}/consent`);
+  }
+  const businessId = businessIdRaw as string;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            {isCorporate ? 'KYB Application' : 'KYC Application'}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Step 1 of 3</p>
+          <h1 className="text-2xl font-semibold text-gray-900">KYB Application</h1>
+          <p className="text-sm text-gray-500 mt-1">Step 2 of 3</p>
         </div>
 
         <ProgressIndicator
-          steps={steps}
+          steps={STEPS}
           currentStep={session.current_step}
           completedSteps={session.completed_steps}
         />
 
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-1">Consent & Disclosures</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-1">Business Information</h2>
           <p className="text-sm text-gray-500 mb-6">
-            Please review and consent to the following before we proceed.
+            Provide your company details as they appear on the trade license.
           </p>
-          <ConsentForm
+          <BusinessForm
             tenantSlug={tenantSlug}
             sessionId={sessionId}
-            customerId={session.customer_id}
-            nextStepPath={nextStepPath}
+            businessId={businessId}
           />
         </div>
       </div>

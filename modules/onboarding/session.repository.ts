@@ -6,6 +6,7 @@ export async function createSession(params: {
   customer_id: string;
   workflow_id: string;
   first_step: string;
+  step_data?: Record<string, unknown>;
 }): Promise<OnboardingSession> {
   const supabase = await createClient();
 
@@ -18,7 +19,7 @@ export async function createSession(params: {
       status: 'in_progress',
       current_step: params.first_step,
       completed_steps: [],
-      step_data: {},
+      step_data: params.step_data ?? {},
     })
     .select()
     .single();

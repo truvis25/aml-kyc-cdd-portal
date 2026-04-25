@@ -1,13 +1,12 @@
 import { redirect } from 'next/navigation';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
-import { initiateSession } from '@/modules/onboarding/onboarding.service';
+import { CustomerTypeSelector } from '@/components/onboarding/customer-type-selector';
 
 interface Props {
   params: Promise<{ tenantSlug: string }>;
 }
 
-// Initiates a new onboarding session and redirects to the first step (consent).
 export default async function OnboardingStartPage({ params }: Props) {
   const { tenantSlug } = await params;
 
@@ -24,7 +23,17 @@ export default async function OnboardingStartPage({ params }: Props) {
     redirect('/dashboard');
   }
 
-  const { session } = await initiateSession(auth.user.tenant_id, auth.user.id);
-
-  redirect(`/${tenantSlug}/onboard/${session.id}/consent`);
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="mx-auto max-w-lg">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-semibold text-gray-900">Start Your Application</h1>
+          <p className="text-sm text-gray-500 mt-1">Select your application type to begin.</p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <CustomerTypeSelector tenantSlug={tenantSlug} />
+        </div>
+      </div>
+    </div>
+  );
 }

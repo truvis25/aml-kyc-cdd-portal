@@ -24,6 +24,10 @@ export enum AuditEventType {
   DOCUMENT_REJECTED = 'document.rejected',
   DOCUMENT_EXPIRED = 'document.expired',
 
+  // KYB events
+  KYB_INITIATED = 'kyb.initiated',
+  BUSINESS_FIELD_CHANGED = 'business.field_changed',
+
   // KYC events
   KYC_INITIATED = 'kyc.initiated',
   KYC_RESULT_RECEIVED = 'kyc.result_received',
@@ -86,6 +90,7 @@ export enum AuditEntityType {
   RISK_ASSESSMENT = 'risk_assessments',
   CASE = 'cases',
   APPROVAL = 'approvals',
+  BUSINESS = 'businesses',
   TENANT_CONFIG = 'tenant_config',
   WORKFLOW_DEFINITION = 'workflow_definitions',
 }
