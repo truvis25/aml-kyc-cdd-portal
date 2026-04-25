@@ -172,32 +172,58 @@ CREATE POLICY "businesses_update_staff" ON businesses
     AND (auth.jwt() ->> 'user_role') IN ('analyst', 'senior_reviewer', 'mlro', 'tenant_admin', 'platform_super_admin')
   );
 
--- approval_workflows
-DROP POLICY IF EXISTS "approvals_select_admin" ON approval_workflows;
-CREATE POLICY "approvals_select_admin" ON approval_workflows
+-- webhook_events
+DROP POLICY IF EXISTS "webhook_events_select_admin" ON webhook_events;
+CREATE POLICY "webhook_events_select_admin" ON webhook_events
   FOR SELECT TO authenticated
   USING ((auth.jwt() ->> 'user_role') IN ('tenant_admin', 'platform_super_admin'));
 
-DROP POLICY IF EXISTS "approvals_insert_staff" ON approval_workflows;
-CREATE POLICY "approvals_insert_staff" ON approval_workflows
+-- screening_hit_resolutions
+DROP POLICY IF EXISTS "screening_resolutions_insert_analyst" ON screening_hit_resolutions;
+CREATE POLICY "screening_resolutions_insert_analyst" ON screening_hit_resolutions
   FOR INSERT TO authenticated
   WITH CHECK (
     (auth.jwt() ->> 'tenant_id')::UUID = tenant_id
     AND (auth.jwt() ->> 'user_role') IN ('analyst', 'senior_reviewer', 'mlro', 'tenant_admin', 'platform_super_admin')
   );
 
-DROP POLICY IF EXISTS "approvals_update_reviewer" ON approval_workflows;
-CREATE POLICY "approvals_update_reviewer" ON approval_workflows
+-- cases
+DROP POLICY IF EXISTS "cases_select_analyst" ON cases;
+CREATE POLICY "cases_select_analyst" ON cases
+  FOR SELECT TO authenticated
+  USING (
+    (auth.jwt() ->> 'tenant_id')::UUID = tenant_id
+    AND (
+      (auth.jwt() ->> 'user_role') IN ('mlro', 'tenant_admin', 'platform_super_admin')
+      OR assigned_to = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "cases_update_staff" ON cases;
+CREATE POLICY "cases_update_staff" ON cases
   FOR UPDATE TO authenticated
   USING ((auth.jwt() ->> 'tenant_id')::UUID = tenant_id)
   WITH CHECK (
     (auth.jwt() ->> 'tenant_id')::UUID = tenant_id
-    AND (
-      (auth.jwt() ->> 'user_role') IN ('mlro', 'tenant_admin', 'platform_super_admin')
-      OR (
-        (auth.jwt() ->> 'user_role') IN ('analyst', 'senior_reviewer', 'mlro', 'tenant_admin', 'platform_super_admin')
-      )
-    )
+    AND (auth.jwt() ->> 'user_role') IN ('analyst', 'senior_reviewer', 'mlro', 'tenant_admin', 'platform_super_admin')
+  );
+
+-- case_events
+DROP POLICY IF EXISTS "case_events_insert_staff" ON case_events;
+CREATE POLICY "case_events_insert_staff" ON case_events
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    (auth.jwt() ->> 'tenant_id')::UUID = tenant_id
+    AND (auth.jwt() ->> 'user_role') IN ('analyst', 'senior_reviewer', 'mlro', 'tenant_admin', 'platform_super_admin')
+  );
+
+-- approvals
+DROP POLICY IF EXISTS "approvals_insert_mlro" ON approvals;
+CREATE POLICY "approvals_insert_mlro" ON approvals
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    (auth.jwt() ->> 'tenant_id')::UUID = tenant_id
+    AND (auth.jwt() ->> 'user_role') IN ('mlro', 'tenant_admin', 'platform_super_admin')
   );
 
 -- ============================================================
