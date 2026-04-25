@@ -84,10 +84,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS no_business_data_update ON business_data_versions;
 CREATE TRIGGER no_business_data_update
   BEFORE UPDATE ON business_data_versions
   FOR EACH ROW EXECUTE FUNCTION prevent_business_data_modification();
 
+DROP TRIGGER IF EXISTS no_business_data_delete ON business_data_versions;
 CREATE TRIGGER no_business_data_delete
   BEFORE DELETE ON business_data_versions
   FOR EACH ROW EXECUTE FUNCTION prevent_business_data_modification();
@@ -98,14 +100,17 @@ CREATE TRIGGER no_business_data_delete
 -- ============================================================
 
 -- businesses
+DROP POLICY IF EXISTS "businesses_select_staff" ON businesses;
 CREATE POLICY "businesses_select_staff" ON businesses
   FOR SELECT TO authenticated
   USING ((auth.jwt() ->> 'tenant_id')::UUID = tenant_id);
 
+DROP POLICY IF EXISTS "businesses_insert_authenticated" ON businesses;
 CREATE POLICY "businesses_insert_authenticated" ON businesses
   FOR INSERT TO authenticated
   WITH CHECK ((auth.jwt() ->> 'tenant_id')::UUID = tenant_id);
 
+DROP POLICY IF EXISTS "businesses_update_staff" ON businesses;
 CREATE POLICY "businesses_update_staff" ON businesses
   FOR UPDATE TO authenticated
   USING ((auth.jwt() ->> 'tenant_id')::UUID = tenant_id)
@@ -115,10 +120,12 @@ CREATE POLICY "businesses_update_staff" ON businesses
   );
 
 -- business_data_versions (append-only — no UPDATE or DELETE policies)
+DROP POLICY IF EXISTS "business_data_select_staff" ON business_data_versions;
 CREATE POLICY "business_data_select_staff" ON business_data_versions
   FOR SELECT TO authenticated
   USING ((auth.jwt() ->> 'tenant_id')::UUID = tenant_id);
 
+DROP POLICY IF EXISTS "business_data_insert_staff" ON business_data_versions;
 CREATE POLICY "business_data_insert_staff" ON business_data_versions
   FOR INSERT TO authenticated
   WITH CHECK ((auth.jwt() ->> 'tenant_id')::UUID = tenant_id);
