@@ -48,8 +48,8 @@ export default async function CasesPage({ searchParams }: Props) {
   if (!user) redirect('/sign-in');
 
   const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims as { role?: Role; tenant_id?: string } | undefined;
-  const role = claims?.role;
+  const claims = claimsData?.claims as { user_role?: Role; tenant_id?: string } | undefined;
+  const role = claims?.user_role;
   const tenant_id = claims?.tenant_id;
   if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
