@@ -11,19 +11,30 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    // Always show success — never reveal whether an account exists (prevents enumeration)
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-    });
-
-    setSubmitted(true);
-    setLoading(false);
+    try {
+      const supabase = createClient();
+      // Always show success — never reveal whether an account exists (prevents enumeration)
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      });
+      // Only surface config errors (not "email not found" — that would leak info)
+      if (resetError && resetError.message.toLowerCase().includes('url')) {
+        setError('Password reset is not configured correctly. Please contact your administrator.');
+        return;
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -77,6 +88,12 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
               />
             </div>
+
+            {error && (
+              <div className="rounded-md bg-red-50 border border-red-200 p-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Sending…' : 'Send reset link'}
