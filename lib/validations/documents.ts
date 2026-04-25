@@ -9,6 +9,9 @@ export const DocumentTypeSchema = z.enum([
   'bank_statement',
   'utility_bill',
   'other',
+  'emirates_id_front',
+  'emirates_id_back',
+  'trade_license',
 ]);
 
 export const UploadUrlRequestSchema = z.object({

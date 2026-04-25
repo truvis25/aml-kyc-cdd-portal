@@ -41,10 +41,22 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
     const form = new FormData(e.currentTarget);
     const data = Object.fromEntries(form.entries());
 
-    // Transform pep_status from checkbox
+    // Build bank_account object from flat field names (omit if all empty)
+    const bankAccount = {
+      iban:           (form.get('bank_account.iban') as string) || undefined,
+      bank_name:      (form.get('bank_account.bank_name') as string) || undefined,
+      account_number: (form.get('bank_account.account_number') as string) || undefined,
+      swift_code:     (form.get('bank_account.swift_code') as string) || undefined,
+    };
+    const hasBankData = Object.values(bankAccount).some(Boolean);
+
+    // Remove flat bank_account keys from data before spreading
+    const { 'bank_account.iban': _i, 'bank_account.bank_name': _b, 'bank_account.account_number': _a, 'bank_account.swift_code': _s, ...restData } = data;
+
     const payload = {
-      ...data,
+      ...restData,
       pep_status: form.get('pep_status') === 'on',
+      ...(hasBankData ? { bank_account: bankAccount } : {}),
     };
 
     try {
@@ -263,6 +275,31 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
                 I am (or am associated with) a Politically Exposed Person (PEP)
               </span>
             </label>
+          </div>
+        </div>
+      </section>
+
+      {/* Bank Account Details */}
+      <section>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+          Bank Account Details <span className="font-normal text-gray-400">(optional)</span>
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">IBAN</label>
+            <input name="bank_account.iban" className="input-field" placeholder="AE070331234567890123456" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+            <input name="bank_account.bank_name" className="input-field" placeholder="Emirates NBD" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+            <input name="bank_account.account_number" className="input-field" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">SWIFT / BIC Code</label>
+            <input name="bank_account.swift_code" className="input-field" placeholder="EBILAEAD" />
           </div>
         </div>
       </section>

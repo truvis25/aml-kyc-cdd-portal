@@ -35,6 +35,12 @@ export interface CustomerDataVersion {
   dual_nationality: string | null;
   source_of_funds: string | null;
   purpose_of_relationship: string | null;
+  bank_account: {
+    iban: string | null;
+    bank_name: string | null;
+    account_number: string | null;
+    swift_code: string | null;
+  } | null;
   submitted_by: string | null;
   created_at: string;
 }

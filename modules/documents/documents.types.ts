@@ -6,7 +6,10 @@ export type DocumentType =
   | 'proof_of_address'
   | 'bank_statement'
   | 'utility_bill'
-  | 'other';
+  | 'other'
+  | 'emirates_id_front'
+  | 'emirates_id_back'
+  | 'trade_license';
 
 export type DocumentStatus = 'pending' | 'uploaded' | 'verified' | 'rejected' | 'expired';
 

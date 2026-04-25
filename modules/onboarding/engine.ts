@@ -43,7 +43,8 @@ export class WorkflowEngine {
 
     if (!session.workflow_id) return { session, step: null };
 
-    const row = await getWorkflowDefinition(tenant_id, 'individual');
+    const customer_type = (session.step_data as { customer_type?: string })?.customer_type ?? 'individual';
+    const row = await getWorkflowDefinition(tenant_id, customer_type);
     if (!row) return { session, step: null };
 
     const definition = WorkflowEngine.parseDefinition(row.definition as Record<string, unknown>);
@@ -62,7 +63,8 @@ export class WorkflowEngine {
       throw new Error('Session is already complete');
     }
 
-    const row = await getWorkflowDefinition(tenant_id, 'individual');
+    const customer_type = (session.step_data as { customer_type?: string })?.customer_type ?? 'individual';
+    const row = await getWorkflowDefinition(tenant_id, customer_type);
     if (!row) throw new Error('No workflow found');
 
     const definition = WorkflowEngine.parseDefinition(row.definition as Record<string, unknown>);

@@ -7,9 +7,10 @@ interface ConsentFormProps {
   tenantSlug: string;
   sessionId: string;
   customerId: string;
+  nextStepPath: string;
 }
 
-export function ConsentForm({ tenantSlug, sessionId, customerId }: ConsentFormProps) {
+export function ConsentForm({ tenantSlug, sessionId, customerId, nextStepPath }: ConsentFormProps) {
   const router = useRouter();
   const [values, setValues] = useState({
     data_processing: false,
@@ -44,7 +45,7 @@ export function ConsentForm({ tenantSlug, sessionId, customerId }: ConsentFormPr
       });
       if (!stepRes.ok) throw new Error('Failed to advance session');
 
-      router.push(`/${tenantSlug}/onboard/${sessionId}/identity`);
+      router.push(nextStepPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
