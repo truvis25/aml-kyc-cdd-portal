@@ -104,6 +104,22 @@ export async function appendDocumentEvent(
   if (error) throw new Error(`Failed to append document event: ${error.message}`);
 }
 
+export async function updateDocumentStoragePath(
+  id: string,
+  tenant_id: string,
+  storage_path: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('documents')
+    .update({ storage_path })
+    .eq('id', id)
+    .eq('tenant_id', tenant_id);
+
+  if (error) throw new Error(`Failed to update document storage path: ${error.message}`);
+}
+
 export async function updateDocumentStatus(
   id: string,
   tenant_id: string,

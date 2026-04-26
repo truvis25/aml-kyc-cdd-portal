@@ -71,7 +71,7 @@ export default async function CaseDetailPage({ params }: Props) {
   if (isAnalystOnly && case_.assigned_to !== user.id) notFound();
 
   // Fetch related data in parallel
-  const [eventsResult, riskResult, documentsResult] = await Promise.all([
+  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult] = await Promise.all([
     supabase
       .from('case_events')
       .select('*')
@@ -83,14 +83,32 @@ export default async function CaseDetailPage({ params }: Props) {
       : Promise.resolve({ data: null }),
     supabase
       .from('documents')
-      .select('id, document_type, file_name, status, uploaded_at')
+      .select('id, document_type, file_name, status, uploaded_at, storage_path')
       .eq('customer_id', case_.customer_id)
       .eq('tenant_id', tenant_id),
+    supabase
+      .from('customer_data_versions')
+      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, pep_status, id_type, id_number')
+      .eq('customer_id', case_.customer_id)
+      .eq('tenant_id', tenant_id)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    case_.session_id
+      ? supabase.from('onboarding_sessions').select('step_data').eq('id', case_.session_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const events = (eventsResult.data ?? []) as unknown as CaseEvent[];
   const riskAssessment = (riskResult.data ?? null) as RiskRow | null;
-  const documents = (documentsResult.data ?? []) as unknown as DocumentRow[];
+  const documents = (documentsResult.data ?? []) as unknown as (DocumentRow & { storage_path: string })[];
+  const customerData = customerDataResult.data as {
+    full_name: string | null; date_of_birth: string | null; nationality: string | null;
+    country_of_residence: string | null; occupation: string | null; source_of_funds: string | null;
+    pep_status: boolean | null; id_type: string | null; id_number: string | null;
+  } | null;
+  const sessionStepData = (sessionResult.data as { step_data?: { customer_type?: string } } | null)?.step_data ?? null;
+  const isCorporate = sessionStepData?.customer_type === 'corporate';
 
   const canViewSar = role === 'mlro' || role === 'platform_super_admin';
   const canApprove = hasPermission(role, 'cases:approve_standard');
@@ -136,7 +154,7 @@ export default async function CaseDetailPage({ params }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left column — risk + actions */}
+        {/* Left column — risk + docs + actions */}
         <div className="space-y-6">
           {riskAssessment && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
@@ -166,15 +184,24 @@ export default async function CaseDetailPage({ params }: Props) {
           {documents.length > 0 && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Documents</h2>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {documents.map((doc) => (
-                  <li key={doc.id} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-700 capitalize">{doc.document_type.replace(/_/g, ' ')}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      doc.status === 'verified' ? 'bg-green-50 text-green-700' :
-                      doc.status === 'rejected' ? 'bg-red-50 text-red-700' :
-                      'bg-gray-50 text-gray-600'
-                    }`}>{doc.status}</span>
+                  <li key={doc.id}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-700 capitalize">{doc.document_type.replace(/_/g, ' ')}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        doc.status === 'verified' ? 'bg-green-50 text-green-700' :
+                        doc.status === 'rejected' ? 'bg-red-50 text-red-700' :
+                        'bg-gray-50 text-gray-600'
+                      }`}>{doc.status}</span>
+                    </div>
+                    <Link
+                      href={`/api/documents/${doc.id}`}
+                      className="mt-0.5 text-xs text-blue-600 hover:underline truncate block"
+                      target="_blank"
+                    >
+                      {doc.file_name}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -190,8 +217,39 @@ export default async function CaseDetailPage({ params }: Props) {
           )}
         </div>
 
-        {/* Right column — case timeline */}
-        <div className="lg:col-span-2">
+        {/* Right column — customer data + timeline */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Customer / Business data */}
+          {customerData && !isCorporate && (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">Customer Identity</h2>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                {[
+                  ['Full Name', customerData.full_name],
+                  ['Date of Birth', customerData.date_of_birth],
+                  ['Nationality', customerData.nationality],
+                  ['Country of Residence', customerData.country_of_residence],
+                  ['Occupation', customerData.occupation],
+                  ['Source of Funds', customerData.source_of_funds],
+                  ['ID Type', customerData.id_type],
+                  ['ID Number', customerData.id_number ? '••••' + customerData.id_number.slice(-4) : null],
+                ].filter(([, v]) => v != null).map(([label, value]) => (
+                  <div key={label as string}>
+                    <dt className="text-gray-400">{label}</dt>
+                    <dd className="font-medium text-gray-900 mt-0.5">{value}</dd>
+                  </div>
+                ))}
+                {customerData.pep_status && (
+                  <div className="col-span-2 mt-1">
+                    <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
+                      PEP
+                    </span>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
+
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Case Timeline</h2>
             {events.length === 0 ? (
