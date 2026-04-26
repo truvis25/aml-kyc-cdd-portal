@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/modules/auth/auth.service';
-import { assertPermission } from '@/modules/auth/rbac';
+import { assertPermission, PermissionDeniedError } from '@/modules/auth/rbac';
 import { recordDecision } from '@/modules/approvals/approvals.service';
 
 const ApprovalSchema = z.object({
@@ -38,6 +38,9 @@ export async function POST(
     return NextResponse.json({ approval }, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
+    if (err instanceof PermissionDeniedError) {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+    }
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg.includes('already been recorded')) return NextResponse.json({ error: msg }, { status: 409 });
     console.error('POST /api/approvals/[caseId] error:', msg);
