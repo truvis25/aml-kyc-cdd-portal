@@ -1,6 +1,8 @@
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
+import { TenantConfigClient } from '@/components/admin/tenant-config-client';
 
 export default async function AdminConfigPage() {
   const { role, tenantId: tenant_id } = await getPageAuth();
@@ -21,6 +23,14 @@ export default async function AdminConfigPage() {
     .eq('id', tenant_id)
     .single();
 
+  // Build absolute onboarding URL from the current request host
+  const headersList = await headers();
+  const host = headersList.get('host') ?? 'localhost:3000';
+  const proto = host.startsWith('localhost') ? 'http' : 'https';
+  const onboardingUrl = `${proto}://${host}/${tenant?.slug ?? ''}/onboard`;
+
+  const canEdit = hasPermission(role, 'admin:manage_config');
+
   return (
     <div>
       <div className="mb-6">
@@ -29,48 +39,31 @@ export default async function AdminConfigPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Tenant Info */}
+        <TenantConfigClient
+          tenantId={tenant_id}
+          initialName={tenant?.name ?? ''}
+          slug={tenant?.slug ?? ''}
+          onboardingUrl={onboardingUrl}
+          canEdit={canEdit}
+        />
+
+        {/* Additional metadata */}
         <div className="rounded-lg bg-white border border-gray-200 shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-medium text-gray-900">Tenant Details</h2>
+            <h2 className="text-base font-medium text-gray-900">Platform Details</h2>
           </div>
-          <div className="px-6 py-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Name</p>
-                <p className="mt-1 text-sm text-gray-900">{tenant?.name ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</p>
-                <p className="mt-1 text-sm font-mono text-gray-900">{tenant?.slug ?? '—'}</p>
-              </div>
+          <div className="px-6 py-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant ID</p>
-                <p className="mt-1 text-sm font-mono text-gray-500">{tenant_id}</p>
+                <p className="mt-1 font-mono text-gray-500 text-xs">{tenant_id}</p>
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created</p>
-                <p className="mt-1 text-sm text-gray-900">
+                <p className="mt-1 text-gray-900">
                   {tenant?.created_at ? new Date(tenant.created_at as string).toLocaleDateString() : '—'}
                 </p>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Onboarding Link */}
-        <div className="rounded-lg bg-white border border-gray-200 shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-medium text-gray-900">Customer Onboarding</h2>
-          </div>
-          <div className="px-6 py-4">
-            <p className="text-sm text-gray-500 mb-3">
-              Share this link with customers to start their KYC/KYB onboarding process.
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded bg-gray-50 border border-gray-200 px-3 py-2 text-sm font-mono text-gray-700">
-                /{tenant?.slug ?? '...'}/onboard
-              </code>
             </div>
           </div>
         </div>
