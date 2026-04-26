@@ -24,6 +24,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 -- Allow authenticated staff to upload (creates signed upload URL + stores object)
+DROP POLICY IF EXISTS "kyc_docs_tenant_upload" ON storage.objects;
 CREATE POLICY "kyc_docs_tenant_upload" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -32,6 +33,7 @@ CREATE POLICY "kyc_docs_tenant_upload" ON storage.objects
   );
 
 -- Allow authenticated staff to read objects within their tenant
+DROP POLICY IF EXISTS "kyc_docs_tenant_select" ON storage.objects;
 CREATE POLICY "kyc_docs_tenant_select" ON storage.objects
   FOR SELECT TO authenticated
   USING (
@@ -40,6 +42,7 @@ CREATE POLICY "kyc_docs_tenant_select" ON storage.objects
   );
 
 -- Allow authenticated staff to delete objects within their tenant (for replacements)
+DROP POLICY IF EXISTS "kyc_docs_tenant_delete" ON storage.objects;
 CREATE POLICY "kyc_docs_tenant_delete" ON storage.objects
   FOR DELETE TO authenticated
   USING (
