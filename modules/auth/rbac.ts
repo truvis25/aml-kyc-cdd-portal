@@ -130,7 +130,10 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'cases:add_note',
     'cases:request_additional_info',
     'cases:escalate',
-    // Senior reviewer CANNOT view SAR status
+    'cases:approve_standard',
+    'cases:reject',
+    'cases:assign',
+    // Senior reviewer CANNOT view SAR status or flag SAR
     'customers:read_assigned',
     'customers:read_edd_data',
     'documents:read',

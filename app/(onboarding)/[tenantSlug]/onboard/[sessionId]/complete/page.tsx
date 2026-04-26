@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { getSessionState } from '@/modules/onboarding/onboarding.service';
 
@@ -7,7 +8,7 @@ interface Props {
 }
 
 export default async function CompletePage({ params }: Props) {
-  const { sessionId } = await params;
+  const { tenantSlug, sessionId } = await params;
 
   let auth;
   try {
@@ -66,9 +67,17 @@ export default async function CompletePage({ params }: Props) {
           </ul>
         </div>
 
-        <p className="mt-6 text-xs text-gray-400">
-          Reference: {session.id}
-        </p>
+        <div className="mt-6 space-y-2">
+          <p className="text-xs text-gray-400">
+            Reference: <span className="font-mono">{session.id}</span>
+          </p>
+          <Link
+            href={`/${tenantSlug}/status/${session.id}`}
+            className="inline-block text-sm text-blue-600 hover:underline"
+          >
+            Check application status →
+          </Link>
+        </div>
       </div>
     </div>
   );

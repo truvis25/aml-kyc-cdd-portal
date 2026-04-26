@@ -7,6 +7,8 @@ import type { Role } from '@/lib/constants/roles';
  * Returns null if the user is not authenticated.
  *
  * Used in Server Components and API Route Handlers.
+ * Falls back to a DB lookup when JWT claims are not yet populated
+ * (e.g. during token-refresh windows before the custom_access_token_hook fires).
  */
 export async function getAuthContext(): Promise<AuthContext | null> {
   const supabase = await createClient();
@@ -14,15 +16,31 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 
   if (error || !user) return null;
 
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  if (claimsError || !claimsData?.claims) return null;
-
-  const claims = claimsData.claims as Record<string, unknown>;
-  const tenantId = claims?.tenant_id as string | undefined;
-  const userRole = claims?.user_role as Role | undefined;
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = (claimsData?.claims ?? {}) as Record<string, unknown>;
+  let tenantId = claims?.tenant_id as string | undefined;
+  let userRole = claims?.user_role as Role | undefined;
   const mfaVerified = claims?.aal === 'aal2';
 
-  if (!tenantId || !userRole) return null;
+  // Fallback: if JWT claims are missing (token refresh window), read from DB
+  if (!tenantId || !userRole) {
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('tenant_id, user_roles(roles(name))')
+      .eq('id', user.id)
+      .single();
+
+    if (!userRow) return null;
+
+    tenantId = (userRow as { tenant_id: string }).tenant_id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const roleRows = (userRow as any).user_roles;
+    userRole = Array.isArray(roleRows) && roleRows.length > 0
+      ? (roleRows[0]?.roles?.name as Role)
+      : undefined;
+
+    if (!tenantId || !userRole) return null;
+  }
 
   const authUser: AuthUser = {
     id: user.id,
