@@ -196,7 +196,7 @@ export default async function CaseDetailPage({ params }: Props) {
                       }`}>{doc.status}</span>
                     </div>
                     <Link
-                      href={`/api/documents/${doc.id}`}
+                      href={`/api/documents/${doc.id}/download`}
                       className="mt-0.5 text-xs text-blue-600 hover:underline truncate block"
                       target="_blank"
                     >
