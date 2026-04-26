@@ -25,6 +25,7 @@ export type Permission =
   | 'cases:approve_high_risk'
   | 'cases:reject'
   | 'cases:view_sar_status'
+  | 'cases:flag_sar'
   // Customer permissions
   | 'customers:read_assigned'
   | 'customers:read_all'
@@ -32,6 +33,7 @@ export type Permission =
   // Document permissions
   | 'documents:read'
   | 'documents:upload'
+  | 'documents:verify'
   // Screening permissions
   | 'screening:read'
   | 'screening:resolve_hit'
@@ -96,9 +98,11 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'cases:approve_high_risk',
     'cases:reject',
     'cases:view_sar_status',
+    'cases:flag_sar',
     'customers:read_all',
     'customers:read_edd_data',
     'documents:read',
+    'documents:verify',
     'screening:read',
     'screening:resolve_hit',
     'risk:read',
@@ -117,6 +121,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'customers:read_assigned',
     'customers:read_edd_data',
     'documents:read',
+    'documents:verify',
     'screening:read',
     'screening:resolve_hit',
     'risk:read',
@@ -133,6 +138,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'customers:read_assigned',
     // Analyst CANNOT read EDD data
     'documents:read',
+    'documents:verify',
     'screening:read',
     'screening:resolve_hit',
     'risk:read',

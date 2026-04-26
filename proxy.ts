@@ -10,7 +10,7 @@ import { getSupabasePublicEnv, SupabaseEnvError } from '@/lib/supabase/env';
  * 1. Refresh Supabase session (keep JWT fresh)
  * 2. Protect authenticated routes — redirect unauthenticated users to /sign-in
  * 3. Enforce role-based access to specific sections
- * 4. Enforce MFA for roles that require it
+ * 4. Enforce MFA for roles that require it (role-based, not path-based)
  * 5. Validate tenant context matches JWT claims
  *
  * DevPlan v1.0 Section 2.2 — Edge Middleware
@@ -23,14 +23,12 @@ const PUBLIC_PATHS = [
   '/sign-up',
   '/auth/callback',
   '/auth/confirm',
+  '/mfa-setup',
 ];
 
 // Routes requiring specific roles
 const ADMIN_ONLY_PATHS = ['/admin'];
 const MLRO_PATHS = ['/audit'];
-
-// Routes requiring MFA verification
-const MFA_REQUIRED_PATHS = ['/admin', '/audit'];
 
 export async function proxy(request: NextRequest) {
   return middleware(request);
@@ -41,8 +39,9 @@ export async function middleware(request: NextRequest) {
 
   // Allow public routes without auth check
   const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  // Allow onboarding routes (customer-facing, session-based auth)
-  const isOnboardingPath = pathname.startsWith('/onboard');
+  // Allow onboarding routes (customer-facing, uses session-based auth not staff JWT)
+  // Pattern: /{tenantSlug}/onboard/...
+  const isOnboardingPath = /^\/[^/]+\/onboard/.test(pathname);
   // Allow API routes that are webhook receivers (no JWT required — validated by signature)
   const isWebhookPath = pathname.startsWith('/api/webhooks/');
 
@@ -99,14 +98,16 @@ export async function middleware(request: NextRequest) {
 
   if (user) {
     const { data: claimsData } = await supabase.auth.getClaims();
+    // Use 'user_role' — the custom_access_token_hook stores the application role here.
+    // Do NOT read 'role' — that is the Postgres-level role ('authenticated') used by PostgREST.
     const claims = (claimsData?.claims ?? {}) as {
       tenant_id?: string;
-      role?: Role;
+      user_role?: Role;
       mfa_verified?: boolean;
       aal?: string;
     };
 
-    const role = claims.role;
+    const role = claims.user_role;
     // Supabase AAL claim: 'aal1' (password-only) or 'aal2' (MFA-verified).
     const mfaVerified = claims.aal === 'aal2';
 
@@ -119,24 +120,21 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(signInUrl);
     }
 
-    // Check MFA requirement for sensitive paths
-    const requiresMfa = MFA_REQUIRED_PATHS.some((p) => pathname.includes(p));
-    const roleMfaRequired = role ? MFA_REQUIRED_ROLES.includes(role) : false;
-
-    if ((requiresMfa || roleMfaRequired) && !mfaVerified) {
-      const signInUrl = new URL('/sign-in', request.url);
-      signInUrl.searchParams.set('redirectTo', pathname);
-      signInUrl.searchParams.set('error', 'mfa_required');
-      return NextResponse.redirect(signInUrl);
+    // MFA enforcement — role-based only (not path-based).
+    // MFA_REQUIRED_ROLES: platform_super_admin, tenant_admin, mlro.
+    // If their role requires MFA and they haven't completed it, redirect to setup.
+    const roleMfaRequired = MFA_REQUIRED_ROLES.includes(role);
+    if (roleMfaRequired && !mfaVerified) {
+      return NextResponse.redirect(new URL('/mfa-setup', request.url));
     }
 
-    // Admin-only path check
+    // Admin-only path check (tenant_admin and platform_super_admin only)
     const isAdminPath = ADMIN_ONLY_PATHS.some((p) => pathname.includes(p));
     if (isAdminPath && role !== Role.TENANT_ADMIN && role !== Role.PLATFORM_SUPER_ADMIN) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // MLRO-only paths
+    // MLRO-restricted paths (mlro, tenant_admin, platform_super_admin)
     const isMlroPath = MLRO_PATHS.some((p) => pathname.includes(p));
     if (isMlroPath && role !== Role.MLRO && role !== Role.TENANT_ADMIN && role !== Role.PLATFORM_SUPER_ADMIN) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -158,3 +156,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
+

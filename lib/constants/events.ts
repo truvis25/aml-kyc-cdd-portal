@@ -50,6 +50,8 @@ export enum AuditEventType {
   CASE_RAI_SENT = 'case.rai_sent',
   CASE_ESCALATED = 'case.escalated',
   CASE_DECISION_RECORDED = 'case.decision_recorded',
+  CASE_SAR_FLAGGED = 'case.sar_flagged',
+  CASE_SAR_UNFLAGGED = 'case.sar_unflagged',
 
   // Approval events
   APPROVAL_GRANTED = 'approval.granted',
