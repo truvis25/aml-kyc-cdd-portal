@@ -9,6 +9,7 @@ import type { RiskBand } from '@/modules/risk/risk.types';
 interface SearchParams {
   queue?: string;
   status?: string;
+  customer_id?: string;
 }
 
 interface Props {
@@ -66,6 +67,7 @@ export default async function CasesPage({ searchParams }: Props) {
   if (isAnalystOnly) q = q.eq('assigned_to', user.id);
   if (filters.queue) q = q.eq('queue', filters.queue);
   if (filters.status) q = q.eq('status', filters.status);
+  if (filters.customer_id) q = q.eq('customer_id', filters.customer_id);
 
   const { data: rawCases } = await q;
   const cases = (rawCases ?? []) as unknown as CaseListRow[];
@@ -88,7 +90,11 @@ export default async function CasesPage({ searchParams }: Props) {
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Cases</h1>
-          <p className="text-sm text-gray-500 mt-1">{cases?.length ?? 0} cases</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {filters.customer_id
+              ? `Cases for customer ${filters.customer_id.slice(0, 8)}… · ${cases?.length ?? 0} found`
+              : `${cases?.length ?? 0} cases`}
+          </p>
         </div>
         <CaseFilters />
       </div>
