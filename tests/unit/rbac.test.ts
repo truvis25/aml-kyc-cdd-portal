@@ -21,6 +21,10 @@ describe('RBAC — hasPermission', () => {
       expect(hasPermission(Role.ANALYST, 'cases:approve_high_risk')).toBe(false);
     });
 
+    it('CANNOT reject cases', () => {
+      expect(hasPermission(Role.ANALYST, 'cases:reject')).toBe(false);
+    });
+
     it('CANNOT view_sar_status', () => {
       expect(hasPermission(Role.ANALYST, 'cases:view_sar_status')).toBe(false);
     });
@@ -35,6 +39,54 @@ describe('RBAC — hasPermission', () => {
 
     it('CANNOT configure risk', () => {
       expect(hasPermission(Role.ANALYST, 'risk:configure')).toBe(false);
+    });
+  });
+
+  // Senior Reviewer permissions
+  describe('Senior Reviewer role', () => {
+    it('can approve standard cases', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:approve_standard')).toBe(true);
+    });
+
+    it('can reject cases', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:reject')).toBe(true);
+    });
+
+    it('can assign cases', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:assign')).toBe(true);
+    });
+
+    it('can verify documents', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'documents:verify')).toBe(true);
+    });
+
+    it('can resolve screening hits', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'screening:resolve_hit')).toBe(true);
+    });
+
+    it('can read EDD data', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'customers:read_edd_data')).toBe(true);
+    });
+
+    it('CANNOT approve high-risk cases', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:approve_high_risk')).toBe(false);
+    });
+
+    it('CANNOT view SAR status', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:view_sar_status')).toBe(false);
+    });
+
+    it('CANNOT flag SAR', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:flag_sar')).toBe(false);
+    });
+
+    it('CANNOT manage users', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'admin:manage_users')).toBe(false);
+    });
+
+    it('only reads assigned cases (not all)', () => {
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:read_assigned')).toBe(true);
+      expect(hasPermission(Role.SENIOR_REVIEWER, 'cases:read_all')).toBe(false);
     });
   });
 
