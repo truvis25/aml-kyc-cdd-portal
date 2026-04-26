@@ -20,6 +20,11 @@ const eslintConfig = defineConfig([
     files: ["**/*.ts", "**/*.tsx"],
     ignores: ["app/api/**"],
     rules: {
+      // Honour the _underscore convention for intentionally unused parameters/variables.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
       // Block service-role admin client imports everywhere except app/api/ route handlers.
       // app/api/ is excluded above — that is the sole authorised boundary.
       // Architecture rule: lib/supabase/admin.ts must never appear in client components,
