@@ -20,6 +20,8 @@ export default async function CompletePage({ params }: Props) {
   if (!session) notFound();
 
   const isSubmitted = session.status === 'submitted' || session.status === 'approved';
+  const customerType = (session.step_data as { customer_type?: string })?.customer_type ?? 'individual';
+  const isCorporate = customerType === 'corporate';
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
@@ -37,17 +39,30 @@ export default async function CompletePage({ params }: Props) {
         </h1>
         <p className="text-gray-500 text-sm mb-8">
           {isSubmitted
-            ? 'Your KYC application has been submitted successfully. Our compliance team will review your information and documents. You will be notified once the review is complete.'
+            ? isCorporate
+              ? 'Your KYB application has been submitted successfully. Our compliance team will review your business information and documents. You will be notified once the review is complete.'
+              : 'Your KYC application has been submitted successfully. Our compliance team will review your information and documents. You will be notified once the review is complete.'
             : 'Your application is being processed. Please check back later for updates.'}
         </p>
 
         <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-left">
           <p className="text-sm font-medium text-blue-900">What happens next?</p>
           <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-            <li>Identity documents will be verified</li>
-            <li>AML/sanctions screening will be performed</li>
-            <li>A risk assessment will be conducted</li>
-            <li>You will be notified of the decision</li>
+            {isCorporate ? (
+              <>
+                <li>Trade license and business documents will be verified</li>
+                <li>Authorized representative identity will be confirmed</li>
+                <li>AML/sanctions screening will be performed</li>
+                <li>You will be notified of the decision</li>
+              </>
+            ) : (
+              <>
+                <li>Identity documents will be verified</li>
+                <li>AML/sanctions screening will be performed</li>
+                <li>A risk assessment will be conducted</li>
+                <li>You will be notified of the decision</li>
+              </>
+            )}
           </ul>
         </div>
 
