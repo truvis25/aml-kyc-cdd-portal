@@ -6,7 +6,7 @@ import type { Role } from '@/lib/constants/roles';
  */
 export interface JwtClaims {
   tenant_id: string;
-  role: Role;
+  user_role: Role;
   mfa_verified: boolean;
   permissions: string[];
   // Standard JWT claims

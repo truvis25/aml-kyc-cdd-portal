@@ -13,8 +13,8 @@ export default async function DashboardPage() {
     redirect('/sign-in?error=session_invalid');
   }
 
-  const claims = claimsData.claims as { role?: Role; tenant_id?: string };
-  const role = claims.role ?? 'unknown';
+  const claims = claimsData.claims as { user_role?: Role; tenant_id?: string };
+  const role = claims.user_role ?? 'unknown';
   const tenant_id = claims.tenant_id;
 
   // Fetch stats if we have a tenant context

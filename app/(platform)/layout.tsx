@@ -20,14 +20,14 @@ export default async function PlatformLayout({
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = (claimsData?.claims ?? {}) as {
     tenant_id?: string;
-    role?: Role;
+    user_role?: Role;
     mfa_verified?: boolean;
   };
 
   // If JWT hook hasn't enriched this token yet, fall back to looking up the
   // user directly in the database so the page still renders.
   let tenantId = claims.tenant_id;
-  let role = claims.role;
+  let role = claims.user_role;
 
   if (!tenantId || !role) {
     // Fallback: query the users/user_roles tables directly

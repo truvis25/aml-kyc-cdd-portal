@@ -15,8 +15,8 @@ export default async function UsersPage() {
     redirect('/sign-in?error=session_invalid');
   }
 
-  const claims = claimsData.claims as { role?: Role; tenant_id?: string };
-  const role = claims.role;
+  const claims = claimsData.claims as { user_role?: Role; tenant_id?: string };
+  const role = claims.user_role;
 
   if (!role || !hasPermission(role, 'admin:manage_users')) {
     return (

@@ -19,17 +19,17 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 
   const claims = claimsData.claims as Record<string, unknown>;
   const tenantId = claims?.tenant_id as string | undefined;
-  const role = claims?.role as Role | undefined;
+  const userRole = claims?.user_role as Role | undefined;
   const mfaVerified = claims?.aal === 'aal2';
 
-  if (!tenantId || !role) return null;
+  if (!tenantId || !userRole) return null;
 
   const authUser: AuthUser = {
     id: user.id,
     tenant_id: tenantId,
-    role,
+    role: userRole,
     mfa_verified: mfaVerified,
-    display_name: null, // populated from users table when needed
+    display_name: null,
     email: user.email ?? '',
   };
 
@@ -39,7 +39,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
       sub: user.id,
       email: user.email,
       tenant_id: tenantId,
-      role,
+      user_role: userRole,
       mfa_verified: mfaVerified,
       permissions: (claims?.permissions as string[]) ?? [],
     },
