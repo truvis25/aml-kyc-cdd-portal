@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface ConsentFormProps {
-  tenantSlug: string;
   sessionId: string;
   customerId: string;
   nextStepPath: string;
 }
 
-export function ConsentForm({ tenantSlug, sessionId, customerId, nextStepPath }: ConsentFormProps) {
+export function ConsentForm({ sessionId, customerId, nextStepPath }: ConsentFormProps) {
   const router = useRouter();
   const [values, setValues] = useState({
     data_processing: false,

@@ -15,7 +15,7 @@ export async function GET() {
       user_error: userError?.message ?? null,
       has_claims: !!claimsData?.claims,
       tenant_id: (claimsData?.claims as Record<string, unknown> | null)?.tenant_id ?? null,
-      user_role: (claimsData?.claims as Record<string, unknown> | null)?.user_role ?? null,
+      role: (claimsData?.claims as Record<string, unknown> | null)?.role ?? null,
       claims_error: claimsError?.message ?? null,
     });
   } catch (err) {

@@ -70,6 +70,7 @@ export default function SignInPage() {
       });
 
       if (signInError) {
+        // Show the real Supabase error so issues are visible
         setError(signInError.message);
         return;
       }
@@ -81,10 +82,10 @@ export default function SignInPage() {
 
       // Decode claims from the freshly-issued JWT (no network call)
       const { data: claimsData } = await supabase.auth.getClaims(signInData.session.access_token);
-      const claims = (claimsData?.claims ?? {}) as { user_role?: Role };
+      const claims = (claimsData?.claims ?? {}) as { role?: Role };
 
       // MFA gate for roles that require it
-      if (claims.user_role && MFA_REQUIRED_ROLES.includes(claims.user_role)) {
+      if (claims.role && MFA_REQUIRED_ROLES.includes(claims.role)) {
         const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (!aalError && aalData?.currentLevel !== 'aal2' && aalData?.nextLevel === 'aal2') {
           const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
@@ -106,6 +107,7 @@ export default function SignInPage() {
       router.refresh();
 
     } catch (err) {
+      // Surface any unexpected error (env var missing, network failure, etc.)
       setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
