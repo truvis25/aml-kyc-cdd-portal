@@ -1,11 +1,10 @@
 import { notFound } from 'next/navigation';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { headers } from 'next/headers';
 
 interface Props {
   params: Promise<{ tenantSlug: string; sessionId: string }>;
 }
 
-type SessionStatus = 'in_progress' | 'submitted' | 'approved' | 'rejected' | 'pending_info' | string;
 type DocumentStatus = 'uploaded' | 'verified' | 'rejected' | string;
 type CaseStatus = 'open' | 'in_review' | 'pending_info' | 'escalated' | 'approved' | 'rejected' | 'closed' | string;
 
@@ -23,79 +22,58 @@ interface CaseRow {
   opened_at: string;
 }
 
+interface StatusData {
+  tenant: { name: string };
+  session: {
+    id: string;
+    status: string;
+    step_data: unknown;
+    created_at: string;
+    updated_at: string | null;
+  };
+  documents: DocumentRow[];
+  latestCase: CaseRow | null;
+}
+
 const SESSION_STATUS_LABEL: Record<string, { label: string; color: string; icon: string }> = {
-  in_progress: { label: 'In Progress', color: 'text-blue-700 bg-blue-50 border-blue-200', icon: '⏳' },
-  submitted:   { label: 'Under Review', color: 'text-purple-700 bg-purple-50 border-purple-200', icon: '🔍' },
-  approved:    { label: 'Approved', color: 'text-green-700 bg-green-50 border-green-200', icon: '✅' },
-  rejected:    { label: 'Not Approved', color: 'text-red-700 bg-red-50 border-red-200', icon: '❌' },
-  pending_info:{ label: 'Additional Information Required', color: 'text-yellow-700 bg-yellow-50 border-yellow-200', icon: '📋' },
+  in_progress:  { label: 'In Progress', color: 'text-blue-700 bg-blue-50 border-blue-200', icon: '⏳' },
+  submitted:    { label: 'Under Review', color: 'text-purple-700 bg-purple-50 border-purple-200', icon: '🔍' },
+  approved:     { label: 'Approved', color: 'text-green-700 bg-green-50 border-green-200', icon: '✅' },
+  rejected:     { label: 'Not Approved', color: 'text-red-700 bg-red-50 border-red-200', icon: '❌' },
+  pending_info: { label: 'Additional Information Required', color: 'text-yellow-700 bg-yellow-50 border-yellow-200', icon: '📋' },
 };
 
 const DOC_STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  uploaded:  { label: 'Received', color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  verified:  { label: 'Verified', color: 'text-green-600 bg-green-50 border-green-200' },
-  rejected:  { label: 'Not Accepted', color: 'text-red-600 bg-red-50 border-red-200' },
+  uploaded: { label: 'Received', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  verified: { label: 'Verified', color: 'text-green-600 bg-green-50 border-green-200' },
+  rejected: { label: 'Not Accepted', color: 'text-red-600 bg-red-50 border-red-200' },
 };
 
 function formatDocType(type: string): string {
   return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+async function fetchStatusData(sessionId: string, tenantSlug: string): Promise<StatusData | null> {
+  const hdrs = await headers();
+  const host = hdrs.get('host') ?? 'localhost:3000';
+  const proto = host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https';
+  const url = `${proto}://${host}/api/status/${sessionId}?tenantSlug=${encodeURIComponent(tenantSlug)}`;
+
+  const res = await fetch(url, { cache: 'no-store' });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return res.json() as Promise<StatusData>;
+}
+
 export default async function CustomerStatusPage({ params }: Props) {
   const { tenantSlug, sessionId } = await params;
-  const supabase = createAdminClient();
+  const data = await fetchStatusData(sessionId, tenantSlug);
+  if (!data) notFound();
 
-  // Validate the tenant slug
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id, name')
-    .eq('slug', tenantSlug)
-    .maybeSingle();
-
-  if (!tenant) notFound();
-
-  // Fetch the session — tenant isolation via tenant_id on the join
-  const { data: rawSession } = await supabase
-    .from('onboarding_sessions')
-    .select('id, status, customer_id, step_data, created_at, updated_at')
-    .eq('id', sessionId)
-    .eq('tenant_id', tenant.id)
-    .maybeSingle();
-
-  if (!rawSession) notFound();
-
-  const session = rawSession as {
-    id: string;
-    status: string;
-    customer_id: string;
-    step_data: unknown;
-    created_at: string;
-    updated_at: string | null;
-  };
-
+  const { tenant, session, documents, latestCase } = data;
   const customerType = (session.step_data as { customer_type?: string } | null)?.customer_type ?? 'individual';
   const isCorporate = customerType === 'corporate';
 
-  // Fetch documents for this customer (status + type only — no storage paths exposed)
-  const { data: rawDocs } = await supabase
-    .from('documents')
-    .select('id, document_type, status, file_name, uploaded_at')
-    .eq('customer_id', session.customer_id)
-    .eq('tenant_id', tenant.id)
-    .order('uploaded_at', { ascending: true });
-  const documents = (rawDocs ?? []) as DocumentRow[];
-
-  // Fetch the linked case (if one has been opened)
-  const { data: rawCases } = await supabase
-    .from('cases')
-    .select('id, status, opened_at')
-    .eq('customer_id', session.customer_id)
-    .eq('tenant_id', tenant.id)
-    .order('opened_at', { ascending: false })
-    .limit(1);
-  const latestCase = (rawCases?.[0] ?? null) as CaseRow | null;
-
-  // Resolve overall status: prefer the case status if a case exists and is decided
   const overallStatus: string = (() => {
     if (latestCase?.status === 'approved') return 'approved';
     if (latestCase?.status === 'rejected') return 'rejected';
@@ -113,9 +91,7 @@ export default async function CustomerStatusPage({ params }: Props) {
         {/* Header */}
         <div className="text-center mb-8">
           <p className="text-sm font-medium text-gray-500 mb-1">{tenant.name}</p>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Application Status
-          </h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Application Status</h1>
           <p className="text-xs text-gray-400 mt-1 font-mono">Ref: {sessionId}</p>
         </div>
 
