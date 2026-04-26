@@ -1,10 +1,10 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { AnalystActions } from '@/components/cases/analyst-actions';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { hasPermission } from '@/modules/auth/rbac';
-import type { Role } from '@/lib/constants/roles';
+import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
 import type { CaseEvent } from '@/modules/cases/cases.types';
 
@@ -43,16 +43,8 @@ interface RiskRow {
 
 export default async function CaseDetailPage({ params }: Props) {
   const { caseId } = await params;
-
+  const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims as { user_role?: Role; tenant_id?: string } | undefined;
-  const role = claims?.user_role;
-  const tenant_id = claims?.tenant_id;
-  if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
 
   // Fetch case
@@ -68,7 +60,7 @@ export default async function CaseDetailPage({ params }: Props) {
 
   // Access control: analysts only see assigned cases
   const isAnalystOnly = role === 'analyst' || role === 'senior_reviewer';
-  if (isAnalystOnly && case_.assigned_to !== user.id) notFound();
+  if (isAnalystOnly && case_.assigned_to !== userId) notFound();
 
   // Fetch related data in parallel
   const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult] = await Promise.all([

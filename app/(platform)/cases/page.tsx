@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 import { CaseFilters } from '@/components/cases/case-filters';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
-import type { Role } from '@/lib/constants/roles';
+import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
 
 interface SearchParams {
@@ -43,16 +42,8 @@ interface RiskLookupRow {
 
 export default async function CasesPage({ searchParams }: Props) {
   const filters = await searchParams;
-
+  const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims as { user_role?: Role; tenant_id?: string } | undefined;
-  const role = claims?.user_role;
-  const tenant_id = claims?.tenant_id;
-  if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
 
   // Build query — analysts see only assigned cases
@@ -64,7 +55,7 @@ export default async function CasesPage({ searchParams }: Props) {
     .order('opened_at', { ascending: false })
     .limit(50);
 
-  if (isAnalystOnly) q = q.eq('assigned_to', user.id);
+  if (isAnalystOnly) q = q.eq('assigned_to', userId);
   if (filters.queue) q = q.eq('queue', filters.queue);
   if (filters.status) q = q.eq('status', filters.status);
   if (filters.customer_id) q = q.eq('customer_id', filters.customer_id);
