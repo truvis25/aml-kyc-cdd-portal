@@ -131,7 +131,9 @@ export function Sidebar({ role, displayName, email, onSignOut }: SidebarProps) {
           </p>
         </div>
         <button
-          onClick={onSignOut}
+          onClick={() => {
+            if (window.confirm('Sign out of TruVis?')) onSignOut();
+          }}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
         >
           <LogOut className="h-4 w-4" />
