@@ -6,6 +6,7 @@ import {
   createSignedDownloadUrl,
   appendDocumentEvent,
   updateDocumentStatus,
+  updateDocumentStoragePath,
   getDocumentById,
   buildStoragePath,
 } from './documents.repository';
@@ -17,12 +18,11 @@ export async function initiateUpload(
   tenant_id: string,
   actor_id: string
 ): Promise<SignedUploadUrl> {
-  const placeholderPath = `${tenant_id}/${params.customer_id}/placeholder`;
   const doc = await createDocumentRecord({
     tenant_id,
     customer_id: params.customer_id,
     document_type: params.document_type,
-    storage_path: placeholderPath,
+    storage_path: `${tenant_id}/${params.customer_id}/pending`,
     file_name: params.file_name,
     file_size: params.file_size,
     mime_type: params.mime_type,
@@ -30,6 +30,7 @@ export async function initiateUpload(
   });
 
   const storage_path = buildStoragePath(tenant_id, params.customer_id, doc.id, params.file_name);
+  await updateDocumentStoragePath(doc.id, tenant_id, storage_path);
   const upload_url = await createSignedUploadUrl(storage_path);
 
   await appendDocumentEvent(doc.id, tenant_id, 'upload_initiated', actor_id, {
