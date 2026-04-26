@@ -75,8 +75,20 @@ describe('RBAC — hasPermission', () => {
       expect(hasPermission(Role.TENANT_ADMIN, 'admin:activate_workflow')).toBe(true);
     });
 
-    it('CANNOT view SAR status (MLRO-only)', () => {
-      expect(hasPermission(Role.TENANT_ADMIN, 'cases:view_sar_status')).toBe(false);
+    it('can view SAR status', () => {
+      expect(hasPermission(Role.TENANT_ADMIN, 'cases:view_sar_status')).toBe(true);
+    });
+
+    it('can flag SAR', () => {
+      expect(hasPermission(Role.TENANT_ADMIN, 'cases:flag_sar')).toBe(true);
+    });
+
+    it('can approve cases', () => {
+      expect(hasPermission(Role.TENANT_ADMIN, 'cases:approve_standard')).toBe(true);
+    });
+
+    it('can verify documents', () => {
+      expect(hasPermission(Role.TENANT_ADMIN, 'documents:verify')).toBe(true);
     });
   });
 
