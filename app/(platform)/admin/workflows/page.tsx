@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
+import { WorkflowToggle } from '@/components/admin/workflow-toggle';
 
 export default async function AdminWorkflowsPage() {
   const { role, tenantId: tenant_id } = await getPageAuth();
@@ -15,13 +16,15 @@ export default async function AdminWorkflowsPage() {
     );
   }
 
-  type WorkflowRow = { id: string; name: string; version: number; is_active: boolean; created_at: string };
+  type WorkflowRow = { id: string; name: string; version: number; is_active: boolean; created_at: string; tenant_id: string | null };
   const { data: rawWorkflows } = await supabase
     .from('workflow_definitions')
-    .select('id, name, version, is_active, created_at')
+    .select('id, name, version, is_active, created_at, tenant_id')
     .or(`tenant_id.eq.${tenant_id},tenant_id.is.null`)
     .order('name', { ascending: true });
   const workflows = (rawWorkflows ?? []) as unknown as WorkflowRow[];
+
+  const canToggle = hasPermission(role, 'admin:activate_workflow');
 
   return (
     <div>
@@ -30,7 +33,7 @@ export default async function AdminWorkflowsPage() {
         <p className="text-sm text-gray-500 mt-1">Onboarding workflow definitions</p>
       </div>
 
-      {(!workflows || workflows.length === 0) ? (
+      {workflows.length === 0 ? (
         <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
           <p className="text-sm text-gray-500">No workflow definitions found.</p>
           <p className="text-xs text-gray-400 mt-1">Run the database migrations to seed default workflows.</p>
@@ -45,28 +48,44 @@ export default async function AdminWorkflowsPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                {canToggle && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 text-sm">
-              {workflows.map((w) => (
-                <tr key={w.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{w.name}</td>
-                  <td className="px-4 py-3 text-gray-500">v{w.version}</td>
-                  <td className="px-4 py-3">
-                    {w.is_active ? (
-                      <span className="inline-flex items-center rounded border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Active</span>
-                    ) : (
-                      <span className="inline-flex items-center rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-500">Inactive</span>
+              {workflows.map((w) => {
+                const isPlatformLevel = w.tenant_id === null;
+                return (
+                  <tr key={w.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-900">{w.name}</td>
+                    <td className="px-4 py-3 text-gray-500">v{w.version}</td>
+                    <td className="px-4 py-3">
+                      {w.is_active ? (
+                        <span className="inline-flex items-center rounded border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Active</span>
+                      ) : (
+                        <span className="inline-flex items-center rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-500">Inactive</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {isPlatformLevel ? 'Platform default' : 'Tenant'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {new Date(w.created_at).toLocaleDateString()}
+                    </td>
+                    {canToggle && (
+                      <td className="px-4 py-3">
+                        <WorkflowToggle
+                          workflowId={w.id}
+                          workflowName={w.name}
+                          initialActive={w.is_active}
+                          isPlatformLevel={isPlatformLevel}
+                        />
+                      </td>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {w.is_active ? 'Platform default' : 'Tenant'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {new Date(w.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
