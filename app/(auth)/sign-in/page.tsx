@@ -82,10 +82,10 @@ export default function SignInPage() {
 
       // Decode claims from the freshly-issued JWT (no network call)
       const { data: claimsData } = await supabase.auth.getClaims(signInData.session.access_token);
-      const claims = (claimsData?.claims ?? {}) as { role?: Role };
+      const claims = (claimsData?.claims ?? {}) as { user_role?: Role };
 
       // MFA gate for roles that require it
-      if (claims.role && MFA_REQUIRED_ROLES.includes(claims.role)) {
+      if (claims.user_role && MFA_REQUIRED_ROLES.includes(claims.user_role)) {
         const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (!aalError && aalData?.currentLevel !== 'aal2' && aalData?.nextLevel === 'aal2') {
           const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
