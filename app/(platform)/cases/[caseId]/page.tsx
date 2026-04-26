@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { AnalystActions } from '@/components/cases/analyst-actions';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
+import { ScreeningHitsPanel } from '@/components/cases/screening-hits-panel';
+import { DocumentVerifyPanel } from '@/components/cases/document-verify-panel';
+import { SarFlagToggle } from '@/components/cases/sar-flag-toggle';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
@@ -41,6 +44,15 @@ interface RiskRow {
   product_score: number | null;
 }
 
+interface ScreeningHitRow {
+  id: string;
+  hit_type: string;
+  match_name: string;
+  match_score: number | null;
+  status: string;
+  created_at: string;
+}
+
 export default async function CaseDetailPage({ params }: Props) {
   const { caseId } = await params;
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
@@ -63,7 +75,7 @@ export default async function CaseDetailPage({ params }: Props) {
   if (isAnalystOnly && case_.assigned_to !== userId) notFound();
 
   // Fetch related data in parallel
-  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult] = await Promise.all([
+  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult, hitsResult] = await Promise.all([
     supabase
       .from('case_events')
       .select('*')
@@ -89,6 +101,12 @@ export default async function CaseDetailPage({ params }: Props) {
     case_.session_id
       ? supabase.from('onboarding_sessions').select('step_data').eq('id', case_.session_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase
+      .from('screening_hits')
+      .select('id, hit_type, match_name, match_score, status, created_at')
+      .eq('customer_id', case_.customer_id)
+      .eq('tenant_id', tenant_id)
+      .order('created_at', { ascending: false }),
   ]);
 
   const events = (eventsResult.data ?? []) as unknown as CaseEvent[];
@@ -101,8 +119,12 @@ export default async function CaseDetailPage({ params }: Props) {
   } | null;
   const sessionStepData = (sessionResult.data as { step_data?: { customer_type?: string } } | null)?.step_data ?? null;
   const isCorporate = sessionStepData?.customer_type === 'corporate';
+  const screeningHits = (hitsResult.data ?? []) as ScreeningHitRow[];
 
-  const canViewSar = role === 'mlro' || role === 'platform_super_admin';
+  const canFlagSar = hasPermission(role, 'cases:flag_sar');
+  const canViewSar = hasPermission(role, 'cases:view_sar_status') || canFlagSar;
+  const canVerifyDocs = hasPermission(role, 'documents:verify');
+  const canResolveHits = hasPermission(role, 'screening:resolve_hit');
   const canApprove = hasPermission(role, 'cases:approve_standard');
   const canReject = hasPermission(role, 'cases:reject');
   const isClosed = case_.status === 'approved' || case_.status === 'rejected' || case_.status === 'closed';
@@ -136,7 +158,10 @@ export default async function CaseDetailPage({ params }: Props) {
             }`}>
               {case_.status.replace(/_/g, ' ')}
             </span>
-            {canViewSar && case_.sar_flagged && (
+            {canFlagSar && (
+              <SarFlagToggle caseId={caseId} initialFlagged={case_.sar_flagged} />
+            )}
+            {!canFlagSar && canViewSar && case_.sar_flagged && (
               <span className="text-xs font-medium rounded-full px-3 py-1 bg-red-100 border border-red-300 text-red-800">
                 SAR Flagged
               </span>
@@ -146,7 +171,7 @@ export default async function CaseDetailPage({ params }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left column — risk + docs + actions */}
+        {/* Left column — risk + docs + screening + actions */}
         <div className="space-y-6">
           {riskAssessment && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
@@ -172,33 +197,11 @@ export default async function CaseDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* Documents */}
-          {documents.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-              <h2 className="text-sm font-semibold text-gray-900 mb-3">Documents</h2>
-              <ul className="space-y-2.5">
-                {documents.map((doc) => (
-                  <li key={doc.id}>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-gray-700 capitalize">{doc.document_type.replace(/_/g, ' ')}</span>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        doc.status === 'verified' ? 'bg-green-50 text-green-700' :
-                        doc.status === 'rejected' ? 'bg-red-50 text-red-700' :
-                        'bg-gray-50 text-gray-600'
-                      }`}>{doc.status}</span>
-                    </div>
-                    <Link
-                      href={`/api/documents/${doc.id}/download`}
-                      className="mt-0.5 text-xs text-blue-600 hover:underline truncate block"
-                      target="_blank"
-                    >
-                      {doc.file_name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Documents with verify/reject actions */}
+          <DocumentVerifyPanel documents={documents} canVerify={canVerifyDocs && !isClosed} />
+
+          {/* Screening hits with resolve actions */}
+          <ScreeningHitsPanel initialHits={screeningHits} canResolve={canResolveHits && !isClosed} />
 
           {/* Actions */}
           {!isClosed && (
