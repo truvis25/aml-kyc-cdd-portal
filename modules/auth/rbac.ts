@@ -26,6 +26,7 @@ export type Permission =
   | 'cases:reject'
   | 'cases:view_sar_status'
   | 'cases:flag_sar'
+  | 'cases:assign'
   // Customer permissions
   | 'customers:read_assigned'
   | 'customers:read_all'
@@ -77,15 +78,26 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'onboarding:read',
     'onboarding:write',
     'cases:read_all',
+    'cases:add_note',
+    'cases:request_additional_info',
+    'cases:escalate',
+    'cases:approve_standard',
+    'cases:approve_high_risk',
+    'cases:reject',
+    'cases:view_sar_status',
+    'cases:flag_sar',
+    'cases:assign',
     'customers:read_all',
+    'customers:read_edd_data',
     'documents:read',
     'documents:upload',
+    'documents:verify',
     'screening:read',
+    'screening:resolve_hit',
     'risk:read',
     'audit:read',
     'audit:export',
     'reporting:read_aggregate',
-    // Tenant admin CANNOT make MLRO-level compliance decisions
   ],
 
   [Role.MLRO]: [
@@ -99,6 +111,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'cases:reject',
     'cases:view_sar_status',
     'cases:flag_sar',
+    'cases:assign',
     'customers:read_all',
     'customers:read_edd_data',
     'documents:read',

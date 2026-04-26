@@ -6,6 +6,7 @@ import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { ScreeningHitsPanel } from '@/components/cases/screening-hits-panel';
 import { DocumentVerifyPanel } from '@/components/cases/document-verify-panel';
 import { SarFlagToggle } from '@/components/cases/sar-flag-toggle';
+import { CaseAssignPanel } from '@/components/cases/case-assign-panel';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
@@ -53,6 +54,12 @@ interface ScreeningHitRow {
   created_at: string;
 }
 
+interface OfficerRow {
+  id: string;
+  display_name: string | null;
+  role: string;
+}
+
 export default async function CaseDetailPage({ params }: Props) {
   const { caseId } = await params;
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
@@ -70,12 +77,12 @@ export default async function CaseDetailPage({ params }: Props) {
 
   if (!case_) notFound();
 
-  // Access control: analysts only see assigned cases
-  const isAnalystOnly = role === 'analyst' || role === 'senior_reviewer';
-  if (isAnalystOnly && case_.assigned_to !== userId) notFound();
+  // Access control: analysts/senior_reviewers only see their assigned cases; managers see all
+  const isRestrictedRole = role === 'analyst' || role === 'senior_reviewer';
+  if (isRestrictedRole && case_.assigned_to !== userId) notFound();
 
   // Fetch related data in parallel
-  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult, hitsResult] = await Promise.all([
+  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult, hitsResult, officersResult] = await Promise.all([
     supabase
       .from('case_events')
       .select('*')
@@ -107,6 +114,12 @@ export default async function CaseDetailPage({ params }: Props) {
       .eq('customer_id', case_.customer_id)
       .eq('tenant_id', tenant_id)
       .order('created_at', { ascending: false }),
+    // Fetch users with compliance roles for assignment dropdown
+    supabase
+      .from('users')
+      .select('id, display_name, user_roles!inner(roles!inner(name))')
+      .eq('tenant_id', tenant_id)
+      .eq('status', 'active'),
   ]);
 
   const events = (eventsResult.data ?? []) as unknown as CaseEvent[];
@@ -121,12 +134,22 @@ export default async function CaseDetailPage({ params }: Props) {
   const isCorporate = sessionStepData?.customer_type === 'corporate';
   const screeningHits = (hitsResult.data ?? []) as ScreeningHitRow[];
 
+  // Build officer list for assignment dropdown — filter to compliance roles only
+  const ASSIGNABLE_ROLES = ['analyst', 'senior_reviewer', 'mlro', 'tenant_admin'];
+  const officers: OfficerRow[] = (officersResult.data ?? []).flatMap((u) => {
+    const userRoles = (u as { id: string; display_name: string | null; user_roles: { roles: { name: string } }[] }).user_roles;
+    const roleName = userRoles?.[0]?.roles?.name;
+    if (!roleName || !ASSIGNABLE_ROLES.includes(roleName)) return [];
+    return [{ id: (u as { id: string }).id, display_name: (u as { display_name: string | null }).display_name, role: roleName }];
+  });
+
   const canFlagSar = hasPermission(role, 'cases:flag_sar');
   const canViewSar = hasPermission(role, 'cases:view_sar_status') || canFlagSar;
   const canVerifyDocs = hasPermission(role, 'documents:verify');
   const canResolveHits = hasPermission(role, 'screening:resolve_hit');
   const canApprove = hasPermission(role, 'cases:approve_standard');
   const canReject = hasPermission(role, 'cases:reject');
+  const canAssign = hasPermission(role, 'cases:assign');
   const isClosed = case_.status === 'approved' || case_.status === 'rejected' || case_.status === 'closed';
 
   return (
@@ -167,6 +190,16 @@ export default async function CaseDetailPage({ params }: Props) {
               </span>
             )}
           </div>
+        </div>
+
+        {/* Assignment row */}
+        <div className="mt-3">
+          <CaseAssignPanel
+            caseId={caseId}
+            currentAssigneeId={case_.assigned_to}
+            officers={officers}
+            canAssign={canAssign && !isClosed}
+          />
         </div>
       </div>
 
