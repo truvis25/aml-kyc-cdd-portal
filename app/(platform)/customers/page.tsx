@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { getPageAuth } from '@/lib/auth/page-auth';
+import { hasPermission } from '@/modules/auth/rbac';
 import { CustomerFilters } from '@/components/customers/customer-filters';
 
 interface SearchParams {
@@ -50,7 +51,8 @@ export default async function CustomersPage({ searchParams }: Props) {
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
 
-  const isAnalystOnly = role === 'analyst' || role === 'onboarding_agent' || role === 'read_only';
+  const canReadAll = hasPermission(role, 'customers:read_all');
+  const isAnalystOnly = !canReadAll;
 
   // Build base query
   let q = supabase
@@ -219,10 +221,10 @@ export default async function CustomersPage({ searchParams }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      href={`/cases?customer_id=${c.id}`}
+                      href={`/customers/${c.id}`}
                       className="text-blue-600 hover:underline text-xs font-medium"
                     >
-                      Cases →
+                      View →
                     </Link>
                   </td>
                 </tr>

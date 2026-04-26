@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { CaseFilters } from '@/components/cases/case-filters';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { getPageAuth } from '@/lib/auth/page-auth';
+import { hasPermission } from '@/modules/auth/rbac';
 import type { RiskBand } from '@/modules/risk/risk.types';
 
 interface SearchParams {
@@ -46,8 +47,8 @@ export default async function CasesPage({ searchParams }: Props) {
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
 
-  // Build query — analysts see only assigned cases
-  const isAnalystOnly = role === 'analyst' || role === 'onboarding_agent' || role === 'read_only';
+  // Build query — only roles with cases:read_all see all cases; others see only assigned
+  const canReadAll = hasPermission(role, 'cases:read_all');
   let q = supabase
     .from('cases')
     .select('id, customer_id, status, queue, opened_at, risk_assessment_id, assigned_to')
@@ -55,7 +56,7 @@ export default async function CasesPage({ searchParams }: Props) {
     .order('opened_at', { ascending: false })
     .limit(50);
 
-  if (isAnalystOnly) q = q.eq('assigned_to', userId);
+  if (!canReadAll) q = q.eq('assigned_to', userId);
   if (filters.queue) q = q.eq('queue', filters.queue);
   if (filters.status) q = q.eq('status', filters.status);
   if (filters.customer_id) q = q.eq('customer_id', filters.customer_id);
