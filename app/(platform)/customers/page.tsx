@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import type { Role } from '@/lib/constants/roles';
+import { getPageAuth } from '@/lib/auth/page-auth';
 
 const STATUS_BADGE: Record<string, string> = {
   pending:     'bg-yellow-50 border-yellow-200 text-yellow-700',
@@ -13,15 +12,8 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default async function CustomersPage() {
+  const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims as { user_role?: Role; tenant_id?: string } | undefined;
-  const role = claims?.user_role;
-  const tenant_id = claims?.tenant_id;
-  if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
   const isAnalystOnly = role === 'analyst' || role === 'onboarding_agent' || role === 'read_only';
 
@@ -38,7 +30,7 @@ export default async function CustomersPage() {
       .from('cases')
       .select('customer_id')
       .eq('tenant_id', tenant_id)
-      .eq('assigned_to', user.id);
+      .eq('assigned_to', userId);
     const ids = (assignedCases ?? []).map((c) => c.customer_id as string).filter(Boolean);
     if (ids.length === 0) {
       return (

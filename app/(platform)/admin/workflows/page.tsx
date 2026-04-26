@@ -1,18 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import type { Role } from '@/lib/constants/roles';
 import { hasPermission } from '@/modules/auth/rbac';
+import { getPageAuth } from '@/lib/auth/page-auth';
 
 export default async function AdminWorkflowsPage() {
+  const { role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims as { user_role?: Role; tenant_id?: string } | undefined;
-  const role = claims?.user_role;
-  const tenant_id = claims?.tenant_id;
-  if (!role || !tenant_id) redirect('/sign-in?error=session_invalid');
 
   if (!hasPermission(role, 'admin:activate_workflow')) {
     return (

@@ -1,21 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import type { Role } from '@/lib/constants/roles';
+import { getPageAuth } from '@/lib/auth/page-auth';
 
 export default async function DashboardPage() {
+  const { role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  if (claimsError || !claimsData?.claims) {
-    redirect('/sign-in?error=session_invalid');
-  }
-
-  const claims = claimsData.claims as { user_role?: Role; tenant_id?: string };
-  const role = claims.user_role ?? 'unknown';
-  const tenant_id = claims.tenant_id;
 
   // Fetch stats + tenant slug if we have a tenant context
   let pendingCases = 0;
