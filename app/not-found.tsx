@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function GlobalNotFound() {
   return (
     <html lang="en">
@@ -8,12 +10,12 @@ export default function GlobalNotFound() {
           <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
             The page you are looking for does not exist.
           </p>
-          <a
+          <Link
             href="/"
             style={{ borderRadius: '0.375rem', background: '#2563eb', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', textDecoration: 'none' }}
           >
             Go home
-          </a>
+          </Link>
         </div>
       </body>
     </html>
