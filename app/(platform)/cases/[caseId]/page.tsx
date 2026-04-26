@@ -60,6 +60,16 @@ interface OfficerRow {
   role: string;
 }
 
+interface BusinessDataRow {
+  company_name: string | null;
+  trade_license_number: string | null;
+  jurisdiction: string | null;
+  activity_type: string | null;
+  trade_license_issued_at: string | null;
+  trade_license_expires_at: string | null;
+  authorized_rep_name: string | null;
+}
+
 export default async function CaseDetailPage({ params }: Props) {
   const { caseId } = await params;
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
@@ -82,7 +92,7 @@ export default async function CaseDetailPage({ params }: Props) {
   if (isRestrictedRole && case_.assigned_to !== userId) notFound();
 
   // Fetch related data in parallel
-  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult, hitsResult, officersResult] = await Promise.all([
+  const [eventsResult, riskResult, documentsResult, customerDataResult, sessionResult, hitsResult, officersResult, businessDataResult] = await Promise.all([
     supabase
       .from('case_events')
       .select('*')
@@ -120,6 +130,15 @@ export default async function CaseDetailPage({ params }: Props) {
       .select('id, display_name, user_roles!inner(roles!inner(name))')
       .eq('tenant_id', tenant_id)
       .eq('status', 'active'),
+    // Fetch business data (for corporate KYB cases)
+    supabase
+      .from('businesses')
+      .select('business_data_versions(company_name, trade_license_number, jurisdiction, activity_type, trade_license_issued_at, trade_license_expires_at, authorized_rep_name)')
+      .eq('customer_id', case_.customer_id)
+      .eq('tenant_id', tenant_id)
+      .order('version', { referencedTable: 'business_data_versions', ascending: false })
+      .limit(1, { referencedTable: 'business_data_versions' })
+      .maybeSingle(),
   ]);
 
   const events = (eventsResult.data ?? []) as unknown as CaseEvent[];
@@ -133,6 +152,10 @@ export default async function CaseDetailPage({ params }: Props) {
   const sessionStepData = (sessionResult.data as { step_data?: { customer_type?: string } } | null)?.step_data ?? null;
   const isCorporate = sessionStepData?.customer_type === 'corporate';
   const screeningHits = (hitsResult.data ?? []) as ScreeningHitRow[];
+
+  // Extract latest business data version (for corporate cases)
+  const businessRaw = businessDataResult.data as { business_data_versions: BusinessDataRow[] } | null;
+  const businessData: BusinessDataRow | null = businessRaw?.business_data_versions?.[0] ?? null;
 
   // Build officer list for assignment dropdown — filter to compliance roles only
   const ASSIGNABLE_ROLES = ['analyst', 'senior_reviewer', 'mlro', 'tenant_admin'];
@@ -247,7 +270,30 @@ export default async function CaseDetailPage({ params }: Props) {
 
         {/* Right column — customer data + timeline */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Customer / Business data */}
+          {/* Business identity (corporate KYB cases) */}
+          {isCorporate && businessData && (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">Business Identity</h2>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                {[
+                  ['Company Name', businessData.company_name],
+                  ['Trade License No.', businessData.trade_license_number],
+                  ['Jurisdiction', businessData.jurisdiction],
+                  ['Activity Type', businessData.activity_type],
+                  ['License Issued', businessData.trade_license_issued_at],
+                  ['License Expires', businessData.trade_license_expires_at],
+                  ['Authorised Rep.', businessData.authorized_rep_name],
+                ].filter(([, v]) => v != null).map(([label, value]) => (
+                  <div key={label as string}>
+                    <dt className="text-gray-400">{label}</dt>
+                    <dd className="font-medium text-gray-900 mt-0.5">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {/* Individual customer identity */}
           {customerData && !isCorporate && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Customer Identity</h2>
