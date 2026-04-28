@@ -107,8 +107,10 @@ Deno.serve(async () => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ ok: false, error: message }), {
+    // Log full error server-side; never echo it back. The caller (pg_cron)
+    // only needs the non-200 status to retry.
+    console.error('process-screening-webhook failed:', err);
+    return new Response(JSON.stringify({ ok: false, error: 'internal_error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
