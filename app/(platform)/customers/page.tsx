@@ -3,10 +3,14 @@ import Link from 'next/link';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { hasPermission } from '@/modules/auth/rbac';
 import { CustomerFilters } from '@/components/customers/customer-filters';
+import { Pagination } from '@/components/shared/pagination';
+
+const PAGE_SIZE = 50;
 
 interface SearchParams {
   status?: string;
   type?: string;
+  page?: string;
 }
 
 interface Props {
@@ -54,13 +58,16 @@ export default async function CustomersPage({ searchParams }: Props) {
   const canReadAll = hasPermission(role, 'customers:read_all');
   const isAnalystOnly = !canReadAll;
 
-  // Build base query
+  const currentPage = Math.max(1, parseInt(filters.page ?? '1', 10));
+  const offset = (currentPage - 1) * PAGE_SIZE;
+
+  // Build base query — fetch PAGE_SIZE + 1 to detect a next page.
   let q = supabase
     .from('customers')
     .select('id, customer_type, status, created_at')
     .eq('tenant_id', tenant_id)
     .order('created_at', { ascending: false })
-    .limit(200);
+    .range(offset, offset + PAGE_SIZE);
 
   if (filters.status) q = q.eq('status', filters.status);
   if (filters.type) q = q.eq('customer_type', filters.type);
@@ -93,7 +100,9 @@ export default async function CustomersPage({ searchParams }: Props) {
   }
 
   const { data: rawCustomers } = await q;
-  const customers = (rawCustomers ?? []) as unknown as CustomerRow[];
+  const allCustomers = (rawCustomers ?? []) as unknown as CustomerRow[];
+  const hasNextPage = allCustomers.length > PAGE_SIZE;
+  const customers = hasNextPage ? allCustomers.slice(0, PAGE_SIZE) : allCustomers;
   const ids = customers.map((c) => c.id);
 
   if (ids.length === 0) {
@@ -233,6 +242,20 @@ export default async function CustomersPage({ searchParams }: Props) {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        basePath="/customers"
+        params={
+          new URLSearchParams({
+            ...(filters.status ? { status: filters.status } : {}),
+            ...(filters.type ? { type: filters.type } : {}),
+          })
+        }
+        currentPage={currentPage}
+        rowsOnPage={customers.length}
+        pageSize={PAGE_SIZE}
+        hasNextPage={hasNextPage}
+      />
     </div>
   );
 }
