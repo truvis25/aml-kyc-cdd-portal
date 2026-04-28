@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { CaseFilters } from '@/components/cases/case-filters';
+import { CaseRealtime } from '@/components/cases/case-realtime';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { hasPermission } from '@/modules/auth/rbac';
@@ -106,6 +107,7 @@ export default async function CasesPage({ searchParams }: Props) {
 
   return (
     <div>
+      <CaseRealtime tenantId={tenant_id} assignedTo={canReadAll ? undefined : userId} />
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Cases</h1>

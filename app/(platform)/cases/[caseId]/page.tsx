@@ -7,6 +7,7 @@ import { ScreeningHitsPanel } from '@/components/cases/screening-hits-panel';
 import { DocumentVerifyPanel } from '@/components/cases/document-verify-panel';
 import { SarFlagToggle } from '@/components/cases/sar-flag-toggle';
 import { CaseAssignPanel } from '@/components/cases/case-assign-panel';
+import { CaseRealtime } from '@/components/cases/case-realtime';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
@@ -177,6 +178,7 @@ export default async function CaseDetailPage({ params }: Props) {
 
   return (
     <div className="max-w-5xl mx-auto">
+      <CaseRealtime tenantId={tenant_id} />
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
