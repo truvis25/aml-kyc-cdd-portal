@@ -12,6 +12,8 @@ import {
   UserCog,
   LogOut,
   ShieldCheck,
+  Flag,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Role } from '@/lib/constants/roles';
@@ -41,6 +43,18 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Customers',
     icon: Users,
     roles: [Role.MLRO, Role.SENIOR_REVIEWER, Role.ANALYST, Role.TENANT_ADMIN],
+  },
+  {
+    href: '/sar',
+    label: 'SAR Register',
+    icon: Flag,
+    roles: [Role.TENANT_ADMIN, Role.MLRO],
+  },
+  {
+    href: '/reporting',
+    label: 'Reporting',
+    icon: BarChart3,
+    roles: [Role.TENANT_ADMIN, Role.MLRO, Role.SENIOR_REVIEWER, Role.READ_ONLY],
   },
   {
     href: '/audit',
