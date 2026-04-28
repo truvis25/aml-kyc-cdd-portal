@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { log } from '@/lib/logger';
 
 // Inbound screening webhook from ComplyAdvantage.
 // Validates signature, queues into webhook_events, returns 200 immediately.
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Failed to queue screening webhook:', error.message);
+      log.error('Failed to queue screening webhook', error);
       return NextResponse.json({ error: 'Failed to queue' }, { status: 500 });
     }
 

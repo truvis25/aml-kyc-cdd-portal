@@ -3,6 +3,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { initiateUpload } from '@/modules/documents/documents.service';
 import { UploadUrlRequestSchema } from '@/lib/validations/documents';
+import { log } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/documents/upload-url error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/documents/upload-url error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

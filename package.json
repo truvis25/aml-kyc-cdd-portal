@@ -14,7 +14,7 @@
     "test:watch": "vitest tests/unit/",
     "test:coverage": "vitest run --coverage",
     "validate:env": "node scripts/check-env.mjs",
-    "check:pii": "node scripts/check-pii-logs.mjs",
+    "check:pii": "node scripts/check-pii-logs.mjs --strict",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:pii",
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "db:reset": "supabase db reset",

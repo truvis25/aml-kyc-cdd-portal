@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { log } from '@/lib/logger';
 
 export async function POST() {
   try {
@@ -22,9 +23,7 @@ export async function POST() {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('MFA completion route error', {
-      error_type: err instanceof Error ? err.name : 'UnknownError',
-    });
+    log.error('MFA completion route error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

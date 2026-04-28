@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { getLatestAssessment } from '@/modules/risk/risk.service';
+import { log } from '@/lib/logger';
 
 export async function GET(
   _request: NextRequest,
@@ -17,7 +18,7 @@ export async function GET(
     return NextResponse.json({ assessment });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('GET /api/risk/[customerId]/latest error:', err instanceof Error ? err.message : err);
+    log.error('GET /api/risk/[customerId]/latest error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

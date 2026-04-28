@@ -22,6 +22,7 @@ import { renderRaiEmail } from './templates/rai';
 import { renderApprovalEmail } from './templates/approval';
 import { renderRejectionEmail } from './templates/rejection';
 import type { SendResult } from './types';
+import { log } from '@/lib/logger';
 
 interface RaiInput {
   tenantId: string;
@@ -163,7 +164,7 @@ async function commonSend({
     // Notification audit failure should not mask the email-send result.
     // Log and continue; the notification_events row is still the canonical
     // record of what happened.
-    console.error('[notifications] audit emit failed:', err);
+    log.error('[notifications] audit emit failed', err);
   }
 
   return {

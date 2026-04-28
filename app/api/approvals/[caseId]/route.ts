@@ -5,6 +5,7 @@ import { assertPermission, PermissionDeniedError } from '@/modules/auth/rbac';
 import { recordDecision } from '@/modules/approvals/approvals.service';
 import { getCaseById } from '@/modules/cases/cases.repository';
 import { sendApprovalEmail, sendRejectionEmail } from '@/modules/notifications';
+import { log } from '@/lib/logger';
 
 const ApprovalSchema = z.object({
   decision: z.enum(['approved', 'rejected']),
@@ -65,7 +66,7 @@ export async function POST(
     }
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg.includes('already been recorded')) return NextResponse.json({ error: msg }, { status: 409 });
-    console.error('POST /api/approvals/[caseId] error:', msg);
+    log.error('POST /api/approvals/[caseId] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

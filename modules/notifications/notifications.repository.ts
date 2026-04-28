@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import type { NotificationChannel, NotificationTemplate } from './types';
+import { log } from '@/lib/logger';
 
 export interface NotificationEventRow {
   tenant_id: string;
@@ -31,6 +32,6 @@ export async function recordNotificationEvent(row: NotificationEventRow): Promis
   if (error) {
     // Don't bubble — failing to write the audit row should NOT mask the original
     // intent (the email may have already been sent). Log so ops can investigate.
-    console.error('[notifications] failed to insert notification_events row:', error.message);
+    log.error('[notifications] failed to insert notification_events row', error);
   }
 }

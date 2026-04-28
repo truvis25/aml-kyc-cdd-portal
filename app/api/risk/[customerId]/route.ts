@@ -3,6 +3,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { computeRiskScore } from '@/modules/risk/risk.service';
 import { getLatestCustomerData } from '@/modules/kyc-individual/kyc.repository';
+import { log } from '@/lib/logger';
 
 export async function POST(
   _request: NextRequest,
@@ -32,7 +33,7 @@ export async function POST(
     return NextResponse.json({ assessment }, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/risk/[customerId] error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/risk/[customerId] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

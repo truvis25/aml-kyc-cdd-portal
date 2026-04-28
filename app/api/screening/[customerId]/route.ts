@@ -3,6 +3,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { initiateScreening } from '@/modules/screening/screening.service';
 import { getLatestCustomerData } from '@/modules/kyc-individual/kyc.repository';
+import { log } from '@/lib/logger';
 
 export async function POST(
   _request: NextRequest,
@@ -30,7 +31,7 @@ export async function POST(
     return NextResponse.json(result, { status: 202 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/screening error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/screening error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

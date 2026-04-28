@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { initiateSession } from '@/modules/onboarding/onboarding.service';
+import { log } from '@/lib/logger';
 
 const CreateSessionSchema = z.object({
   customer_type: z.enum(['individual', 'corporate']).default('individual'),
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ session, first_step }, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/sessions error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/sessions error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

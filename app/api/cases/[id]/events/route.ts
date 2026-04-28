@@ -4,6 +4,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { addNote, escalateCase, requestAdditionalInfo } from '@/modules/cases/cases.service';
 import { sendRaiEmail } from '@/modules/notifications';
+import { log } from '@/lib/logger';
 
 const CaseEventSchema = z.discriminatedUnion('event_type', [
   z.object({
@@ -81,7 +82,7 @@ export async function POST(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg === 'Case not found') return NextResponse.json({ error: msg }, { status: 404 });
-    console.error('POST /api/cases/[id]/events error:', msg);
+    log.error('POST /api/cases/[id]/events error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

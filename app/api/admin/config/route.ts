@@ -10,6 +10,7 @@ import {
   recordTenantConfigVersion,
 } from '@/modules/admin-config/admin-config.service';
 import { TenantConfigUpdateSchema } from '@/lib/validations/tenant-config';
+import { log } from '@/lib/logger';
 
 const TenantNameSchema = z.object({
   name: z.string().min(2).max(100),
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ tenant_config: row }, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/admin/config error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/admin/config error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

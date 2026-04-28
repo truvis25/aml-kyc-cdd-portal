@@ -6,6 +6,7 @@ import { Role } from '@/lib/constants/roles';
 import { createClient } from '@/lib/supabase/server';
 import * as audit from '@/modules/audit/audit.service';
 import { AuditEntityType, AuditEventType } from '@/lib/constants/events';
+import { log } from '@/lib/logger';
 
 const AckSchema = z.object({
   notes: z.string().max(2000).optional(),
@@ -103,7 +104,7 @@ export async function POST(
         { status: 403 },
       );
     }
-    console.error('POST /api/admin/workflows/[id]/acknowledge error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/admin/workflows/[id]/acknowledge error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

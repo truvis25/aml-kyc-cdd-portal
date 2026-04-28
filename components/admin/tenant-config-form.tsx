@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { TenantConfig } from '@/modules/admin-config/types';
+import { BrandingUploader } from './branding-uploader';
 
 interface Props {
   initial: TenantConfig;
@@ -157,12 +158,15 @@ export function TenantConfigForm({ initial, initialVersion, canEdit }: Props) {
           </div>
         </section>
 
-        {/* Branding placeholder */}
+        {/* Branding */}
         <section>
           <h3 className="text-sm font-semibold text-gray-700">Branding</h3>
           <p className="text-xs text-gray-500 mt-1 mb-3">
-            Logo upload ships in a follow-up sprint. Set company name to override the tenant name on customer-facing UI.
+            Logo and display name appear on the customer-facing onboarding pages. Logo
+            upload writes a new tenant_config version automatically; the display name
+            below is staged until you Save.
           </p>
+          <BrandingUploader initialLogoUrl={config.branding.logo_url} canEdit={canEdit} />
           <input
             type="text"
             value={config.branding.company_name ?? ''}
@@ -174,7 +178,7 @@ export function TenantConfigForm({ initial, initialVersion, canEdit }: Props) {
                 branding: { ...c.branding, company_name: e.target.value || null },
               }))
             }
-            className="w-full max-w-md rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+            className="mt-3 w-full max-w-md rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
           />
         </section>
 

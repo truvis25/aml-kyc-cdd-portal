@@ -3,6 +3,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { submitIdentityData } from '@/modules/kyc-individual/kyc.service';
 import { KycIdentitySchema } from '@/lib/validations/kyc';
+import { log } from '@/lib/logger';
 
 export async function PATCH(
   request: NextRequest,
@@ -31,7 +32,7 @@ export async function PATCH(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg === 'Customer not found') return NextResponse.json({ error: msg }, { status: 404 });
-    console.error('PATCH /api/customers/[id]/data error:', msg);
+    log.error('PATCH /api/customers/[id]/data error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
