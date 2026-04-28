@@ -104,3 +104,9 @@ verify_jwt = false
 [functions.retry-failed-webhooks]
 enabled = true
 verify_jwt = false
+
+# compute-document-hash is invoked from confirmUpload() via service-role JWT;
+# verify_jwt remains true (default) because invocation goes through the standard
+# Supabase functions auth path with the service-role bearer token.
+[functions.compute-document-hash]
+enabled = true

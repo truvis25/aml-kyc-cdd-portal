@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission, PermissionDeniedError } from '@/modules/auth/rbac';
 import { recordDecision } from '@/modules/approvals/approvals.service';
+import { getCaseById } from '@/modules/cases/cases.repository';
+import { sendApprovalEmail, sendRejectionEmail } from '@/modules/notifications';
 
 const ApprovalSchema = z.object({
   decision: z.enum(['approved', 'rejected']),
@@ -35,7 +37,27 @@ export async function POST(
       auth.user.role
     );
 
-    return NextResponse.json({ approval }, { status: 201 });
+    // Dispatch the customer notification AFTER the approval is durably written.
+    // Email send is best-effort; result is recorded in notification_events
+    // regardless of success/failure.
+    let emailResult = { ok: false, error: 'no_case' as string | null | undefined };
+    const case_ = await getCaseById(caseId, auth.user.tenant_id);
+    if (case_) {
+      const send = parsed.data.decision === 'approved' ? sendApprovalEmail : sendRejectionEmail;
+      const result = await send({
+        tenantId: auth.user.tenant_id,
+        caseId,
+        customerId: case_.customer_id,
+        actorId: auth.user.id,
+        actorRole: auth.user.role,
+      });
+      emailResult = { ok: result.ok, error: result.error ?? null };
+    }
+
+    return NextResponse.json(
+      { approval, email: emailResult },
+      { status: 201 },
+    );
   } catch (err) {
     if (err instanceof Response) return err;
     if (err instanceof PermissionDeniedError) {

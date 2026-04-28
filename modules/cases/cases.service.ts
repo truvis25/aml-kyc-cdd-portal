@@ -117,6 +117,63 @@ export async function escalateCase(
   });
 }
 
+export interface RaiParams {
+  case_id: string;
+  tenant_id: string;
+  info_requested: string;
+  documents_required?: string[];
+  actor_id: string;
+  actor_role: string;
+}
+
+export interface RaiResult {
+  case: Case;
+  event: CaseEvent;
+}
+
+/**
+ * Records a request-for-additional-information on a case. Updates status
+ * to 'pending_info', appends a case event, emits the audit log entry, and
+ * returns the (now-pending) case + the new event so the caller can dispatch
+ * the customer email side-effect.
+ */
+export async function requestAdditionalInfo(params: RaiParams): Promise<RaiResult> {
+  const case_ = await getCaseById(params.case_id, params.tenant_id);
+  if (!case_) throw new Error('Case not found');
+
+  await updateCaseStatus(params.case_id, params.tenant_id, 'pending_info');
+
+  const event = await appendCaseEvent({
+    tenant_id: params.tenant_id,
+    case_id: params.case_id,
+    event_type: 'request_additional_info',
+    actor_id: params.actor_id,
+    actor_role: params.actor_role,
+    payload: {
+      info_requested: params.info_requested,
+      documents_required: params.documents_required ?? [],
+    },
+  });
+
+  await audit.emit({
+    tenant_id: params.tenant_id,
+    event_type: AuditEventType.CASE_RAI_SENT,
+    entity_type: AuditEntityType.CASE,
+    entity_id: params.case_id,
+    actor_id: params.actor_id,
+    actor_role: params.actor_role,
+    payload: {
+      // PII rule: never log the literal info_requested text in audit_log
+      // (could contain customer-identifying questions). Record only structural
+      // metadata; the case_event row holds the literal request body.
+      documents_required_count: params.documents_required?.length ?? 0,
+      customer_id: case_.customer_id,
+    },
+  });
+
+  return { case: case_, event };
+}
+
 export async function getCaseList(
   tenant_id: string,
   role: string,

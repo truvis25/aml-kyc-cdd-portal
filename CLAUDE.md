@@ -73,7 +73,21 @@ npx supabase gen types typescript --local > lib/supabase/database.types.ts
 supabase functions deploy process-screening-webhook
 supabase functions deploy process-idv-webhook
 supabase functions deploy retry-failed-webhooks
+supabase functions deploy compute-document-hash
 ```
+
+## Notifications (Resend)
+
+Outbound transactional email is delivered via [Resend](https://resend.com). Set
+`RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, and optionally `RESEND_REPLY_TO` in
+`.env.local` and Vercel env. When `RESEND_API_KEY` is unset, send calls are a
+no-op and a `notification_events` row with `status='failed'` /
+`error='not_configured'` is recorded — case actions still succeed.
+
+Templates live in `modules/notifications/templates/`. The public surface
+(`modules/notifications/index.ts`) exposes `sendRaiEmail`, `sendApprovalEmail`,
+and `sendRejectionEmail`. All sends are logged to `notification_events` (RLS,
+append-only) and emit a corresponding `audit_log` event.
 
 ## Post-Deploy: Webhook Retry Schedule (one-time per environment)
 

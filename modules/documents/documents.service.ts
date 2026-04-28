@@ -71,7 +71,42 @@ export async function confirmUpload(
     payload: { customer_id: doc.customer_id, document_type: doc.document_type },
   });
 
+  // Fire the hash compute Edge Function. We don't await — the user shouldn't
+  // wait on a Storage download to finish their request. The function is
+  // idempotent so a retry is cheap, and a missed invocation just leaves
+  // file_hash null until a future batch run picks it up.
+  void invokeComputeDocumentHash(document_id, tenant_id);
+
   return { ...doc, status: 'uploaded' };
+}
+
+async function invokeComputeDocumentHash(
+  document_id: string,
+  tenant_id: string,
+): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    console.warn('[documents] compute-document-hash skipped: env not configured');
+    return;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    await fetch(`${supabaseUrl}/functions/v1/compute-document-hash`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({ document_id, tenant_id }),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
+  } catch (err) {
+    // Don't bubble — hash compute is a background concern.
+    console.warn('[documents] compute-document-hash invoke failed:', err instanceof Error ? err.message : err);
+  }
 }
 
 export async function getDocumentWithUrl(
