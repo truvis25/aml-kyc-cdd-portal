@@ -8,6 +8,9 @@ import {
   CustomerRevisions,
   type CustomerRevisionRow,
 } from '@/components/customers/customer-revisions';
+import { CustomerAuditTrail } from '@/components/customers/customer-audit-trail';
+import * as audit from '@/modules/audit/audit.service';
+import { AuditEntityType } from '@/lib/constants/events';
 import type { RiskBand } from '@/modules/risk/risk.types';
 
 /**
@@ -247,6 +250,38 @@ export default async function CustomerDetailPage({ params }: Props) {
 
   // Build the timeline: rows are already DESC by version. Compare each to
   // its predecessor (i + 1 in the array) to compute changed fields.
+  // Compliance activity feed for this customer entity. Fetch the latest
+  // events and resolve actor display names so the panel reads naturally.
+  const auditEventsRaw = await audit.query({
+    tenant_id,
+    entity_type: AuditEntityType.CUSTOMER,
+    entity_id: id,
+    limit: 25,
+  });
+  const auditActorIds = [
+    ...new Set(
+      auditEventsRaw.map((e) => e.actor_id).filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const auditActorNames = new Map<string, string>();
+  if (auditActorIds.length > 0) {
+    const { data: actorRows } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .in('id', auditActorIds);
+    for (const u of (actorRows ?? []) as Array<{ id: string; display_name: string | null }>) {
+      auditActorNames.set(u.id, u.display_name ?? `${u.id.slice(0, 8)}…`);
+    }
+  }
+  const auditTrailRows = auditEventsRaw.map((e) => ({
+    id: e.id,
+    event_time: e.event_time,
+    event_type: e.event_type as string,
+    entity_type: e.entity_type as string,
+    actor_role: e.actor_role ?? null,
+    actor_name: e.actor_id ? auditActorNames.get(e.actor_id) ?? null : null,
+  }));
+
   const revisionPanelRows: CustomerRevisionRow[] = revisionRows.map((row, idx) => {
     const prev = revisionRows[idx + 1];
     const changed: string[] = prev
@@ -406,6 +441,9 @@ export default async function CustomerDetailPage({ params }: Props) {
 
           {/* Data revisions timeline */}
           <CustomerRevisions rows={revisionPanelRows} />
+
+          {/* Compliance activity timeline (audit_log derived) */}
+          <CustomerAuditTrail events={auditTrailRows} />
 
           {/* Screening hits */}
           {screeningHits.length > 0 && (
