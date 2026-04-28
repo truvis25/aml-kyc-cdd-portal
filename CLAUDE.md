@@ -68,10 +68,32 @@ supabase test db
 # Generate TypeScript types from Supabase schema
 npx supabase gen types typescript --local > lib/supabase/database.types.ts
 
-# Deploy Edge Functions to Supabase (future async functions only)
+# Deploy Edge Functions to Supabase
 # NOTE: enrich-jwt Edge Function is RETIRED — JWT enrichment is now a Postgres hook (C-02)
-# supabase functions deploy <function-name>
+supabase functions deploy process-screening-webhook
+supabase functions deploy process-idv-webhook
+supabase functions deploy retry-failed-webhooks
 ```
+
+## Post-Deploy: Webhook Retry Schedule (one-time per environment)
+
+After Edge Functions are deployed and migration 0028 is applied, register the
+hourly pg_cron schedule that drives webhook retries. This is one-time per
+environment because the URL and JWT are env-specific:
+
+```sql
+SELECT cron.schedule(
+  'retry-failed-webhooks-hourly',
+  '0 * * * *',
+  $$ SELECT net.http_post(
+       url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/retry-failed-webhooks',
+       headers := jsonb_build_object('Authorization', 'Bearer <SERVICE_ROLE_JWT>')
+     ) $$
+);
+```
+
+Verify by querying `cron.job` and watching `webhook_events.status` transitions
+after deliberately failing a test event.
 
 ## Environment Setup
 
