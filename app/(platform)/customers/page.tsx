@@ -10,6 +10,7 @@ const PAGE_SIZE = 50;
 interface SearchParams {
   status?: string;
   type?: string;
+  q?: string;
   page?: string;
 }
 
@@ -60,6 +61,42 @@ export default async function CustomersPage({ searchParams }: Props) {
 
   const currentPage = Math.max(1, parseInt(filters.page ?? '1', 10));
   const offset = (currentPage - 1) * PAGE_SIZE;
+  const searchTerm = filters.q?.trim() ?? '';
+
+  // Name search: resolve matching customer_ids first, then constrain the main
+  // query. The fan-out is bounded (we only show paginated results anyway) so
+  // this is cheaper than a foreign-table filter through PostgREST.
+  let searchCustomerIds: string[] | null = null;
+  if (searchTerm.length > 0) {
+    const { data: nameMatches } = await supabase
+      .from('customer_data_versions')
+      .select('customer_id')
+      .eq('tenant_id', tenant_id)
+      .ilike('full_name', `%${searchTerm.replace(/[%_]/g, '\\$&')}%`)
+      .limit(500);
+    searchCustomerIds = [
+      ...new Set(((nameMatches ?? []) as Array<{ customer_id: string }>).map((r) => r.customer_id)),
+    ];
+    if (searchCustomerIds.length === 0) {
+      // No name matches → short-circuit before hitting customers table.
+      return (
+        <div>
+          <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Customers</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                No customers match &quot;{searchTerm}&quot;
+              </p>
+            </div>
+            <CustomerFilters />
+          </div>
+          <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
+            <p className="text-sm text-gray-500">No customers match the selected filters.</p>
+          </div>
+        </div>
+      );
+    }
+  }
 
   // Build base query — fetch PAGE_SIZE + 1 to detect a next page.
   let q = supabase
@@ -71,6 +108,7 @@ export default async function CustomersPage({ searchParams }: Props) {
 
   if (filters.status) q = q.eq('status', filters.status);
   if (filters.type) q = q.eq('customer_type', filters.type);
+  if (searchCustomerIds) q = q.in('id', searchCustomerIds);
 
   // Analysts only see customers they have a case assigned for
   let customerIds: string[] = [];
@@ -249,6 +287,7 @@ export default async function CustomersPage({ searchParams }: Props) {
           new URLSearchParams({
             ...(filters.status ? { status: filters.status } : {}),
             ...(filters.type ? { type: filters.type } : {}),
+            ...(filters.q ? { q: filters.q } : {}),
           })
         }
         currentPage={currentPage}

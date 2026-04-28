@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Flag,
   BarChart3,
+  Webhook,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Role } from '@/lib/constants/roles';
@@ -79,6 +80,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Workflows',
     icon: GitBranch,
     roles: [Role.TENANT_ADMIN, Role.MLRO],
+  },
+  {
+    href: '/admin/webhooks',
+    label: 'Webhook Queue',
+    icon: Webhook,
+    roles: [Role.TENANT_ADMIN, Role.MLRO, Role.PLATFORM_SUPER_ADMIN],
   },
 ];
 
