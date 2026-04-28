@@ -8,6 +8,7 @@ const PAGE_SIZE = 50;
 
 interface SearchParams {
   page?: string;
+  status?: 'all' | 'open' | 'closed';
 }
 
 interface SarRow {
@@ -44,16 +45,21 @@ export default async function SARRegisterPage({ searchParams }: Props) {
   const sp = await searchParams;
   const currentPage = Math.max(1, parseInt(sp.page ?? '1', 10));
   const offset = (currentPage - 1) * PAGE_SIZE;
+  const statusFilter: 'all' | 'open' | 'closed' = sp.status ?? 'open';
 
   const supabase = await createClient();
 
-  const { data: rawCases } = await supabase
+  let q = supabase
     .from('cases')
     .select('id, customer_id, status, queue, opened_at, closed_at, assigned_to, sar_flagged')
     .eq('tenant_id', tenantId)
     .eq('sar_flagged', true)
     .order('opened_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE);
+  if (statusFilter === 'open') q = q.neq('status', 'closed');
+  else if (statusFilter === 'closed') q = q.eq('status', 'closed');
+
+  const { data: rawCases } = await q;
 
   const allRows = (rawCases ?? []) as unknown as (SarRow & { sar_flagged: boolean })[];
   const hasNextPage = allRows.length > PAGE_SIZE;
@@ -98,18 +104,42 @@ export default async function SARRegisterPage({ searchParams }: Props) {
     officerNameById.set(u.id, u.display_name ?? u.id.slice(0, 8));
   }
 
+  const filterTabs: Array<{ value: 'open' | 'closed' | 'all'; label: string }> = [
+    { value: 'open', label: 'Open' },
+    { value: 'closed', label: 'Closed' },
+    { value: 'all', label: 'All' },
+  ];
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">SAR Register</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Cases flagged for Suspicious Activity Report review · {cases.length} total
+            Cases flagged for Suspicious Activity Report review · showing{' '}
+            <span className="text-gray-700">{cases.length}</span>
             {' · '}
             <span className="text-gray-700">{open} open</span>
             {' · '}
             <span className="text-gray-700">{closed} closed</span>
+            {' on this page'}
           </p>
+        </div>
+        <div className="inline-flex rounded-md border border-gray-200 bg-white p-0.5 text-xs">
+          {filterTabs.map((tab) => {
+            const active = statusFilter === tab.value;
+            return (
+              <Link
+                key={tab.value}
+                href={tab.value === 'open' ? '/sar' : `/sar?status=${tab.value}`}
+                className={`px-3 py-1.5 rounded font-medium ${
+                  active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -180,7 +210,11 @@ export default async function SARRegisterPage({ searchParams }: Props) {
 
       <Pagination
         basePath="/sar"
-        params={new URLSearchParams()}
+        params={
+          new URLSearchParams(
+            statusFilter !== 'open' ? { status: statusFilter } : {},
+          )
+        }
         currentPage={currentPage}
         rowsOnPage={cases.length}
         pageSize={PAGE_SIZE}

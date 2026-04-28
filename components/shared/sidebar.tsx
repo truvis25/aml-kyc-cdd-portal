@@ -87,6 +87,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: Webhook,
     roles: [Role.TENANT_ADMIN, Role.MLRO, Role.PLATFORM_SUPER_ADMIN],
   },
+  {
+    href: '/admin/platform',
+    label: 'Platform Admin',
+    icon: ShieldCheck,
+    roles: [Role.PLATFORM_SUPER_ADMIN],
+  },
 ];
 
 interface SidebarProps {
