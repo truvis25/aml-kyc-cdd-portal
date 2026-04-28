@@ -4,7 +4,43 @@ import { createClient } from '@/lib/supabase/server';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { hasPermission } from '@/modules/auth/rbac';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
+import {
+  CustomerRevisions,
+  type CustomerRevisionRow,
+} from '@/components/customers/customer-revisions';
 import type { RiskBand } from '@/modules/risk/risk.types';
+
+/**
+ * Fields tracked across customer_data_versions. Order matters: drives the
+ * field-changed comparison below. Keep in sync with the columns selected in
+ * the revision query.
+ */
+const REVISION_FIELDS = [
+  'full_name',
+  'date_of_birth',
+  'nationality',
+  'country_of_residence',
+  'id_type',
+  'id_number',
+  'id_expiry',
+  'id_issuing_country',
+  'email',
+  'phone',
+  'address_line1',
+  'city',
+  'postal_code',
+  'country',
+  'occupation',
+  'employer',
+  'pep_status',
+  'source_of_funds',
+  'purpose_of_relationship',
+] as const;
+type RevisionRecord = Record<(typeof REVISION_FIELDS)[number], unknown> & {
+  version: number;
+  created_at: string;
+  submitted_by: string | null;
+};
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -173,6 +209,57 @@ export default async function CustomerDetailPage({ params }: Props) {
   const cases = (casesResult.data ?? []) as unknown as CaseRow[];
   const screeningHits = (hitsResult.data ?? []) as ScreeningHitRow[];
 
+  // Revision history — fetch every version's tracked fields + author so we
+  // can compute which fields changed between adjacent versions. Values are
+  // PII so we surface only the field NAMES that changed; reviewers see the
+  // current values via the Identity / EDD panels.
+  const { data: revisionRowsRaw } = await supabase
+    .from('customer_data_versions')
+    .select(
+      [
+        'version',
+        'created_at',
+        'submitted_by',
+        ...REVISION_FIELDS,
+      ].join(', '),
+    )
+    .eq('customer_id', id)
+    .eq('tenant_id', tenant_id)
+    .order('version', { ascending: false })
+    .limit(50);
+  const revisionRows = (revisionRowsRaw ?? []) as unknown as RevisionRecord[];
+
+  const revisionAuthorIds = [
+    ...new Set(
+      revisionRows.map((r) => r.submitted_by).filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const revisionAuthors = new Map<string, string>();
+  if (revisionAuthorIds.length > 0) {
+    const { data: authorRows } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .in('id', revisionAuthorIds);
+    for (const u of (authorRows ?? []) as Array<{ id: string; display_name: string | null }>) {
+      revisionAuthors.set(u.id, u.display_name ?? `${u.id.slice(0, 8)}…`);
+    }
+  }
+
+  // Build the timeline: rows are already DESC by version. Compare each to
+  // its predecessor (i + 1 in the array) to compute changed fields.
+  const revisionPanelRows: CustomerRevisionRow[] = revisionRows.map((row, idx) => {
+    const prev = revisionRows[idx + 1];
+    const changed: string[] = prev
+      ? REVISION_FIELDS.filter((f) => row[f] !== prev[f])
+      : [];
+    return {
+      version: row.version,
+      created_at: row.created_at,
+      submitted_by_name: row.submitted_by ? revisionAuthors.get(row.submitted_by) ?? null : null,
+      changed_fields: changed,
+    };
+  });
+
   // Fetch risk assessments and officer names for cases
   const riskIds = [...new Set(cases.map((c) => c.risk_assessment_id).filter(Boolean))] as string[];
   const officerIds = [...new Set(cases.map((c) => c.assigned_to).filter(Boolean))] as string[];
@@ -316,6 +403,9 @@ export default async function CustomerDetailPage({ params }: Props) {
               </p>
             </div>
           )}
+
+          {/* Data revisions timeline */}
+          <CustomerRevisions rows={revisionPanelRows} />
 
           {/* Screening hits */}
           {screeningHits.length > 0 && (
