@@ -25,6 +25,7 @@ interface DataVersionRow {
   country_of_residence: string | null;
   occupation: string | null;
   source_of_funds: string | null;
+  purpose_of_relationship: string | null;
   pep_status: boolean | null;
   id_type: string | null;
   id_number: string | null;
@@ -128,7 +129,7 @@ export default async function CustomerDetailPage({ params }: Props) {
   const [dataResult, businessResult, docsResult, casesResult, hitsResult] = await Promise.all([
     supabase
       .from('customer_data_versions')
-      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, pep_status, id_type, id_number, version')
+      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, purpose_of_relationship, pep_status, id_type, id_number, version')
       .eq('customer_id', id)
       .eq('tenant_id', tenant_id)
       .order('version', { ascending: false })
@@ -267,12 +268,6 @@ export default async function CustomerDetailPage({ params }: Props) {
                   ['Date of Birth', latestData.date_of_birth],
                   ['Nationality', latestData.nationality],
                   ['Country of Residence', latestData.country_of_residence],
-                  ...(canReadEdd ? [
-                    ['Occupation', latestData.occupation],
-                    ['Source of Funds', latestData.source_of_funds],
-                    ['ID Type', latestData.id_type],
-                    ['ID Number', latestData.id_number ? '••••' + latestData.id_number.slice(-4) : null],
-                  ] as [string, string | null][] : []),
                 ] as [string, string | null][]).filter(([, v]) => v != null).map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-2">
                     <dt className="text-gray-400 shrink-0">{label}</dt>
@@ -285,6 +280,40 @@ export default async function CustomerDetailPage({ params }: Props) {
                   </div>
                 )}
               </dl>
+            </div>
+          )}
+
+          {/* Enhanced Due Diligence (gated). Surfaces high-sensitivity
+              fields aggregated from customer_data_versions. Visible to
+              senior_reviewer / mlro / tenant_admin only via the
+              customers:read_edd_data permission. Analysts and onboarding
+              agents do not see this panel. */}
+          {!isCorporate && latestData && canReadEdd && (
+            <div className="bg-white rounded-lg border border-amber-200 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-gray-900">Enhanced Due Diligence</h2>
+                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700">
+                  Restricted
+                </span>
+              </div>
+              <dl className="space-y-2 text-xs">
+                {([
+                  ['Occupation', latestData.occupation],
+                  ['Source of Funds', latestData.source_of_funds],
+                  ['Purpose of Relationship', latestData.purpose_of_relationship],
+                  ['ID Type', latestData.id_type],
+                  ['ID Number', latestData.id_number ? '••••' + latestData.id_number.slice(-4) : null],
+                  ['PEP Status', latestData.pep_status ? 'Politically exposed' : 'Not flagged'],
+                ] as [string, string | null][]).filter(([, v]) => v != null).map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-2">
+                    <dt className="text-gray-400 shrink-0">{label}</dt>
+                    <dd className="font-medium text-gray-900 text-right break-words">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="text-[11px] text-gray-400 mt-3">
+                Visible to MLRO, Senior Reviewer, and Tenant Admin only.
+              </p>
             </div>
           )}
 

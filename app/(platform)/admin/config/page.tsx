@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { TenantConfigClient } from '@/components/admin/tenant-config-client';
+import { TenantConfigForm } from '@/components/admin/tenant-config-form';
+import { getLatestTenantConfig } from '@/modules/admin-config/admin-config.service';
 
 export default async function AdminConfigPage() {
   const { role, tenantId: tenant_id } = await getPageAuth();
@@ -31,6 +33,8 @@ export default async function AdminConfigPage() {
 
   const canEdit = hasPermission(role, 'admin:manage_config');
 
+  const tenantConfigRow = await getLatestTenantConfig(tenant_id);
+
   return (
     <div>
       <div className="mb-6">
@@ -44,6 +48,12 @@ export default async function AdminConfigPage() {
           initialName={tenant?.name ?? ''}
           slug={tenant?.slug ?? ''}
           onboardingUrl={onboardingUrl}
+          canEdit={canEdit}
+        />
+
+        <TenantConfigForm
+          initial={tenantConfigRow.config}
+          initialVersion={tenantConfigRow.version}
           canEdit={canEdit}
         />
 
@@ -66,12 +76,6 @@ export default async function AdminConfigPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Coming soon */}
-        <div className="rounded-lg bg-gray-50 border border-gray-200 p-6 text-center">
-          <p className="text-sm font-medium text-gray-600">Additional configuration options coming soon</p>
-          <p className="text-xs text-gray-400 mt-1">Risk thresholds, notification settings, workflow rules</p>
         </div>
       </div>
     </div>
