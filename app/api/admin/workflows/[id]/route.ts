@@ -30,7 +30,7 @@ export async function PATCH(
     // Verify the workflow belongs to this tenant (or is platform-level for super admin)
     const { data: workflow, error: fetchError } = await supabase
       .from('workflow_definitions')
-      .select('id, name, tenant_id, is_active')
+      .select('id, name, version, tenant_id, is_active')
       .eq('id', id)
       .or(`tenant_id.eq.${auth.user.tenant_id},tenant_id.is.null`)
       .single();
@@ -39,9 +39,43 @@ export async function PATCH(
       return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
     }
 
+    const wf = workflow as {
+      id: string;
+      name: string;
+      version: number;
+      tenant_id: string | null;
+      is_active: boolean;
+    };
+
     // Platform-level workflows (tenant_id IS NULL) can only be toggled by platform_super_admin
-    if ((workflow as { tenant_id: string | null }).tenant_id === null && auth.user.role !== 'platform_super_admin') {
-      return NextResponse.json({ error: 'Only platform super admins can modify platform-level workflows' }, { status: 403 });
+    if (wf.tenant_id === null && auth.user.role !== 'platform_super_admin') {
+      return NextResponse.json(
+        { error: 'Only platform super admins can modify platform-level workflows' },
+        { status: 403 },
+      );
+    }
+
+    // Pre-flight ack check for tenant-scoped activations. Surfaces a clean
+    // 409 instead of relying on the DB trigger to throw a generic error.
+    // Platform workflows are exempt (the trigger also exempts them).
+    if (parsed.data.is_active && !wf.is_active && wf.tenant_id !== null) {
+      const { count } = await supabase
+        .from('workflow_activation_acks')
+        .select('id', { count: 'exact', head: true })
+        .eq('workflow_id', wf.id)
+        .eq('workflow_version', wf.version)
+        .eq('acknowledged_role', 'mlro')
+        .is('revoked_at', null);
+      if (!count) {
+        return NextResponse.json(
+          {
+            error: 'mlro_acknowledgement_required',
+            message:
+              'Workflow activation requires an MLRO acknowledgement for this version. Ask an MLRO to acknowledge before activating.',
+          },
+          { status: 409 },
+        );
+      }
     }
 
     const { error: updateError } = await supabase
@@ -49,7 +83,20 @@ export async function PATCH(
       .update({ is_active: parsed.data.is_active })
       .eq('id', id);
 
-    if (updateError) throw new Error(updateError.message);
+    if (updateError) {
+      // The DB trigger uses ERRCODE='check_violation' for the ack gate.
+      if (updateError.code === '23514') {
+        return NextResponse.json(
+          {
+            error: 'mlro_acknowledgement_required',
+            message:
+              'Workflow activation requires an MLRO acknowledgement for this version.',
+          },
+          { status: 409 },
+        );
+      }
+      throw new Error(updateError.message);
+    }
 
     await audit.emit({
       tenant_id: auth.user.tenant_id,
@@ -61,7 +108,8 @@ export async function PATCH(
       actor_id: auth.user.id,
       actor_role: auth.user.role,
       payload: {
-        workflow_name: (workflow as { name: string }).name,
+        workflow_name: wf.name,
+        workflow_version: wf.version,
         is_active: parsed.data.is_active,
       },
     });
@@ -69,6 +117,7 @@ export async function PATCH(
     return NextResponse.json({ is_active: parsed.data.is_active });
   } catch (err) {
     if (err instanceof Response) return err;
+    console.error('PATCH /api/admin/workflows/[id] error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

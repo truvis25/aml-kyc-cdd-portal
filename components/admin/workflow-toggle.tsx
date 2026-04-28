@@ -28,7 +28,9 @@ export function WorkflowToggle({ workflowId, workflowName, initialActive, isPlat
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? 'Failed to update workflow');
+        // Prefer the human-readable `message` (e.g. ack-required guidance);
+        // fall back to the error code or a generic string.
+        throw new Error(data.message ?? data.error ?? 'Failed to update workflow');
       }
       setIsActive((v) => !v);
       setConfirming(false);
