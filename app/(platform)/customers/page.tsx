@@ -72,7 +72,10 @@ export default async function CustomersPage({ searchParams }: Props) {
       .from('customer_data_versions')
       .select('customer_id')
       .eq('tenant_id', tenant_id)
-      .ilike('full_name', `%${searchTerm.replace(/[%_]/g, '\\$&')}%`)
+      // Escape LIKE metacharacters in user input. Backslash MUST come first
+      // in the character class so any literal backslash the user typed gets
+      // escaped along with `%` and `_` (CodeQL: incomplete string escaping).
+      .ilike('full_name', `%${searchTerm.replace(/[\\%_]/g, '\\$&')}%`)
       .limit(500);
     searchCustomerIds = [
       ...new Set(((nameMatches ?? []) as Array<{ customer_id: string }>).map((r) => r.customer_id)),
