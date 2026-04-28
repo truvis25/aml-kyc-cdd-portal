@@ -5,6 +5,7 @@ import { assertPermission } from '@/modules/auth/rbac';
 import { createAdminClient } from '@/lib/supabase/admin';
 import * as audit from '@/modules/audit/audit.service';
 import { AuditEntityType, AuditEventType } from '@/lib/constants/events';
+import { log } from '@/lib/logger';
 
 const ResolveSchema = z.object({
   resolution: z.enum(['confirmed_match', 'false_positive', 'escalated']),
@@ -73,7 +74,7 @@ export async function POST(
     return NextResponse.json({ resolution: data }, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/screening/hits/[hitId]/resolve error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/screening/hits/[hitId]/resolve error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

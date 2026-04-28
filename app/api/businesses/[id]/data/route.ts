@@ -3,6 +3,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { submitBusinessData, getBusiness } from '@/modules/kyb/kyb.service';
 import { KybBusinessSchema } from '@/lib/validations/kyb';
+import { log } from '@/lib/logger';
 
 export async function PATCH(
   request: NextRequest,
@@ -31,7 +32,7 @@ export async function PATCH(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg.includes('not found')) return NextResponse.json({ error: 'Business not found' }, { status: 404 });
-    console.error('PATCH /api/businesses/[id]/data error:', msg);
+    log.error('PATCH /api/businesses/[id]/data error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -52,7 +53,7 @@ export async function GET(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg.includes('not found')) return NextResponse.json({ error: 'Business not found' }, { status: 404 });
-    console.error('GET /api/businesses/[id]/data error:', msg);
+    log.error('GET /api/businesses/[id]/data error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

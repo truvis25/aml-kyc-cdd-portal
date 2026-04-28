@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { log } from '@/lib/logger';
 
 interface Props {
   error: Error & { digest?: string };
@@ -11,8 +12,8 @@ interface Props {
 export default function AuthError({ error, reset }: Props) {
   useEffect(() => {
     // No PII expected in auth-flow errors, but guard against future regressions
-    // by never logging the raw error.message — the digest is enough.
-    console.error('Auth flow error:', { name: error.name, digest: error.digest });
+    // by routing through the safe logger.
+    log.error('Auth flow error', error, { digest: error.digest });
   }, [error]);
 
   return (

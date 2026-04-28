@@ -10,6 +10,7 @@ import {
   manageUserAccess,
 } from '@/modules/admin-users/admin-users.service';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { log } from '@/lib/logger';
 
 const ManageUserSchema = z.discriminatedUnion('action', [
   z.object({
@@ -78,10 +79,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: err.message }, { status: 409 });
     }
 
-    console.error(
-      'PATCH /api/admin/users/[userId] error:',
-      err instanceof Error ? err.message : 'Unknown error'
-    );
+    log.error('PATCH /api/admin/users/[userId] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

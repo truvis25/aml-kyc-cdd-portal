@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { submitStep } from '@/modules/onboarding/onboarding.service';
+import { log } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -27,7 +28,7 @@ export async function POST(
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg.includes('not found')) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     if (msg.includes('already complete')) return NextResponse.json({ error: 'Session already complete' }, { status: 409 });
-    console.error('POST /api/sessions/[id]/steps/[stepId] error:', msg);
+    log.error('POST /api/sessions/[id]/steps/[stepId] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

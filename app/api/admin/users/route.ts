@@ -13,6 +13,7 @@ import {
   canManageCrossTenantUsers,
 } from '@/lib/constants/roles';
 import { listManagedUsers } from '@/modules/admin-users/admin-users.service';
+import { log } from '@/lib/logger';
 
 const InviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -42,7 +43,7 @@ export async function GET() {
     if (err instanceof PermissionDeniedError) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    console.error('GET /api/admin/users error:', err instanceof Error ? err.message : 'Unknown error');
+    log.error('GET /api/admin/users error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     if (inviteError || !inviteData.user) {
       // Do not leak internal error details
-      console.error('Invite error:', inviteError?.message);
+      log.error('Invite error', inviteError);
       return NextResponse.json(
         { error: 'Failed to send invitation. Please try again.' },
         { status: 500 }
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingUserError) {
-      console.error('User lookup error:', existingUserError.message);
+      log.error('User lookup error', existingUserError);
       return NextResponse.json(
         { error: 'Failed to validate existing user record. Please try again.' },
         { status: 500 }
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (userUpsertError) {
-      console.error('User upsert error:', userUpsertError.message);
+      log.error('User upsert error', userUpsertError);
       return NextResponse.json(
         { error: 'Failed to create user record. Please try again.' },
         { status: 500 }
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingRoleError) {
-      console.error('Role lookup error:', existingRoleError.message);
+      log.error('Role lookup error', existingRoleError);
       return NextResponse.json(
         { error: 'Failed to validate role assignment. Please try again.' },
         { status: 500 }
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (roleInsertError) {
-        console.error('Role insert error:', roleInsertError.message);
+        log.error('Role insert error', roleInsertError);
         return NextResponse.json(
           { error: 'Failed to assign role. Please try again.' },
           { status: 500 }
@@ -225,7 +226,7 @@ export async function POST(request: NextRequest) {
     if (err instanceof PermissionDeniedError) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    console.error('Invite handler error:', err instanceof Error ? err.message : 'Unknown error');
+    log.error('Invite handler error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

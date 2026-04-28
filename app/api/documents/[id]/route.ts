@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { getDocumentWithUrl, confirmUpload } from '@/modules/documents/documents.service';
+import { log } from '@/lib/logger';
 
 export async function GET(
   _request: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg === 'Document not found') return NextResponse.json({ error: msg }, { status: 404 });
-    console.error('GET /api/documents/[id] error:', msg);
+    log.error('GET /api/documents/[id] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -39,7 +40,7 @@ export async function POST(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg === 'Document not found') return NextResponse.json({ error: msg }, { status: 404 });
-    console.error('POST /api/documents/[id] error:', msg);
+    log.error('POST /api/documents/[id] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

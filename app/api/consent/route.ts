@@ -3,6 +3,7 @@ import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { captureConsent } from '@/modules/consent/consent.service';
 import { ConsentSchema } from '@/lib/validations/consent';
+import { log } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ record }, { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('POST /api/consent error:', err instanceof Error ? err.message : err);
+    log.error('POST /api/consent error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

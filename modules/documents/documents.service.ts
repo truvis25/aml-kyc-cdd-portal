@@ -12,6 +12,7 @@ import {
 } from './documents.repository';
 import type { Document, SignedUploadUrl, SignedDownloadUrl } from './documents.types';
 import type { UploadUrlRequest } from '@/lib/validations/documents';
+import { log } from '@/lib/logger';
 
 export async function initiateUpload(
   params: UploadUrlRequest,
@@ -87,7 +88,7 @@ async function invokeComputeDocumentHash(
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) {
-    console.warn('[documents] compute-document-hash skipped: env not configured');
+    log.warn('[documents] compute-document-hash skipped: env not configured');
     return;
   }
 
@@ -105,7 +106,7 @@ async function invokeComputeDocumentHash(
     }).finally(() => clearTimeout(timer));
   } catch (err) {
     // Don't bubble — hash compute is a background concern.
-    console.warn('[documents] compute-document-hash invoke failed:', err instanceof Error ? err.message : err);
+    log.warn('[documents] compute-document-hash invoke failed', { err: err instanceof Error ? err.name : 'unknown' });
   }
 }
 

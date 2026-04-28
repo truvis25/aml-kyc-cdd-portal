@@ -114,6 +114,37 @@ export async function recordTenantConfigVersion(params: UpdateParams): Promise<T
   };
 }
 
+export async function listTenantConfigVersions(
+  tenant_id: string,
+  limit = 20,
+): Promise<TenantConfigRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('tenant_config')
+    .select('id, tenant_id, version, config, notes, created_by, created_at')
+    .eq('tenant_id', tenant_id)
+    .order('version', { ascending: false })
+    .limit(limit);
+
+  return ((data ?? []) as Array<{
+    id: string;
+    tenant_id: string;
+    version: number;
+    config: TenantConfig;
+    notes: string | null;
+    created_by: string | null;
+    created_at: string;
+  }>).map((row) => ({
+    config_id: row.id,
+    tenant_id: row.tenant_id,
+    version: row.version,
+    config: mergeWithDefaults(row.config),
+    notes: row.notes,
+    created_by: row.created_by,
+    created_at: row.created_at,
+  }));
+}
+
 /**
  * Shallow-deep merge: every top-level group falls back to defaults if a
  * field is missing. Keeps older config rows readable when new fields are

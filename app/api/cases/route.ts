@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { getCaseList } from '@/modules/cases/cases.service';
+import { log } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ cases });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('GET /api/cases error:', err instanceof Error ? err.message : err);
+    log.error('GET /api/cases error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

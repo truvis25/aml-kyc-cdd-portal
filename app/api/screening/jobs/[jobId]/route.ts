@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
 import { getScreeningResults } from '@/modules/screening/screening.service';
+import { log } from '@/lib/logger';
 
 export async function GET(
   _request: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
     if (err instanceof Response) return err;
     const msg = err instanceof Error ? err.message : 'Internal server error';
     if (msg.includes('not found')) return NextResponse.json({ error: msg }, { status: 404 });
-    console.error('GET /api/screening/jobs/[jobId] error:', msg);
+    log.error('GET /api/screening/jobs/[jobId] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

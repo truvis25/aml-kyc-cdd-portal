@@ -4,7 +4,11 @@ import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { TenantConfigClient } from '@/components/admin/tenant-config-client';
 import { TenantConfigForm } from '@/components/admin/tenant-config-form';
-import { getLatestTenantConfig } from '@/modules/admin-config/admin-config.service';
+import { TenantConfigHistory } from '@/components/admin/tenant-config-history';
+import {
+  getLatestTenantConfig,
+  listTenantConfigVersions,
+} from '@/modules/admin-config/admin-config.service';
 
 export default async function AdminConfigPage() {
   const { role, tenantId: tenant_id } = await getPageAuth();
@@ -34,6 +38,25 @@ export default async function AdminConfigPage() {
   const canEdit = hasPermission(role, 'admin:manage_config');
 
   const tenantConfigRow = await getLatestTenantConfig(tenant_id);
+  const tenantConfigVersions = await listTenantConfigVersions(tenant_id, 20);
+
+  // Resolve author display names for the history list (versions can have a
+  // null created_by for system-emitted rows).
+  const authorIds = [
+    ...new Set(
+      tenantConfigVersions.map((v) => v.created_by).filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const authorById: Record<string, string> = {};
+  if (authorIds.length > 0) {
+    const { data: usersRows } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .in('id', authorIds);
+    for (const u of (usersRows ?? []) as Array<{ id: string; display_name: string | null }>) {
+      authorById[u.id] = u.display_name ?? u.id.slice(0, 8);
+    }
+  }
 
   return (
     <div>
@@ -56,6 +79,8 @@ export default async function AdminConfigPage() {
           initialVersion={tenantConfigRow.version}
           canEdit={canEdit}
         />
+
+        <TenantConfigHistory versions={tenantConfigVersions} authorById={authorById} />
 
         {/* Additional metadata */}
         <div className="rounded-lg bg-white border border-gray-200 shadow-sm">

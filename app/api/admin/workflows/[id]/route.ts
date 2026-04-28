@@ -5,6 +5,7 @@ import { assertPermission } from '@/modules/auth/rbac';
 import { createClient } from '@/lib/supabase/server';
 import * as audit from '@/modules/audit/audit.service';
 import { AuditEntityType, AuditEventType } from '@/lib/constants/events';
+import { log } from '@/lib/logger';
 
 const WorkflowUpdateSchema = z.object({
   is_active: z.boolean(),
@@ -117,7 +118,7 @@ export async function PATCH(
     return NextResponse.json({ is_active: parsed.data.is_active });
   } catch (err) {
     if (err instanceof Response) return err;
-    console.error('PATCH /api/admin/workflows/[id] error:', err instanceof Error ? err.message : err);
+    log.error('PATCH /api/admin/workflows/[id] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
