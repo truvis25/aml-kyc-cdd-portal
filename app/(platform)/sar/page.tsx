@@ -2,6 +2,13 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { assertPermission } from '@/modules/auth/rbac';
+import { Pagination } from '@/components/shared/pagination';
+
+const PAGE_SIZE = 50;
+
+interface SearchParams {
+  page?: string;
+}
 
 interface SarRow {
   id: string;
@@ -23,12 +30,20 @@ const STATUS_BADGE: Record<string, string> = {
   closed: 'bg-gray-50 border-gray-200 text-gray-600',
 };
 
-export default async function SARRegisterPage() {
+interface Props {
+  searchParams: Promise<SearchParams>;
+}
+
+export default async function SARRegisterPage({ searchParams }: Props) {
   const { role, tenantId } = await getPageAuth();
   // Gate: only roles that can flag SAR are entitled to see the SAR register.
   // Per ROLES_DASHBOARDS_FLOWS.md §7, analysts and senior reviewers are intentionally
   // blind to SAR status (tipping-off prevention).
   assertPermission(role, 'cases:flag_sar');
+
+  const sp = await searchParams;
+  const currentPage = Math.max(1, parseInt(sp.page ?? '1', 10));
+  const offset = (currentPage - 1) * PAGE_SIZE;
 
   const supabase = await createClient();
 
@@ -38,9 +53,11 @@ export default async function SARRegisterPage() {
     .eq('tenant_id', tenantId)
     .eq('sar_flagged', true)
     .order('opened_at', { ascending: false })
-    .limit(100);
+    .range(offset, offset + PAGE_SIZE);
 
-  const cases = (rawCases ?? []) as unknown as (SarRow & { sar_flagged: boolean })[];
+  const allRows = (rawCases ?? []) as unknown as (SarRow & { sar_flagged: boolean })[];
+  const hasNextPage = allRows.length > PAGE_SIZE;
+  const cases = hasNextPage ? allRows.slice(0, PAGE_SIZE) : allRows;
   const open = cases.filter((c) => c.status !== 'closed').length;
   const closed = cases.filter((c) => c.status === 'closed').length;
 
@@ -160,6 +177,15 @@ export default async function SARRegisterPage() {
           </table>
         </div>
       )}
+
+      <Pagination
+        basePath="/sar"
+        params={new URLSearchParams()}
+        currentPage={currentPage}
+        rowsOnPage={cases.length}
+        pageSize={PAGE_SIZE}
+        hasNextPage={hasNextPage}
+      />
 
       <p className="mt-6 text-xs text-gray-400">
         SAR visibility is restricted to MLRO and Tenant Admin to prevent tipping-off (PRD §7).

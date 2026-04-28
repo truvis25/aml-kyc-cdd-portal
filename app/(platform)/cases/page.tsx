@@ -3,14 +3,18 @@ import { createClient } from '@/lib/supabase/server';
 import { CaseFilters } from '@/components/cases/case-filters';
 import { CaseRealtime } from '@/components/cases/case-realtime';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
+import { Pagination } from '@/components/shared/pagination';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { hasPermission } from '@/modules/auth/rbac';
 import type { RiskBand } from '@/modules/risk/risk.types';
+
+const PAGE_SIZE = 50;
 
 interface SearchParams {
   queue?: string;
   status?: string;
   customer_id?: string;
+  page?: string;
 }
 
 interface Props {
@@ -48,14 +52,18 @@ export default async function CasesPage({ searchParams }: Props) {
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
 
-  // Build query — only roles with cases:read_all see all cases; others see only assigned
+  const currentPage = Math.max(1, parseInt(filters.page ?? '1', 10));
+  const offset = (currentPage - 1) * PAGE_SIZE;
+
+  // Build query — only roles with cases:read_all see all cases; others see only assigned.
+  // Fetch PAGE_SIZE + 1 to detect a next page without a separate count query.
   const canReadAll = hasPermission(role, 'cases:read_all');
   let q = supabase
     .from('cases')
     .select('id, customer_id, status, queue, opened_at, risk_assessment_id, assigned_to')
     .eq('tenant_id', tenant_id)
     .order('opened_at', { ascending: false })
-    .limit(50);
+    .range(offset, offset + PAGE_SIZE);
 
   if (!canReadAll) q = q.eq('assigned_to', userId);
   if (filters.queue) q = q.eq('queue', filters.queue);
@@ -63,7 +71,9 @@ export default async function CasesPage({ searchParams }: Props) {
   if (filters.customer_id) q = q.eq('customer_id', filters.customer_id);
 
   const { data: rawCases } = await q;
-  const cases = (rawCases ?? []) as unknown as CaseListRow[];
+  const allCases = (rawCases ?? []) as unknown as CaseListRow[];
+  const hasNextPage = allCases.length > PAGE_SIZE;
+  const cases = hasNextPage ? allCases.slice(0, PAGE_SIZE) : allCases;
 
   // Batch fetch risk assessments, customer names, and assigned officer names
   const riskIds = [...new Set(cases.map((c) => c.risk_assessment_id).filter(Boolean))] as string[];
@@ -191,6 +201,21 @@ export default async function CasesPage({ searchParams }: Props) {
           </table>
         </div>
       )}
+
+      <Pagination
+        basePath="/cases"
+        params={
+          new URLSearchParams({
+            ...(filters.queue ? { queue: filters.queue } : {}),
+            ...(filters.status ? { status: filters.status } : {}),
+            ...(filters.customer_id ? { customer_id: filters.customer_id } : {}),
+          })
+        }
+        currentPage={currentPage}
+        rowsOnPage={cases.length}
+        pageSize={PAGE_SIZE}
+        hasNextPage={hasNextPage}
+      />
     </div>
   );
 }
