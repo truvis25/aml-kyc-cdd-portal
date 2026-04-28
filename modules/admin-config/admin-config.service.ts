@@ -148,9 +148,9 @@ export async function listTenantConfigVersions(
 /**
  * Shallow-deep merge: every top-level group falls back to defaults if a
  * field is missing. Keeps older config rows readable when new fields are
- * added in later releases.
+ * added in later releases. Exported for unit testing.
  */
-function mergeWithDefaults(stored: Partial<TenantConfig> | null | undefined): TenantConfig {
+export function mergeWithDefaults(stored: Partial<TenantConfig> | null | undefined): TenantConfig {
   const s = stored ?? {};
   return {
     modules: { ...DEFAULT_TENANT_CONFIG.modules, ...(s.modules ?? {}) },

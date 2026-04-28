@@ -44,8 +44,11 @@ export async function middleware(request: NextRequest) {
   const isOnboardingPath = /^\/[^/]+\/onboard/.test(pathname);
   // Allow API routes that are webhook receivers (no JWT required — validated by signature)
   const isWebhookPath = pathname.startsWith('/api/webhooks/');
+  // Liveness probe — public, no PII, no tenant state. Used by external
+  // monitors and the on-call runbook (docs/RUNBOOK.md §2.1).
+  const isHealthPath = pathname === '/api/health';
 
-  if (isPublicPath || isOnboardingPath || isWebhookPath) {
+  if (isPublicPath || isOnboardingPath || isWebhookPath || isHealthPath) {
     return NextResponse.next();
   }
 
