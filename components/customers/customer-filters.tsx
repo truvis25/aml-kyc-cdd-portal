@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const STATUSES = [
@@ -21,6 +22,26 @@ const TYPES = [
 export function CustomerFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') ?? '');
+
+  // Push search updates with a small debounce so we don't refetch on every
+  // keystroke. URL stays the source of truth — paging / filters survive.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (search.trim()) {
+        params.set('q', search.trim());
+      } else {
+        params.delete('q');
+      }
+      // Clear page when search changes so we don't show "page 4" of the new
+      // result set.
+      params.delete('page');
+      router.push(`/customers?${params.toString()}`);
+    }, 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function update(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -29,11 +50,19 @@ export function CustomerFilters() {
     } else {
       params.delete(key);
     }
+    params.delete('page');
     router.push(`/customers?${params.toString()}`);
   }
 
   return (
-    <div className="flex gap-3 flex-wrap">
+    <div className="flex gap-3 flex-wrap items-center">
+      <input
+        type="search"
+        placeholder="Search by name…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="h-9 w-56 rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
       <select
         value={searchParams.get('type') ?? ''}
         onChange={(e) => update('type', e.target.value)}
