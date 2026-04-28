@@ -1,13 +1,11 @@
 import type { RaiVars } from '../types';
+import { htmlEscape as escape } from './escape';
 
 export interface RenderedEmail {
   subject: string;
   text: string;
   html: string;
 }
-
-const escape = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export function renderRaiEmail(vars: RaiVars): RenderedEmail {
   const { tenantName, customerName, infoRequested, documentsRequired, statusUrl } = vars;

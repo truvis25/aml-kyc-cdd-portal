@@ -1,8 +1,6 @@
 import type { DecisionVars } from '../types';
 import type { RenderedEmail } from './rai';
-
-const escape = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+import { htmlEscape as escape } from './escape';
 
 export function renderRejectionEmail(vars: DecisionVars): RenderedEmail {
   const { tenantName, customerName, statusUrl } = vars;
