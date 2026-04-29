@@ -10,24 +10,24 @@ const STATS: Stat[] = [
     numeral: '5',
     unit: 'M',
     label: 'AED — max fine per violation',
-    hint: 'Federal Decree-Law No. 10 of 2025',
+    hint: 'Federal Decree-Law No. 10 of 2025: the cost of being unprepared',
   },
   {
     numeral: '14',
     unit: 'd',
-    label: 'From sign-up to live tenant',
-    hint: 'Including sandbox seed data',
+    label: 'From sign-up to live, production-ready tenant',
+    hint: 'Including Bahrain data residency and audit chain',
   },
   {
     numeral: '0',
     label: 'Bytes of customer PII leaving the GCC',
-    hint: 'Bahrain region (me1)',
+    hint: 'Bahrain region (me1) — data residency guaranteed',
   },
   {
     numeral: '100',
     unit: '%',
-    label: 'Of compliance actions hash-chained',
-    hint: 'Append-only, append-verified',
+    label: 'Of compliance decisions stored in immutable audit',
+    hint: 'Hash-chained, tamper-detectable, 10-year retention',
   },
 ];
 

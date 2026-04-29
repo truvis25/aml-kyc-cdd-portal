@@ -61,18 +61,18 @@ export default function LandingPage() {
             <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line lg:col-span-7">
               <ProblemPoint
                 index="A"
-                title="Fines start at AED 10,000."
-                body="And run to AED 5 million per violation. Excel and email are not a control."
+                title="Fines range from AED 10,000 to AED 5 million per violation."
+                body="The regulator&rsquo;s first question: show me your evidence. A spreadsheet can&rsquo;t prove who decided what, when, or why. Email threads are not a control."
               />
               <ProblemPoint
                 index="B"
-                title="Buyers off the shelf are built for engineers."
-                body="Most AML platforms sell APIs to product teams. The MLRO is left building the workflow on top."
+                title="IDV and screening vendors sell to engineers."
+                body="Your MLRO is left wiring them together in Zapier and Slack. There&rsquo;s no case queue, no role-aware approval gate, no forensic audit chain."
               />
               <ProblemPoint
                 index="C"
-                title="The audit chain has to defend itself."
-                body="Inspectors ask for evidence two years later. If you can&rsquo;t prove what was decided and why, you lose the argument."
+                title="Two years from now, an inspector will ask: prove your decision."
+                body="If your evidence is in email threads or spreadsheet comments, you lose. If you have an immutable, timestamped, hash-chained audit trail, you win."
               />
             </div>
           </div>
