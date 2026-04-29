@@ -22,34 +22,38 @@ const PRINCIPLES: { title: string; body: string; detail?: string[] }[] = [
   {
     title: 'Tenant isolation at the database',
     body:
-      'Every tenant-scoped table has Row Level Security enabled. Tenancy is enforced in Postgres, not in our application code.',
+      'Data isolation is enforced in Postgres via Row Level Security, not in application code. No configuration error or code bug can allow one tenant to see another's data.',
     detail: [
-      'Row Level Security on all tenant tables — no exceptions',
-      'JWT enrichment via the Postgres custom_access_token_hook',
-      'Service-role client confined to API route handlers; ESLint blocks misuse',
-      'pgTAP tests on every RLS policy in CI',
+      'Row Level Security on every tenant table — enforced by database trigger',
+      'JWT enrichment via Postgres custom_access_token_hook embeds tenant_id in token',
+      'Service-role client confined to API route handlers only; ESLint blocks misuse in components',
+      'pgTAP integration tests verify RLS on every policy in CI',
+      'Cross-tenant query attempt hits database policy denial, not app logic',
     ],
   },
   {
     title: 'Append-only, hash-chained audit',
     body:
-      'audit_log records every consequential action. UPDATE and DELETE are blocked at the database by trigger. Rows are hash-chained so tampering is detectable.',
+      'Every compliance action lands in an immutable ledger. UPDATE and DELETE are forbidden at the database layer. Rows are cryptographically hash-chained so any tampering is immediately detectable. When a regulator audits your systems, the chain is unbroken.',
     detail: [
-      'Trigger blocks UPDATE and DELETE on audit_log',
-      'Customer data versioning — never a bare UPDATE on customer fields',
-      'IP addresses masked to /24 before storage',
-      'JSON-L export for regulator handover',
+      'Database trigger blocks UPDATE and DELETE on audit_log — no exceptions',
+      'Customer data versioning — every field change is a new row, never overwritten',
+      'SHA-256 hash chain: each row commits to the previous row',
+      'Tampering detection: SHA-256 hash change breaks the chain visibly',
+      'IP addresses masked to /24 before storage — geographic only',
+      'JSON-L export with full chain for regulator handover',
     ],
   },
   {
-    title: 'Authentication and MFA',
+    title: 'Authentication and role-based access control',
     body:
-      'Supabase Auth with email + password and TOTP MFA. MFA is required for MLRO, Compliance Officer and Tenant Admin roles.',
+      'TOTP MFA is required for any user who can approve cases or access SAR queue. RBAC is enforced at two layers — JWT middleware and API route — so no privilege escalation is possible.',
     detail: [
-      'TOTP MFA enforced for privileged roles',
-      'Session cookies are httpOnly + Secure; CSRF safe by default in App Router actions',
-      'RBAC checks at two layers: middleware (JWT) and API route (assertPermission)',
-      'Failed sign-in attempts captured in audit_log',
+      'TOTP MFA enforced for MLRO, Compliance Officer, Tenant Admin roles',
+      'Session cookies are httpOnly + Secure; CSRF safe by default',
+      'RBAC checked twice: JWT middleware (deny fast) then API route (deny late)',
+      'Failed sign-in attempts and permission denials logged to audit_log',
+      'Token revocation on MFA disable or role change',
     ],
   },
   {
@@ -101,12 +105,10 @@ export default function SecurityPage() {
             Security &amp; Architecture
           </p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-            Built like the regulator is reading the logs.
+            Engineered for regulatory inspection.
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-700">
-            TruVis is engineered around the controls UAE regulators expect from a compliance
-            platform — data residency, tenant isolation, audit immutability, MFA and least-privilege
-            access. Here is how each is enforced.
+            When Federal Decree-Law No. 10 of 2025 requires data residency, audit immutability, and four-eyes enforcement, TruVis is built to prove it. Every architectural decision is oriented toward forensic defensibility.
           </p>
         </div>
       </header>
@@ -173,9 +175,8 @@ export default function SecurityPage() {
       </div>
 
       <CTASection
-        title="Want a deeper architecture review?"
-        body="Bring your security questionnaire. We will walk through controls, RLS policies and the audit chain on a 30-minute call."
-        primaryLabel="Request a security review"
+        title="Ready to audit the architecture?"
+        body="Bring your security questionnaire and the Federal Decree-Law compliance checklist. We will walk through controls, RLS policies, the hash-chained audit and data residency on a 30-minute call."
       />
     </>
   );
