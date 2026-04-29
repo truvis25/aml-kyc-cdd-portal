@@ -21,3 +21,69 @@ body {
 .input-field {
   @apply flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50;
 }
+
+/* Marketing surface — warm cream palette + serif display, scoped so the
+   platform/auth/onboarding routes are unaffected. */
+.marketing-surface {
+  --tv-cream:        #F4EFE6;
+  --tv-cream-deep:   #ECE4D2;
+  --tv-paper:        #FBF8F1;
+  --tv-ink:          #1A1A1A;
+  --tv-ink-soft:     #2E2A26;
+  --tv-mute:         #6B6259;
+  --tv-line:         #E2D8C5;
+  --tv-line-soft:    #EDE5D2;
+  --tv-copper:       #C2502A;
+  --tv-copper-deep:  #9C3E1F;
+
+  background-color: var(--tv-cream);
+  color: var(--tv-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+.marketing-surface .font-display {
+  font-family: var(--font-display), ui-serif, Georgia, "Times New Roman", serif;
+  font-feature-settings: "liga", "dlig";
+  letter-spacing: -0.01em;
+}
+
+.marketing-surface .text-ink        { color: var(--tv-ink); }
+.marketing-surface .text-ink-soft   { color: var(--tv-ink-soft); }
+.marketing-surface .text-mute       { color: var(--tv-mute); }
+.marketing-surface .text-copper     { color: var(--tv-copper); }
+.marketing-surface .bg-cream        { background-color: var(--tv-cream); }
+.marketing-surface .bg-cream-deep   { background-color: var(--tv-cream-deep); }
+.marketing-surface .bg-paper        { background-color: var(--tv-paper); }
+.marketing-surface .bg-ink          { background-color: var(--tv-ink); }
+.marketing-surface .bg-copper       { background-color: var(--tv-copper); }
+.marketing-surface .border-line     { border-color: var(--tv-line); }
+.marketing-surface .border-line-soft{ border-color: var(--tv-line-soft); }
+
+.marketing-surface .btn-primary {
+  background-color: var(--tv-ink);
+  color: var(--tv-paper);
+  transition: background-color 120ms ease;
+}
+.marketing-surface .btn-primary:hover {
+  background-color: #000;
+}
+.marketing-surface .btn-secondary {
+  background-color: transparent;
+  color: var(--tv-ink);
+  border: 1px solid var(--tv-line);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.marketing-surface .btn-secondary:hover {
+  background-color: var(--tv-paper);
+  border-color: #D5C9B0;
+}
+
+.marketing-surface .copper-rule {
+  background-color: var(--tv-copper);
+  display: inline-block;
+  height: 1px;
+  width: 1.75rem;
+  vertical-align: middle;
+}

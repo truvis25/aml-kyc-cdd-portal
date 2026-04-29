@@ -2,38 +2,43 @@ import Link from 'next/link';
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden border-b border-gray-200 bg-gradient-to-b from-white to-blue-50/40">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28 lg:px-8">
-        <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true" />
-            Bahrain-resident · UAE-aligned
-          </span>
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-            The MLRO&apos;s compliance workbench. Built for UAE.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-gray-700">
-            Onboard, screen, score and decide — with hash-chained audit on every action.
-            TruVis is the case-centric AML/KYC platform compliance officers actually want to use.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/book-demo"
-              className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-            >
-              Book a 20-min demo
-            </Link>
-            <Link
-              href="/product"
-              className="rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-50"
-            >
-              See product tour
-            </Link>
-          </div>
-          <p className="mt-4 text-sm text-gray-500">
-            No credit card. Sandbox tenant ready in under 10 minutes.
-          </p>
+    <section className="relative overflow-hidden bg-cream">
+      <div className="mx-auto max-w-6xl px-6 pb-24 pt-20 lg:pb-32 lg:pt-28 lg:px-10">
+        <div className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+          <span className="copper-rule" aria-hidden="true" />
+          <span>AML / KYC / CDD · Built in the UAE</span>
         </div>
+
+        <h1 className="font-display mt-8 max-w-[18ch] text-[44px] leading-[1.04] text-ink sm:text-[64px] lg:text-[80px]">
+          The compliance
+          <br className="hidden sm:block" /> workbench your <em className="not-italic text-copper">MLRO</em> will actually open in the morning.
+        </h1>
+
+        <p className="mt-7 max-w-xl text-[17px] leading-relaxed text-ink-soft">
+          Onboard, screen, score and decide — with a hash-chained audit trail on every action.
+          Case-centric, role-aware, and resident in Bahrain. The AML platform that&rsquo;s built
+          for the people on the hook.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          <Link
+            href="/book-demo"
+            className="btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-[15px] font-medium"
+          >
+            Book a 20-min demo
+            <span aria-hidden="true">→</span>
+          </Link>
+          <Link
+            href="/product"
+            className="btn-secondary inline-flex items-center rounded-full px-6 py-3 text-[15px] font-medium"
+          >
+            Take the product tour
+          </Link>
+        </div>
+
+        <p className="mt-5 text-[13px] text-mute">
+          No credit card. Sandbox tenant ready in under 10 minutes.
+        </p>
       </div>
     </section>
   );
