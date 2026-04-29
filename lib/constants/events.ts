@@ -53,6 +53,13 @@ export enum AuditEventType {
   CASE_SAR_FLAGGED = 'case.sar_flagged',
   CASE_SAR_UNFLAGGED = 'case.sar_unflagged',
 
+  // SAR (Suspicious Activity Report) events — formal report lifecycle
+  SAR_DRAFTED = 'sar.drafted',
+  SAR_UPDATED = 'sar.updated',
+  SAR_EXPORTED = 'sar.exported',
+  SAR_SUBMITTED = 'sar.submitted',
+  SAR_ACKNOWLEDGED = 'sar.acknowledged',
+
   // Approval events
   APPROVAL_GRANTED = 'approval.granted',
   APPROVAL_REJECTED = 'approval.rejected',
@@ -95,4 +102,5 @@ export enum AuditEntityType {
   BUSINESS = 'businesses',
   TENANT_CONFIG = 'tenant_config',
   WORKFLOW_DEFINITION = 'workflow_definitions',
+  SAR_REPORT = 'sar_reports',
 }
