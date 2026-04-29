@@ -15,52 +15,6 @@ import { ResourceTeaser } from '@/components/marketing/ResourceTeaser';
 import { TrustBadges } from '@/components/marketing/TrustBadges';
 import { CTASection } from '@/components/marketing/CTASection';
 
-type Pillar = {
-  numeral: string;
-  title: string;
-  tagline: string;
-  bullets: string[];
-};
-
-const PILLARS: Pillar[] = [
-  {
-    numeral: '01',
-    title: 'Onboard',
-    tagline: 'Your customers see your branding. Your auditor sees the complete chain.',
-    bullets: [
-      'Tenant-branded portal, multi-step, resumable flows',
-      'KYC-individual and KYB-corporate; every step timestamped with IP',
-      'Sumsub IDV (liveness, OCR, face match) embedded in the workflow',
-      'Document upload to private storage with 15-minute signed URLs',
-      'Consent capture with version, timestamp and IP — GDPR evidence in one row',
-    ],
-  },
-  {
-    numeral: '02',
-    title: 'Decide',
-    tagline: 'An approval chain your auditor will recognize.',
-    bullets: [
-      '3-D risk: geography, PEP exposure, screening hits surface real signals',
-      'Role-aware queues: Analyst → Senior Reviewer → MLRO approval gate',
-      'Four-eyes enforcement: case can\'t close without two signatures',
-      'SAR filing is a first-class action, visible only to MLRO and Compliance Officer',
-      'Every decision is recorded: who approved, when, and what was the evidence',
-    ],
-  },
-  {
-    numeral: '03',
-    title: 'Prove',
-    tagline: 'When a regulator inspects, you have the chain.',
-    bullets: [
-      'Append-only, hash-chained audit log: altering a row breaks the chain and is detectable',
-      'Customer data versioning: no bare UPDATEs, only append-only rows',
-      'goAML XML export bound to audit row with SHA-256 hash for integrity',
-      'Bahrain-resident storage (me1); no PII in application logs',
-      '10-year audit retention, JSON-L export for regulator handover',
-    ],
-  },
-];
-
 export default function LandingPage() {
   return (
     <>
