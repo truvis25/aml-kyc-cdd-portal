@@ -152,8 +152,9 @@ export async function handleApplicantReviewedWebhook(input: {
       .single();
 
     if (session) {
+      const typedSession = session as { tenant_id: string };
       await emit({
-        tenant_id: (session as any).tenant_id as string,
+        tenant_id: typedSession.tenant_id,
         event_type: AuditEventType.KYC_RESULT_RECEIVED,
         entity_type: AuditEntityType.SESSION,
         entity_id: input.externalUserId,
@@ -178,8 +179,9 @@ export async function handleApplicantReviewedWebhook(input: {
         .single();
 
       if (session) {
+        const typedSession = session as { tenant_id: string };
         await emit({
-          tenant_id: (session as any).tenant_id as string,
+          tenant_id: typedSession.tenant_id,
           event_type: AuditEventType.WEBHOOK_FAILED,
           entity_type: AuditEntityType.SESSION,
           entity_id: input.externalUserId,
