@@ -1,54 +1,26 @@
 import Link from 'next/link';
 import { Hero } from '@/components/marketing/Hero';
-import { PillarCard, type Pillar } from '@/components/marketing/PillarCard';
+import { StatsBanner } from '@/components/marketing/StatsBanner';
+import { ProductSection } from '@/components/marketing/ProductSection';
+import {
+  OnboardingVisual,
+  DecideVisual,
+  ProveVisual,
+} from '@/components/marketing/ProductVisuals';
+import { IndustryGrid } from '@/components/marketing/IndustryGrid';
+import { IntegrationsStrip } from '@/components/marketing/IntegrationsStrip';
+import { Differentiators } from '@/components/marketing/Differentiators';
+import { Testimonials } from '@/components/marketing/Testimonials';
+import { ResourceTeaser } from '@/components/marketing/ResourceTeaser';
 import { TrustBadges } from '@/components/marketing/TrustBadges';
 import { CTASection } from '@/components/marketing/CTASection';
-
-const PILLARS: Pillar[] = [
-  {
-    numeral: '01',
-    title: 'Onboard',
-    tagline: 'A branded onboarding flow your customers will actually finish.',
-    bullets: [
-      'Tenant-branded customer portal with multi-step flows',
-      'Individual KYC and corporate KYB with append-only versioning',
-      'Identity verification, liveness, OCR and face match',
-      'Document upload to private storage with 15-minute signed URLs',
-      'Consent capture with version, timestamp and IP — DPA evidence on one row',
-    ],
-  },
-  {
-    numeral: '02',
-    title: 'Decide',
-    tagline: 'Risk and cases your team can actually run.',
-    bullets: [
-      '3-D risk scoring — geography, PEP exposure, screening hits',
-      'Sanctions and PEP screening with hit-resolution workflow',
-      'Role-aware case queues for Analyst → Senior Reviewer → MLRO',
-      'Approval workflow with four-eyes enforcement',
-      'SAR flag as a first-class action, not an out-of-band email',
-    ],
-  },
-  {
-    numeral: '03',
-    title: 'Prove',
-    tagline: 'Audit, evidence and SAR — ready for the regulator.',
-    bullets: [
-      'Append-only, hash-chained audit log on every action',
-      'Customer data versioning — never a bare UPDATE',
-      'goAML-ready SAR register and JSON-L export',
-      'Bahrain-resident storage, signed-URL document access',
-      'No PII in application logs — sanitiser-enforced',
-    ],
-  },
-];
 
 export default function LandingPage() {
   return (
     <>
       <Hero />
 
-      {/* Quiet trust band */}
+      {/* Quiet trust band — verticals served */}
       <section className="border-y border-line-soft bg-paper">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-7 text-[13px] text-mute sm:flex-row sm:justify-between lg:px-10">
           <span className="flex items-center gap-3">
@@ -65,6 +37,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <StatsBanner />
 
       {/* Problem — editorial three-up */}
       <section className="bg-cream">
@@ -105,124 +79,96 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pillars */}
-      <section className="bg-paper">
-        <div className="mx-auto max-w-6xl px-6 py-24 lg:py-32 lg:px-10">
-          <div className="flex items-end justify-between gap-10">
-            <div className="max-w-2xl">
-              <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
-                <span className="copper-rule" aria-hidden="true" />
-                <span>What it does</span>
-              </p>
-              <h2 className="font-display mt-6 text-[40px] leading-[1.1] text-ink sm:text-[52px]">
-                One workbench. Three jobs done right.
-              </h2>
-            </div>
-            <Link
-              href="/product"
-              className="hidden items-center gap-1 text-[14px] font-medium text-ink-soft underline-offset-4 hover:text-ink hover:underline lg:inline-flex"
-            >
-              Full product tour <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-          <div className="mt-12 grid gap-5 lg:grid-cols-3">
-            {PILLARS.map((p) => (
-              <PillarCard key={p.title} pillar={p} />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Three deep-dive product sections, alternating */}
+      <ProductSection
+        eyebrow="Onboard"
+        title="A branded onboarding flow your customers will actually finish."
+        body="Tenant-branded, multi-step, resumable. Individuals and corporates. IDV, document upload to private storage, consent capture with version, timestamp and IP &mdash; DPA evidence in one row."
+        bullets={[
+          'Per-tenant branding (logo + colour) on the customer portal',
+          'KYC-individual and KYB-corporate forms, each step audited',
+          'Sumsub IDV passthrough with liveness, OCR and face match',
+          '15-minute signed URLs on every document — no caching, no leaks',
+        ]}
+        ctaLabel="Walk through onboarding"
+        ctaHref="/product"
+        visual={<OnboardingVisual />}
+      />
+
+      <ProductSection
+        eyebrow="Decide"
+        title="Risk and cases your team can actually run."
+        body="A transparent 3-D risk model, role-aware case queues, four-eyes approvals, and SAR as a first-class action. The workbench your MLRO opens in the morning &mdash; no integration project required."
+        bullets={[
+          '3-D risk: geography, PEP exposure, screening hits',
+          'Role-aware queues for Analyst → Senior Reviewer → MLRO',
+          'Four-eyes enforcement on approvals, recorded against the case',
+          'SAR flag as an action, not an out-of-band email',
+        ]}
+        ctaLabel="See the case workbench"
+        ctaHref="/product"
+        visual={<DecideVisual />}
+        reverse
+      />
+
+      <ProductSection
+        eyebrow="Prove"
+        title="Audit, evidence and SAR &mdash; ready for the regulator."
+        body="Every action lands in an append-only, hash-chained ledger. Customer data is versioned &mdash; never a bare UPDATE. SARs export as goAML XML with a SHA-256 hash bound to the audit row."
+        bullets={[
+          'Append-only audit_log with hash-chain integrity',
+          'customer_data_versions — every revision retained',
+          'goAML XML export with one click; SHA-256 in the audit row',
+          'No PII in application logs — sanitiser-enforced in CI',
+        ]}
+        ctaLabel="Read the security model"
+        ctaHref="/security"
+        visual={<ProveVisual />}
+      />
+
+      <IndustryGrid />
+
+      <IntegrationsStrip />
+
+      <Differentiators />
 
       <TrustBadges />
 
-      {/* "How it works" — four-step editorial flow */}
-      <section className="bg-paper">
-        <div className="mx-auto max-w-6xl px-6 py-24 lg:py-32 lg:px-10">
-          <div className="max-w-2xl">
-            <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
-              <span className="copper-rule" aria-hidden="true" />
-              <span>How it works</span>
-            </p>
-            <h2 className="font-display mt-6 text-[40px] leading-[1.1] text-ink sm:text-[52px]">
-              From first click to a signed-off case.
-            </h2>
-          </div>
-          <ol className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-            <Step
-              number="01"
-              title="Customer onboards"
-              body="Tenant-branded portal collects KYC / KYB and runs identity verification end-to-end."
-            />
-            <Step
-              number="02"
-              title="System screens and scores"
-              body="Sanctions and PEP screening, geography risk and 3-D risk band — every input retained."
-            />
-            <Step
-              number="03"
-              title="Analyst works the case"
-              body="Hits resolved, RAI emails sent, notes captured, escalation when the band warrants it."
-            />
-            <Step
-              number="04"
-              title="MLRO signs off"
-              body="Four-eyes approval, decision recorded, audit chain closes the loop. SAR if it needs one."
-            />
-          </ol>
-        </div>
-      </section>
+      <Testimonials />
 
-      {/* Why TruVis — replaces the prior compare section */}
-      <section className="bg-cream">
-        <div className="mx-auto max-w-6xl px-6 py-24 lg:py-32 lg:px-10">
-          <div className="grid items-start gap-14 lg:grid-cols-12">
+      <ResourceTeaser />
+
+      {/* Comparison teaser */}
+      <section className="bg-paper">
+        <div className="mx-auto max-w-6xl px-6 py-20 lg:px-10 lg:py-24">
+          <div className="grid items-center gap-10 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
                 <span className="copper-rule" aria-hidden="true" />
-                <span>Why TruVis</span>
+                <span>Honest comparisons</span>
               </p>
-              <h2 className="font-display mt-6 text-[40px] leading-[1.1] text-ink sm:text-[52px]">
-                The compliance layer above your stack.
+              <h2 className="font-display mt-6 text-[32px] leading-[1.15] text-ink sm:text-[40px]">
+                Where we lead, and where we don&rsquo;t.
               </h2>
-              <p className="mt-6 max-w-md text-[16px] leading-relaxed text-ink-soft">
-                We don&rsquo;t replace your IDV provider or your screening data. We sit above
-                them — the case-centric workbench your MLRO opens in the morning, with the
-                evidence chain your regulator will accept.
+              <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-soft">
+                We&rsquo;re an MLRO workbench, not an IDV provider. We&rsquo;re a SaaS, not a
+                bespoke integration. Read where that lands us versus the leading players.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/product"
-                  className="btn-secondary inline-flex items-center rounded-full px-5 py-2.5 text-[14px] font-medium"
-                >
-                  See the product
-                </Link>
-                <Link
-                  href="/security"
-                  className="btn-secondary inline-flex items-center rounded-full px-5 py-2.5 text-[14px] font-medium"
-                >
-                  Read the security model
-                </Link>
-              </div>
             </div>
-
-            <ul className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line lg:col-span-7">
-              <Reason
-                title="Case-first, not API-first."
-                body="Workbench, queues, four-eyes — designed for compliance staff, not engineers."
+            <div className="grid gap-3 lg:col-span-7 sm:grid-cols-2">
+              <CompareCard
+                competitor="Sumsub"
+                edge="Workflow + Bahrain residency"
+                concede="They lead on global IDV breadth"
+                href="/compare/sumsub"
               />
-              <Reason
-                title="Audit you can defend."
-                body="Append-only and hash-chained at the database. Every decision linked to every artefact."
+              <CompareCard
+                competitor="Azakaw"
+                edge="Pricing + workbench"
+                concede="They lead on direct goAML submission"
+                href="/compare/azakaw"
               />
-              <Reason
-                title="UAE-resident by design."
-                body="Bahrain region, Row Level Security on every table, MFA-required for privileged roles."
-              />
-              <Reason
-                title="Transparent pricing."
-                body="Published AED tiers, including a Starter that ships in days — not an enterprise quote."
-              />
-            </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -261,29 +207,39 @@ function ProblemPoint({
   );
 }
 
-function Step({
-  number,
-  title,
-  body,
+function CompareCard({
+  competitor,
+  edge,
+  concede,
+  href,
 }: {
-  number: string;
-  title: string;
-  body: string;
+  competitor: string;
+  edge: string;
+  concede: string;
+  href: string;
 }) {
   return (
-    <li className="bg-paper px-7 py-8">
-      <div className="font-display text-copper text-[26px] leading-none">{number}</div>
-      <div className="mt-5 text-[15px] font-medium text-ink">{title}</div>
-      <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">{body}</p>
-    </li>
-  );
-}
-
-function Reason({ title, body }: { title: string; body: string }) {
-  return (
-    <li className="bg-paper px-7 py-6">
-      <div className="font-display text-[22px] leading-[1.2] text-ink">{title}</div>
-      <p className="mt-2.5 text-[14.5px] leading-relaxed text-ink-soft">{body}</p>
-    </li>
+    <Link
+      href={href}
+      className="group block rounded-2xl border border-line bg-cream/40 p-6 transition-colors hover:border-copper/40 hover:bg-cream"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="text-[12px] uppercase tracking-[0.16em] text-mute">vs</div>
+        <span aria-hidden="true" className="text-mute transition-transform group-hover:translate-x-0.5">
+          &rarr;
+        </span>
+      </div>
+      <div className="font-display mt-1 text-[28px] leading-[1.1] text-ink">{competitor}</div>
+      <div className="mt-5 space-y-2 text-[13.5px]">
+        <div className="flex items-start gap-2 text-ink">
+          <span className="text-copper">+</span>
+          <span>{edge}</span>
+        </div>
+        <div className="flex items-start gap-2 text-mute">
+          <span>&minus;</span>
+          <span>{concede}</span>
+        </div>
+      </div>
+    </Link>
   );
 }
