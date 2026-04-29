@@ -78,3 +78,48 @@ export async function requireAuth(): Promise<AuthContext> {
   }
   return ctx;
 }
+
+/**
+ * Check if tenant has an active billing status.
+ * Returns true if active, false if trialing/past_due/canceled.
+ * Throws if billing record doesn't exist.
+ */
+export async function requireActiveBilling(tenantId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data: billing, error } = await supabase
+    .from('tenant_billing')
+    .select('status, trial_ends_at')
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (error) {
+    throw new Response(
+      JSON.stringify({ error: 'Billing information not found' }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Allow 'trialing' status as long as trial hasn't expired
+  if (billing.status === 'trialing') {
+    const now = new Date();
+    const typedBilling = billing as { status: string; trial_ends_at: string };
+    const trialEndsAt = new Date(typedBilling.trial_ends_at);
+    if (now < trialEndsAt) {
+      return true;
+    }
+  }
+
+  // Only 'active' status allows onboarding
+  if (billing.status !== 'active') {
+    throw new Response(
+      JSON.stringify({
+        error: 'Subscription inactive. Please complete payment or upgrade.',
+        status: billing.status,
+      }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  return true;
+}
