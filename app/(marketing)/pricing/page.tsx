@@ -14,13 +14,14 @@ const TIERS: PricingTier[] = [
     name: 'Starter',
     price: 'AED 1,500',
     cadence: '/ month',
-    audience: 'Single-entity DNFBPs and early-stage fintechs.',
+    audience: 'Single-entity DNFBPs and early-stage fintechs piloting TruVis.',
     features: [
       '1 staff seat',
       'Up to 100 verifications / month',
-      'KYC, KYB and sanctions / PEP screening',
-      'Standard onboarding portal (TruVis branding)',
-      'Email support, 1 business day SLA',
+      'KYC-individual, KYB-corporate, sanctions and PEP screening',
+      'Standard onboarding portal (TruVis-branded)',
+      'Append-only audit trail on every action',
+      'Email support, 1 business day response SLA',
     ],
     ctaHref: '/book-demo',
     ctaLabel: 'Start with a demo',
@@ -29,15 +30,17 @@ const TIERS: PricingTier[] = [
     name: 'Growth',
     price: 'AED 5,000',
     cadence: '/ month',
-    audience: 'Multi-team DNFBPs, EMIs and Tier-2 fintechs.',
+    audience: 'Multi-team DNFBPs, EMIs and Tier-2 fintechs running production workflows.',
     features: [
-      '5 staff seats (additional seats available)',
+      '5 staff seats (additional seats billed per seat)',
       'Up to 500 verifications / month',
-      'Full case workflow + four-eyes approvals',
-      'Tenant-branded customer portal',
-      'goAML SAR register and JSON-L export',
-      'Arabic UI (when generally available)',
-      'Priority support, same-day SLA',
+      'Full case workflow with role-aware queues',
+      'Four-eyes enforcement on approvals',
+      'Tenant-branded customer portal with resumable flows',
+      'SAR flag/unflag action with goAML XML export',
+      'Hash-chained audit log, JSON-L export for regulators',
+      'Priority support, same-day response SLA',
+      'Arabic UI (roadmap: Q3 2026)',
     ],
     ctaHref: '/book-demo',
     ctaLabel: 'Talk to sales',
@@ -49,11 +52,13 @@ const TIERS: PricingTier[] = [
     audience: 'Banks, regulated FIs, and groups with multiple licensed entities.',
     features: [
       'Unlimited seats and verifications',
-      'SSO (SAML / OIDC)',
-      'Dedicated tenant on isolated infrastructure',
-      'Named customer success engineer',
-      'Contractual uptime SLA + DPA add-ons',
-      'Security questionnaire and architecture review',
+      'SSO (SAML 2.0 and OpenID Connect)',
+      'Dedicated Supabase tenant on isolated infrastructure',
+      'Named customer success and compliance engineer',
+      'Contractual uptime SLA with incident response',
+      'Data Processing Agreement and sub-processor disclosures',
+      'Security questionnaire walkthrough and architecture review',
+      'Webhook operations viewer for async task visibility',
     ],
     ctaHref: '/book-demo',
     ctaLabel: 'Request a quote',
@@ -63,7 +68,7 @@ const TIERS: PricingTier[] = [
 const FAQ: { q: string; a: string }[] = [
   {
     q: 'How is a “verification” counted?',
-    a: 'One completed onboarding session — the customer reaches a terminal state (approved, rejected, or formally withdrawn) — counts as one verification. Resumed sessions and partial submissions are not counted twice.',
+    a: 'One completed onboarding session — the customer reaches a terminal state (approved, rejected, or formally withdrawn) — counts as one verification. Resumed sessions and partial submissions are not counted twice. Every verification is timestamped and recorded in the immutable audit trail.',
   },
   {
     q: 'What happens if we exceed our monthly verification cap?',
@@ -74,12 +79,20 @@ const FAQ: { q: string; a: string }[] = [
     a: 'Identity verification and sanctions / PEP screening are passed through at our wholesale rate during early-access. From Q3 we will publish a fixed per-verification figure that bundles both.',
   },
   {
+    q: 'How does the audit trail help with regulators?',
+    a: 'Every compliance action (onboarding, screening hit resolution, risk scoring, approval, SAR flag) is recorded in an immutable, hash-chained audit_log. When Federal Decree-Law No. 10 regulators ask to see your evidence, you export the JSON-L chain with no data loss or alteration possible.',
+  },
+  {
     q: 'Do you support Arabic and RTL?',
-    a: 'Arabic UI and RTL layout are on the Growth roadmap and will ship to existing Growth customers at no additional cost.',
+    a: 'Arabic UI and RTL layout are on the Growth roadmap and will ship to existing Growth customers at no additional cost in Q3 2026.',
   },
   {
     q: 'Can we self-host or have a dedicated database?',
-    a: 'Dedicated tenant infrastructure (separate Supabase project) is available on the Enterprise tier. We do not currently offer customer-hosted deployments.',
+    a: 'Dedicated tenant infrastructure (separate Supabase project) is available on the Enterprise tier. All Enterprise tenants run in Bahrain region (me1). We do not currently offer customer-hosted deployments.',
+  },
+  {
+    q: 'What SLA do you offer?',
+    a: 'Starter and Growth tiers offer email support with response-time SLAs (1 business day and same-day, respectively). Enterprise includes a contractual uptime SLA with incident response procedures and a named customer success engineer.',
   },
 ];
 
@@ -90,11 +103,10 @@ export default function PricingPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Pricing</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-            Transparent. Published. In AED.
+            Transparent pricing. No hidden regulator surprises.
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-700">
-            Most AML platforms hide their price. We don&apos;t. Pick a tier, see what you pay,
-            and book a demo when you&apos;re ready to talk specifics.
+            Most AML platforms hide their price until you sign an NDA. TruVis publishes in AED so you know what you pay before the demo. Every tier includes the immutable audit trail your regulator will inspect.
           </p>
         </div>
       </header>
