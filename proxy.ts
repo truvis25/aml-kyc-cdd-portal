@@ -24,6 +24,21 @@ const PUBLIC_PATHS = [
   '/auth/callback',
   '/auth/confirm',
   '/mfa-setup',
+  '/forgot-password',
+  '/reset-password',
+];
+
+// Public marketing surface — landing site, comparison pages, pricing, legal,
+// and the lead-capture API. These routes never require authentication.
+const MARKETING_PATH_PREFIXES = [
+  '/product',
+  '/security',
+  '/pricing',
+  '/compare',
+  '/for',
+  '/legal',
+  '/book-demo',
+  '/api/lead',
 ];
 
 // Routes requiring specific roles
@@ -39,6 +54,10 @@ export async function middleware(request: NextRequest) {
 
   // Allow public routes without auth check
   const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  // Marketing site: the landing page is exactly '/'; the rest are prefix matches.
+  const isMarketingPath =
+    pathname === '/' ||
+    MARKETING_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   // Allow onboarding routes (customer-facing, uses session-based auth not staff JWT)
   // Pattern: /{tenantSlug}/onboard/...
   const isOnboardingPath = /^\/[^/]+\/onboard/.test(pathname);
@@ -48,7 +67,7 @@ export async function middleware(request: NextRequest) {
   // monitors and the on-call runbook (docs/RUNBOOK.md §2.1).
   const isHealthPath = pathname === '/api/health';
 
-  if (isPublicPath || isOnboardingPath || isWebhookPath || isHealthPath) {
+  if (isPublicPath || isMarketingPath || isOnboardingPath || isWebhookPath || isHealthPath) {
     return NextResponse.next();
   }
 
@@ -93,7 +112,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // Unauthenticated user accessing protected route
-  if (!user && !isPublicPath && !isOnboardingPath) {
+  if (!user && !isPublicPath && !isOnboardingPath && !isMarketingPath) {
     const signInUrl = new URL('/sign-in', request.url);
     signInUrl.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(signInUrl);
