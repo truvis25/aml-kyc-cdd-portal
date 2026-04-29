@@ -3,32 +3,22 @@ import { createClient } from '@/lib/supabase/server';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { assertPermission } from '@/modules/auth/rbac';
 import { Pagination } from '@/components/shared/pagination';
+import { listSarReports } from '@/modules/sar';
+import { CreateSarFromCaseButton } from '@/components/sar/create-sar-from-case';
 
 const PAGE_SIZE = 50;
 
 interface SearchParams {
   page?: string;
-  status?: 'all' | 'open' | 'closed';
-}
-
-interface SarRow {
-  id: string;
-  customer_id: string;
-  status: string;
-  queue: string;
-  opened_at: string;
-  closed_at: string | null;
-  assigned_to: string | null;
+  status?: 'all' | 'draft' | 'submitted';
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  open: 'bg-blue-50 border-blue-200 text-blue-700',
-  in_review: 'bg-purple-50 border-purple-200 text-purple-700',
-  pending_info: 'bg-yellow-50 border-yellow-200 text-yellow-700',
-  escalated: 'bg-orange-50 border-orange-200 text-orange-700',
-  approved: 'bg-green-50 border-green-200 text-green-700',
+  draft: 'bg-gray-50 border-gray-200 text-gray-700',
+  ready: 'bg-blue-50 border-blue-200 text-blue-700',
+  submitted: 'bg-purple-50 border-purple-200 text-purple-700',
+  acknowledged: 'bg-green-50 border-green-200 text-green-700',
   rejected: 'bg-red-50 border-red-200 text-red-700',
-  closed: 'bg-gray-50 border-gray-200 text-gray-600',
 };
 
 interface Props {
@@ -36,8 +26,8 @@ interface Props {
 }
 
 export default async function SARRegisterPage({ searchParams }: Props) {
-  const { role, tenantId } = await getPageAuth();
-  // Gate: only roles that can flag SAR are entitled to see the SAR register.
+  const { userId, role, tenantId } = await getPageAuth();
+  // Gate: only roles that can flag SAR (MLRO + tenant_admin) see the register.
   // Per ROLES_DASHBOARDS_FLOWS.md §7, analysts and senior reviewers are intentionally
   // blind to SAR status (tipping-off prevention).
   assertPermission(role, 'cases:flag_sar');
@@ -45,69 +35,72 @@ export default async function SARRegisterPage({ searchParams }: Props) {
   const sp = await searchParams;
   const currentPage = Math.max(1, parseInt(sp.page ?? '1', 10));
   const offset = (currentPage - 1) * PAGE_SIZE;
-  const statusFilter: 'all' | 'open' | 'closed' = sp.status ?? 'open';
+  const statusFilter: 'all' | 'draft' | 'submitted' = sp.status ?? 'all';
 
+  const { reports, total } = await listSarReports(
+    { tenantId, userId, role },
+    {
+      limit: PAGE_SIZE + 1,
+      offset,
+      status:
+        statusFilter === 'draft'
+          ? 'draft'
+          : statusFilter === 'submitted'
+            ? 'submitted'
+            : undefined,
+    },
+  );
+
+  const hasNextPage = reports.length > PAGE_SIZE;
+  const visibleReports = hasNextPage ? reports.slice(0, PAGE_SIZE) : reports;
+
+  // Cases flagged for SAR that don't yet have a draft report. This surfaces
+  // outstanding work — every flag should eventually become a formal report or
+  // be unflagged with a justification note.
   const supabase = await createClient();
-
-  let q = supabase
+  const reportedCaseIds = new Set(reports.map((r) => r.case_id));
+  const { data: flaggedCases } = await supabase
     .from('cases')
-    .select('id, customer_id, status, queue, opened_at, closed_at, assigned_to, sar_flagged')
+    .select('id, customer_id, status, opened_at')
     .eq('tenant_id', tenantId)
     .eq('sar_flagged', true)
     .order('opened_at', { ascending: false })
-    .range(offset, offset + PAGE_SIZE);
-  if (statusFilter === 'open') q = q.neq('status', 'closed');
-  else if (statusFilter === 'closed') q = q.eq('status', 'closed');
+    .limit(50);
 
-  const { data: rawCases } = await q;
+  const pendingDraft = (
+    (flaggedCases ?? []) as { id: string; customer_id: string; status: string; opened_at: string }[]
+  ).filter((c) => !reportedCaseIds.has(c.id));
 
-  const allRows = (rawCases ?? []) as unknown as (SarRow & { sar_flagged: boolean })[];
-  const hasNextPage = allRows.length > PAGE_SIZE;
-  const cases = hasNextPage ? allRows.slice(0, PAGE_SIZE) : allRows;
-  const open = cases.filter((c) => c.status !== 'closed').length;
-  const closed = cases.filter((c) => c.status === 'closed').length;
+  // Resolve customer names for both lists in one batch.
+  const customerIds = [
+    ...new Set([
+      ...visibleReports.map((r) => r.customer_id),
+      ...pendingDraft.map((c) => c.customer_id),
+    ]),
+  ];
+  const { data: customerData } = customerIds.length
+    ? await supabase
+        .from('customer_data_versions')
+        .select('customer_id, full_name')
+        .in('customer_id', customerIds)
+        .eq('tenant_id', tenantId)
+        .order('version', { ascending: false })
+    : { data: [] as { customer_id: string; full_name: string | null }[] };
 
-  const customerIds = [...new Set(cases.map((c) => c.customer_id))];
-  const officerIds = [
-    ...new Set(cases.map((c) => c.assigned_to).filter(Boolean)),
-  ] as string[];
-
-  const [customerDataResult, officersResult] = await Promise.all([
-    customerIds.length > 0
-      ? supabase
-          .from('customer_data_versions')
-          .select('customer_id, full_name')
-          .in('customer_id', customerIds)
-          .eq('tenant_id', tenantId)
-          .order('version', { ascending: false })
-      : Promise.resolve({ data: [] }),
-    officerIds.length > 0
-      ? supabase.from('users').select('id, display_name').in('id', officerIds)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const customerNameById = new Map<string, string>();
-  for (const row of (customerDataResult.data ?? []) as {
+  const nameById = new Map<string, string>();
+  for (const row of (customerData ?? []) as {
     customer_id: string;
     full_name: string | null;
   }[]) {
-    if (!customerNameById.has(row.customer_id) && row.full_name) {
-      customerNameById.set(row.customer_id, row.full_name);
+    if (!nameById.has(row.customer_id) && row.full_name) {
+      nameById.set(row.customer_id, row.full_name);
     }
   }
 
-  const officerNameById = new Map<string, string>();
-  for (const u of (officersResult.data ?? []) as {
-    id: string;
-    display_name: string | null;
-  }[]) {
-    officerNameById.set(u.id, u.display_name ?? u.id.slice(0, 8));
-  }
-
-  const filterTabs: Array<{ value: 'open' | 'closed' | 'all'; label: string }> = [
-    { value: 'open', label: 'Open' },
-    { value: 'closed', label: 'Closed' },
+  const tabs: Array<{ value: 'all' | 'draft' | 'submitted'; label: string }> = [
     { value: 'all', label: 'All' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'submitted', label: 'Submitted' },
   ];
 
   return (
@@ -116,22 +109,19 @@ export default async function SARRegisterPage({ searchParams }: Props) {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">SAR Register</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Cases flagged for Suspicious Activity Report review · showing{' '}
-            <span className="text-gray-700">{cases.length}</span>
+            Suspicious Activity Reports for the UAE FIU (goAML).{' '}
+            <span className="text-gray-700">{total} total</span>
             {' · '}
-            <span className="text-gray-700">{open} open</span>
-            {' · '}
-            <span className="text-gray-700">{closed} closed</span>
-            {' on this page'}
+            <span className="text-gray-700">{pendingDraft.length} cases awaiting draft</span>
           </p>
         </div>
         <div className="inline-flex rounded-md border border-gray-200 bg-white p-0.5 text-xs">
-          {filterTabs.map((tab) => {
+          {tabs.map((tab) => {
             const active = statusFilter === tab.value;
             return (
               <Link
                 key={tab.value}
-                href={tab.value === 'open' ? '/sar' : `/sar?status=${tab.value}`}
+                href={tab.value === 'all' ? '/sar' : `/sar?status=${tab.value}`}
                 className={`px-3 py-1.5 rounded font-medium ${
                   active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
                 }`}
@@ -143,61 +133,108 @@ export default async function SARRegisterPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {cases.length === 0 ? (
+      {pendingDraft.length > 0 && statusFilter === 'all' && (
+        <section className="mb-6 rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-amber-900">
+              Cases flagged for SAR — no draft yet
+            </h2>
+            <span className="text-xs text-amber-800">{pendingDraft.length} pending</span>
+          </div>
+          <ul className="space-y-2">
+            {pendingDraft.slice(0, 8).map((c) => {
+              const name = nameById.get(c.customer_id);
+              return (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between bg-white rounded-md border border-amber-200 px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/cases/${c.id}`}
+                      className="text-blue-600 hover:underline font-mono text-xs"
+                    >
+                      {c.id.slice(0, 8)}…
+                    </Link>
+                    <span className="text-gray-800">
+                      {name ?? (
+                        <span className="text-gray-400 font-mono text-xs">
+                          {c.customer_id.slice(0, 8)}…
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-xs text-gray-500 capitalize">
+                      {c.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <CreateSarFromCaseButton caseId={c.id} />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {visibleReports.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-500 text-sm">No cases are currently flagged as SAR.</p>
+          <p className="text-gray-500 text-sm">
+            No SAR reports {statusFilter !== 'all' ? `in "${statusFilter}" status` : ''} yet.
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Case</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Reference</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Customer</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Queue</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Reasons</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Assigned To</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Flagged</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-600">
+                  Total (AED)
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Created</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {cases.map((c) => {
-                const statusStyle = STATUS_BADGE[c.status] ?? STATUS_BADGE.open;
-                const customerName = customerNameById.get(c.customer_id);
-                const officerName = c.assigned_to ? officerNameById.get(c.assigned_to) : null;
+              {visibleReports.map((r) => {
+                const statusStyle = STATUS_BADGE[r.status] ?? STATUS_BADGE.draft;
+                const name = nameById.get(r.customer_id);
                 return (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {c.id.slice(0, 8)}…
+                  <tr key={r.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700">
+                      {r.reference_number}
                     </td>
                     <td className="px-4 py-3 text-gray-900">
-                      {customerName ?? (
+                      {name ?? (
                         <span className="text-gray-400 text-xs font-mono">
-                          {c.customer_id.slice(0, 8)}…
+                          {r.customer_id.slice(0, 8)}…
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 capitalize text-gray-700">{c.queue}</td>
+                    <td className="px-4 py-3 text-xs text-gray-700">
+                      {r.reason_codes.join(', ')}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border capitalize ${statusStyle}`}
                       >
-                        {c.status.replace(/_/g, ' ')}
+                        {r.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
-                      {officerName ?? <span className="text-gray-400 italic">Unassigned</span>}
+                    <td className="px-4 py-3 text-right tabular-nums text-gray-700">
+                      {r.total_amount_aed.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
-                      {new Date(c.opened_at).toLocaleDateString()}
+                      {new Date(r.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
                       <Link
-                        href={`/cases/${c.id}`}
+                        href={`/sar/${r.id}`}
                         className="text-blue-600 hover:underline text-xs font-medium"
                       >
-                        Review →
+                        Open →
                       </Link>
                     </td>
                   </tr>
@@ -211,18 +248,17 @@ export default async function SARRegisterPage({ searchParams }: Props) {
       <Pagination
         basePath="/sar"
         params={
-          new URLSearchParams(
-            statusFilter !== 'open' ? { status: statusFilter } : {},
-          )
+          new URLSearchParams(statusFilter !== 'all' ? { status: statusFilter } : {})
         }
         currentPage={currentPage}
-        rowsOnPage={cases.length}
+        rowsOnPage={visibleReports.length}
         pageSize={PAGE_SIZE}
         hasNextPage={hasNextPage}
       />
 
       <p className="mt-6 text-xs text-gray-400">
         SAR visibility is restricted to MLRO and Tenant Admin to prevent tipping-off (PRD §7).
+        goAML XML downloads emit an immutable audit event with the SHA-256 hash of the export.
       </p>
     </div>
   );
