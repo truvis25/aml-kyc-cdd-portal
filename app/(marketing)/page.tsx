@@ -15,6 +15,52 @@ import { ResourceTeaser } from '@/components/marketing/ResourceTeaser';
 import { TrustBadges } from '@/components/marketing/TrustBadges';
 import { CTASection } from '@/components/marketing/CTASection';
 
+type Pillar = {
+  numeral: string;
+  title: string;
+  tagline: string;
+  bullets: string[];
+};
+
+const PILLARS: Pillar[] = [
+  {
+    numeral: '01',
+    title: 'Onboard',
+    tagline: 'Your customers see your branding. Your auditor sees the complete chain.',
+    bullets: [
+      'Tenant-branded portal, multi-step, resumable flows',
+      'KYC-individual and KYB-corporate; every step timestamped with IP',
+      'Sumsub IDV (liveness, OCR, face match) embedded in the workflow',
+      'Document upload to private storage with 15-minute signed URLs',
+      'Consent capture with version, timestamp and IP — GDPR evidence in one row',
+    ],
+  },
+  {
+    numeral: '02',
+    title: 'Decide',
+    tagline: 'An approval chain your auditor will recognize.',
+    bullets: [
+      '3-D risk: geography, PEP exposure, screening hits surface real signals',
+      'Role-aware queues: Analyst → Senior Reviewer → MLRO approval gate',
+      'Four-eyes enforcement: case can\'t close without two signatures',
+      'SAR filing is a first-class action, visible only to MLRO and Compliance Officer',
+      'Every decision is recorded: who approved, when, and what was the evidence',
+    ],
+  },
+  {
+    numeral: '03',
+    title: 'Prove',
+    tagline: 'When a regulator inspects, you have the chain.',
+    bullets: [
+      'Append-only, hash-chained audit log: altering a row breaks the chain and is detectable',
+      'Customer data versioning: no bare UPDATEs, only append-only rows',
+      'goAML XML export bound to audit row with SHA-256 hash for integrity',
+      'Bahrain-resident storage (me1); no PII in application logs',
+      '10-year audit retention, JSON-L export for regulator handover',
+    ],
+  },
+];
+
 export default function LandingPage() {
   return (
     <>
@@ -61,18 +107,18 @@ export default function LandingPage() {
             <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line lg:col-span-7">
               <ProblemPoint
                 index="A"
-                title="Fines start at AED 10,000."
-                body="And run to AED 5 million per violation. Excel and email are not a control."
+                title="Fines range from AED 10,000 to AED 5 million per violation."
+                body="The regulator&rsquo;s first question: show me your evidence. A spreadsheet can&rsquo;t prove who decided what, when, or why. Email threads are not a control."
               />
               <ProblemPoint
                 index="B"
-                title="Buyers off the shelf are built for engineers."
-                body="Most AML platforms sell APIs to product teams. The MLRO is left building the workflow on top."
+                title="IDV and screening vendors sell to engineers."
+                body="Your MLRO is left wiring them together in Zapier and Slack. There&rsquo;s no case queue, no role-aware approval gate, no forensic audit chain."
               />
               <ProblemPoint
                 index="C"
-                title="The audit chain has to defend itself."
-                body="Inspectors ask for evidence two years later. If you can&rsquo;t prove what was decided and why, you lose the argument."
+                title="Two years from now, an inspector will ask: prove your decision."
+                body="If your evidence is in email threads or spreadsheet comments, you lose. If you have an immutable, timestamped, hash-chained audit trail, you win."
               />
             </div>
           </div>
