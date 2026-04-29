@@ -84,12 +84,12 @@ const PRINCIPLES: { title: string; body: string; detail?: string[] }[] = [
   },
 ];
 
-const SUB_PROCESSORS: { name: string; purpose: string }[] = [
-  { name: 'Supabase', purpose: 'Postgres database, authentication, file storage and edge functions' },
-  { name: 'Vercel', purpose: 'Application hosting in region me1 (Bahrain)' },
-  { name: 'Resend', purpose: 'Transactional email delivery (RAI, decisions, lead notifications)' },
-  { name: 'ComplyAdvantage', purpose: 'Sanctions and PEP screening data and webhooks' },
-  { name: 'Sumsub', purpose: 'Identity verification (liveness, OCR, face match)' },
+const SUB_PROCESSORS_OVERVIEW: { category: string; purpose: string }[] = [
+  { category: 'Database, auth and storage', purpose: 'Tenant data, audit log and file storage in region me1 (Bahrain)' },
+  { category: 'Application hosting', purpose: 'Edge runtime in region me1 (Bahrain)' },
+  { category: 'Transactional email', purpose: 'RAI, decision and operational notifications' },
+  { category: 'Sanctions and PEP screening', purpose: 'Watchlist data and webhook delivery' },
+  { category: 'Identity verification', purpose: 'Liveness, OCR and face match' },
 ];
 
 export default function SecurityPage() {
@@ -146,9 +146,9 @@ export default function SecurityPage() {
             location and purpose, is on the legal page.
           </p>
           <ul className="mt-5 divide-y divide-gray-100 border-t border-gray-100">
-            {SUB_PROCESSORS.map((s) => (
-              <li key={s.name} className="flex items-baseline justify-between gap-4 py-3 text-sm">
-                <span className="font-medium text-gray-900">{s.name}</span>
+            {SUB_PROCESSORS_OVERVIEW.map((s) => (
+              <li key={s.category} className="flex items-baseline justify-between gap-4 py-3 text-sm">
+                <span className="font-medium text-gray-900">{s.category}</span>
                 <span className="text-right text-gray-700">{s.purpose}</span>
               </li>
             ))}

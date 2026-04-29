@@ -16,23 +16,28 @@ export function CTASection({
   secondaryLabel?: string;
 }) {
   return (
-    <section className="bg-blue-600">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight text-white">{title}</h2>
-            <p className="mt-3 text-blue-50">{body}</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
+    <section className="bg-cream">
+      <div className="mx-auto max-w-6xl px-6 py-20 lg:px-10 lg:py-24">
+        <div className="rounded-3xl bg-ink p-10 text-paper sm:p-14 lg:p-20">
+          <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-[#C9BFA8]">
+            <span className="inline-block h-px w-7 bg-copper" aria-hidden="true" />
+            <span>Talk to us</span>
+          </p>
+          <h2 className="font-display mt-6 max-w-3xl text-[40px] leading-[1.1] text-paper sm:text-[56px]">
+            {title}
+          </h2>
+          <p className="mt-6 max-w-2xl text-[16.5px] leading-relaxed text-[#D9D2C4]">{body}</p>
+          <div className="mt-10 flex flex-wrap gap-3">
             <Link
               href={primaryHref}
-              className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-blue-700 shadow-sm hover:bg-blue-50"
+              className="inline-flex items-center gap-2 rounded-full bg-paper px-6 py-3 text-[15px] font-medium text-ink transition-colors hover:bg-white"
             >
               {primaryLabel}
+              <span aria-hidden="true">→</span>
             </Link>
             <Link
               href={secondaryHref}
-              className="rounded-md border border-white/30 bg-transparent px-5 py-2.5 text-sm font-medium text-white hover:bg-white/10"
+              className="inline-flex items-center rounded-full border border-[#3A342D] px-6 py-3 text-[15px] font-medium text-paper transition-colors hover:bg-[#2A2520]"
             >
               {secondaryLabel}
             </Link>

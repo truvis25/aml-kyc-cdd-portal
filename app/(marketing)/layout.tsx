@@ -1,6 +1,20 @@
 import type { Metadata } from 'next';
+import { Instrument_Serif, Inter } from 'next/font/google';
 import { Nav } from '@/components/marketing/Nav';
 import { Footer } from '@/components/marketing/Footer';
+
+const display = Instrument_Serif({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const sans = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -20,7 +34,9 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div
+      className={`${display.variable} ${sans.variable} marketing-surface flex min-h-screen flex-col`}
+    >
       <Nav />
       <main className="flex-1">{children}</main>
       <Footer />

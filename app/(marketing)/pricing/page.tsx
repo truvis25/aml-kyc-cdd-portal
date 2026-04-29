@@ -18,7 +18,7 @@ const TIERS: PricingTier[] = [
     features: [
       '1 staff seat',
       'Up to 100 verifications / month',
-      'KYC, KYB and ComplyAdvantage screening',
+      'KYC, KYB and sanctions / PEP screening',
       'Standard onboarding portal (TruVis branding)',
       'Email support, 1 business day SLA',
     ],
@@ -71,7 +71,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Are IDV and screening provider fees included?',
-    a: 'Sumsub IDV and ComplyAdvantage screening are passed through at our wholesale rate during early-access. From Q3 we will publish a fixed per-verification figure that bundles both.',
+    a: 'Identity verification and sanctions / PEP screening are passed through at our wholesale rate during early-access. From Q3 we will publish a fixed per-verification figure that bundles both.',
   },
   {
     q: 'Do you support Arabic and RTL?',

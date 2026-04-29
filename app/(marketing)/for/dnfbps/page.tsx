@@ -11,7 +11,7 @@ const SEGMENTS: { name: string; pain: string; truvisFit: string }[] = [
   {
     name: 'Real-estate brokers and agents',
     pain: 'Source-of-funds checks under MoE supervision, beneficial-owner mapping for corporate buyers, ongoing PEP screening on landlords and tenants.',
-    truvisFit: 'KYB with corporate-purchaser flow, ComplyAdvantage screening, document evidence in the case file.',
+    truvisFit: 'KYB with corporate-purchaser flow, sanctions and PEP screening, document evidence in the case file.',
   },
   {
     name: 'Dealers in valuable metals and precious stones',

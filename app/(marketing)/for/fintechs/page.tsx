@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const REASONS: { title: string; body: string }[] = [
   {
     title: 'You already have IDV. You need a workbench.',
-    body: 'Sumsub, Onfido, Persona — pick your IDV. TruVis sits above it. The case-management, four-eyes-approval and audit layer most fintechs build in-house, available off the shelf.',
+    body: 'Pick your IDV provider. TruVis sits above it — the case-management, four-eyes-approval and audit layer most fintechs build in-house, available off the shelf.',
   },
   {
     title: 'Your MLRO is a person, not a Slack channel.',
@@ -42,9 +42,9 @@ export default function FintechsPage() {
             The compliance layer above your IDV stack.
           </h1>
           <p className="mt-4 max-w-3xl text-lg text-gray-700">
-            UAE fintechs are stuck between Sumsub-style IDV APIs (great for engineers, useless for
-            MLROs) and full-fat enterprise compliance suites (overkill, opaque pricing). TruVis is
-            the workbench in between.
+            UAE fintechs are stuck between developer-grade IDV APIs (great for engineers, useless
+            for MLROs) and full-fat enterprise compliance suites (overkill, opaque pricing).
+            TruVis is the workbench in between.
           </p>
         </div>
       </header>
@@ -68,7 +68,7 @@ export default function FintechsPage() {
           <ol className="mt-8 grid gap-4 lg:grid-cols-4">
             {[
               { i: 1, t: 'Sandbox', d: 'Spin up a sandbox tenant. Configure document types, risk thresholds and branding.' },
-              { i: 2, t: 'IDV wired', d: 'Drop your Sumsub keys in. Onboarding flow renders the IDV widget end-to-end.' },
+              { i: 2, t: 'IDV wired', d: 'Drop in your IDV provider keys. The onboarding flow renders the IDV widget end-to-end.' },
               { i: 3, t: 'Cases live', d: 'Onboardings flow into case queues; analysts triage; MLRO approves under four-eyes.' },
               { i: 4, t: 'Evidence', d: 'Audit JSON-L export ready for your CBUAE / SCA submission cycle.' },
             ].map((s) => (
@@ -86,7 +86,7 @@ export default function FintechsPage() {
 
       <CTASection
         title="See TruVis with your IDV stack."
-        body="Bring your Sumsub or Onfido sandbox. We will wire it in on the call."
+        body="Bring your IDV provider sandbox. We will wire it in on the call."
       />
     </>
   );

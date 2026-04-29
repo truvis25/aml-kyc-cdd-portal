@@ -28,13 +28,12 @@ const PUBLIC_PATHS = [
   '/reset-password',
 ];
 
-// Public marketing surface — landing site, comparison pages, pricing, legal,
-// and the lead-capture API. These routes never require authentication.
+// Public marketing surface — landing site, pricing, legal pages and the
+// lead-capture API. These routes never require authentication.
 const MARKETING_PATH_PREFIXES = [
   '/product',
   '/security',
   '/pricing',
-  '/compare',
   '/for',
   '/legal',
   '/book-demo',

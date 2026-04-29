@@ -15,7 +15,7 @@ const SECTIONS: { eyebrow: string; title: string; body: string; bullets: string[
     bullets: [
       'Per-tenant branding (logo + colour) on the customer portal',
       'KYC-individual and KYB-corporate forms, each step audited',
-      'Sumsub IDV passthrough for liveness, OCR and face match',
+      'Identity verification (IDV) integrated into the flow — liveness, OCR and face match',
       'Document upload to private Supabase buckets with 15-minute signed URLs',
       'Resumable sessions; abandonment events surfaced to your team',
       'Consent capture with version, timestamp and IP — DPA evidence in one row',
@@ -24,7 +24,7 @@ const SECTIONS: { eyebrow: string; title: string; body: string; bullets: string[
   {
     eyebrow: 'Screening',
     title: 'Screen sanctions and PEPs without the spreadsheet.',
-    body: 'ComplyAdvantage adapter wired to a hit-resolution workflow your analysts can run inside the case.',
+    body: 'A leading sanctions and PEP screening provider is wired in, with a hit-resolution workflow your analysts can run inside the case.',
     bullets: [
       'Sanctions and PEP coverage out of the box',
       'Hit resolution: confirm, dismiss, escalate — with audit trail',
