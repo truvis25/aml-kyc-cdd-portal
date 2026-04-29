@@ -22,7 +22,7 @@ const PRINCIPLES: { title: string; body: string; detail?: string[] }[] = [
   {
     title: 'Tenant isolation at the database',
     body:
-      'Data isolation is enforced in Postgres via Row Level Security, not in application code. No configuration error or code bug can allow one tenant to see another's data.',
+      "Data isolation is enforced in Postgres via Row Level Security, not in application code. No configuration error or code bug can allow one tenant to see another's data.",
     detail: [
       'Row Level Security on every tenant table — enforced by database trigger',
       'JWT enrichment via Postgres custom_access_token_hook embeds tenant_id in token',
