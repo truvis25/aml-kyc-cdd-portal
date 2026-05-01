@@ -29,6 +29,7 @@
 CREATE OR REPLACE FUNCTION compute_audit_row_hash()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = pg_catalog, public, extensions
 AS $$
 DECLARE
   v_prev_hash TEXT;
@@ -52,8 +53,11 @@ BEGIN
 
   NEW.prev_hash = v_prev_hash;
 
+  -- pgcrypto lives in the `extensions` schema (migration 0019). Calls must
+  -- be qualified — unqualified digest() will fail to resolve at trigger-fire
+  -- time even when the function definition succeeds.
   NEW.row_hash = encode(
-    digest(
+    extensions.digest(
       COALESCE(v_prev_hash, '') ||
       NEW.tenant_id::TEXT ||
       NEW.event_time::TEXT ||
@@ -89,6 +93,10 @@ DECLARE
   v_new_hash   TEXT;
   r            RECORD;
 BEGIN
+  -- Search path includes extensions so unqualified digest() resolves to
+  -- pgcrypto. (DO blocks don't accept SET; we use SET LOCAL inside.)
+  SET LOCAL search_path = pg_catalog, public, extensions;
+
   ALTER TABLE audit_log DISABLE TRIGGER USER;
 
   FOR v_tenant IN SELECT DISTINCT tenant_id FROM audit_log LOOP
@@ -100,7 +108,7 @@ BEGIN
        ORDER BY event_time, id
     LOOP
       v_new_hash := encode(
-        digest(
+        extensions.digest(
           COALESCE(v_prev_hash, '') ||
           r.tenant_id::TEXT ||
           r.event_time::TEXT ||
@@ -148,7 +156,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = pg_catalog, public, extensions
 AS $$
   WITH chain AS (
     SELECT
@@ -173,7 +181,7 @@ AS $$
       prev_hash,
       row_hash,
       encode(
-        digest(
+        extensions.digest(
           COALESCE(expected_prev, '') ||
           tenant_id::TEXT ||
           event_time::TEXT ||
