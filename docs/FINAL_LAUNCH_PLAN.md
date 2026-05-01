@@ -3,7 +3,8 @@
 > **Status:** Canonical planning document. Replaces `MVP_TODO.md`, `BUILD_ORDER.md`, `MILESTONE_1_PLAN.md`, `TASK_PACKS.md`, `PRD_VS_BUILT_GAP_ANALYSIS.md`. Supersedes the "what is built vs needed" sections of `ROLES_DASHBOARDS_FLOWS.md`.
 > **Audience:** Product, Engineering, Compliance, Sales.
 > **Date:** 2026-05-01.
-> **Goal:** After completing the work in this plan, the platform is fit for SaaS sale and public launch in the UAE/GCC market.
+> **Goal:** After completing the work in this plan, the platform is fit for SaaS sale and public launch in the UAE market.
+> **Scope decisions locked (see §11 for full record):** UAE-only at launch · self-serve signup · hybrid pricing · goAML XML export only · Arabic UI deferred to v2 · KSA deferred to v2 · SOC 2 Type I via Drata + Prescient Assurance · adverse media default-ON.
 
 ---
 
@@ -38,23 +39,24 @@ Three buckets:
    - End-to-end test suite covering the 7 role workflows.
 
 2. **Regional must-haves (next 1–2 sprints, gate to UAE pilot):**
-   - **i18n + Arabic + RTL** for the customer-facing onboarding flow.
    - **UAE Pass** identity bridge.
    - **Emirates ID** parse + validation hook.
    - **goAML XML** validated against the FIU XSD (we have a builder; we don't yet validate against the real schema).
    - **DFSA / FSRA / CBUAE rule packs** as selectable workflow templates.
    - **Ongoing monitoring (M-14)** — scheduled re-screening, doc expiry alerts.
    - **UBO engine (M-04)** — recursive resolution + tree visual.
+   - **Adverse media** default-ON in screening adapter at conservative confidence threshold (85%+); tenant can adjust per workflow.
 
-3. **Vendor-grade polish (gate to public marketing launch):**
+3. **Vendor-grade polish (gate to public self-serve launch):**
    - **Visual workflow builder** UI on top of our existing JSON schema.
    - **Web SDK** (drop-in iframe + JS lib) for tenants to embed customer onboarding.
    - **Public API docs** at `/docs/api` plus a sandbox tenant.
-   - **SOC 2 Type I scoping** kicked off (Type II takes 12 months).
+   - **SOC 2 Type I via Drata** + Prescient Assurance auditor (Type II at 12 months).
    - **Operational runbook** + monitoring (Sentry + log drain + alerts) live.
    - **Vertical packs** (Fintech, DNFBP, Real Estate, Crypto/VARA) shipped as templates.
+   - **Self-serve signup → trial → paid** flow polished end-to-end (Nomod billing live; pricing page final).
 
-We can ship #1 in days, #2 in 4–6 weeks, #3 in 8–10 weeks. **We can sell into a friendly UAE pilot tenant after #1 + #2.** We hold public-launch / open-signup until #3.
+We can ship #1 in days, #2 in 3–4 weeks, #3 in 4–6 weeks. **TruVis becomes Tenant Zero (dogfood) and a friendly UAE pilot is onboarded after #1 + #2.** Public self-serve signup opens to anyone after #3.
 
 ---
 
@@ -85,18 +87,18 @@ We model two reference vendors. We do not name them in code or marketing.
 | Dist | Web SDK / drop-in widget | **Missing** |
 | Trust | SOC 2 Type II | **Not started** |
 
-### 2.2 UAE/GCC-specific must-haves (from Vendor B's positioning)
+### 2.2 UAE-specific must-haves (from Vendor B's positioning)
 
 | Surface | Feature | Status with us |
 |---|---|---|
-| Auth | UAE Pass identity bridge | **Missing** |
-| ID | Emirates ID parse + validation | **Missing** (delegated to IDV but not surfaced as a first-class field) |
-| FIU | goAML XML SAR/STR (XSD-validated) | Builder ✅; **XSD validation against real schema needed** |
-| Regulator | DFSA / FSRA / CBUAE rule packs | **Missing** |
-| Lang | Arabic UI + full RTL | **Missing** |
-| Jurisdiction | DIFC / ADGM / mainland switch | **Missing** as a tenant config |
-| KSA | Yakeen / Absher / Tasdeeq adapter shims | **Missing** (defer until KSA tenant signed) |
-| Residency | UAE/GCC region | Vercel `me1` (Bahrain) + Supabase region — done |
+| Auth | UAE Pass identity bridge | **Missing — Sprint 2** |
+| ID | Emirates ID parse + validation | **Missing — Sprint 2** (delegated to IDV but not surfaced as a first-class field) |
+| FIU | goAML XML SAR/STR (XSD-validated) | Builder ✅; **XSD validation against real schema — Sprint 2** |
+| Regulator | DFSA / FSRA / CBUAE rule packs | **Missing — Sprint 2** |
+| Jurisdiction | DIFC / ADGM / mainland switch | **Missing — Sprint 2** (tenant config) |
+| Residency | UAE region | Vercel `me1` (Bahrain) + Supabase region — done |
+| Lang | Arabic UI + full RTL | **Deferred to v2** (decision §11.6) |
+| KSA | Yakeen / Absher / Tasdeeq adapters | **Deferred to v2** (decision §11.5 — KSA PDPL data residency requires separate KSA region deployment) |
 
 ### 2.3 Differentiators we should lean on
 
@@ -309,13 +311,12 @@ A regression suite that proves "the product works end to end for every role" bef
 ### 6.2 P1 — content/design improvements
 
 - **Industry pages**: build out real estate, law firms (DNFBPs), accounting, CSPs, crypto/VARA. We have `/for/fintechs` and `/for/dnfbps` — extend to 6 verticals.
-- **Public security page** — already exists; add SOC 2 status (in-progress badge), pen-test status, ISO 27001 roadmap, and a downloadable security overview PDF.
+- **Public security page** — already exists; add SOC 2 Type I status (Drata in-progress badge), pen-test status, ISO 27001 roadmap, and a downloadable security overview PDF.
 - **API docs** at `/docs/api` — autogenerated from Zod schemas + manual narrative.
-- **Sandbox tenant** signup at `/signup?plan=sandbox` — auto-creates a test tenant with synthetic data, expires in 14 days.
+- **Self-serve signup** at `/signup` — creates a 14-day trial tenant with synthetic seed data; upgrade to paid via Nomod.
 - **Customer story page** structure (empty until first reference customer signs).
-- **Arabic landing page variant** — `next-intl` with Arabic translation of the home, product, pricing, security pages and onboarding.
-- **Trust badges line** — replace generic logos with real certifications + pending statuses ("SOC 2 Type I — in progress").
-- **Pricing page** — confirm tier names, add a "request quote" path, expose what's metered (verifications, screenings, seats).
+- **Trust badges line** — replace generic logos with real certifications + pending statuses ("SOC 2 Type I — in progress via Drata").
+- **Pricing page** — final with 4 tiers per §11.3 (Starter / Growth / Scale / Enterprise); Enterprise routes to "request quote".
 
 ### 6.3 Design system — verify before launch
 
@@ -354,10 +355,10 @@ These are stale or planning-phase docs whose value is captured by this plan:
 - `docs/TEST_SCENARIOS.md` — extracted from §5 of this doc; one row per scenario; status column for "passing on staging".
 - `docs/SECURITY_OVERVIEW.md` — public-facing security claims + their internal evidence references.
 - `docs/API.md` — narrative companion to the OpenAPI spec at `/docs/api`.
-- `docs/I18N.md` — Arabic translation workflow, key naming conventions, RTL CSS rules.
 - `docs/RELEASE_CHECKLIST.md` — pre-deploy gate (typecheck, tests, db migration dry-run, smoke test).
+- `docs/PRICING.md` — internal source of truth for tier definitions, metering rules, overage math, and how `tenant_billing` maps to pricing.
 
-After cleanup the `docs/` folder is: `FINAL_LAUNCH_PLAN.md`, `MILESTONE_CHECKLISTS.md`, `ROLES_DASHBOARDS_FLOWS.md`, `RUNBOOK.md`, `DEPLOYMENT.md`, `TEST_SCENARIOS.md`, `SECURITY_OVERVIEW.md`, `API.md`, `I18N.md`, `RELEASE_CHECKLIST.md`. Ten files instead of nine, but all current.
+After cleanup the `docs/` folder is: `FINAL_LAUNCH_PLAN.md`, `MILESTONE_CHECKLISTS.md`, `ROLES_DASHBOARDS_FLOWS.md`, `RUNBOOK.md`, `DEPLOYMENT.md`, `TEST_SCENARIOS.md`, `SECURITY_OVERVIEW.md`, `API.md`, `RELEASE_CHECKLIST.md`, `PRICING.md`. Ten files, all current. (Arabic / `I18N.md` will be added in v2 when Arabic ships.)
 
 ---
 
@@ -383,38 +384,37 @@ Three sprints. Each ends with a demonstrable, testable ship gate. No work beyond
 
 **Ship gate:** all P0 marketing fixes merged; `npm run check` passes; e2e suite (≥ 20 scenarios) runs green on staging; updated docs reviewed.
 
-### Sprint 2 — UAE/GCC must-haves + ongoing monitoring (3–4 weeks)
+### Sprint 2 — UAE must-haves + ongoing monitoring (3 weeks)
 
-**Goal:** product is fit to onboard a UAE-licensed pilot tenant. Arabic onboarding works. SAR export validates against real FIU schema. Re-screening is alive.
+**Goal:** product is fit to onboard a UAE-licensed pilot tenant. SAR export validates against real FIU schema. Re-screening is alive. TruVis is live as Tenant Zero.
 
 | # | Task | Owner |
 |---|---|---|
-| 2.1 | i18n scaffolding (`next-intl`); extract all customer-facing strings to message catalog | FE |
-| 2.2 | Arabic translation pass for onboarding flow + emails | FE + Compliance |
-| 2.3 | Full RTL CSS audit on customer-facing surfaces | FE |
-| 2.4 | UAE Pass identity bridge (OIDC), surfaced as a customer-facing "Sign in with UAE Pass" path on onboarding | BE + FE |
-| 2.5 | Emirates ID first-class field on individual KYC + parse helper | BE |
-| 2.6 | goAML XSD validation in `goaml-builder.ts`; fixture-based tests | BE |
-| 2.7 | M-07 adverse media flag enabled in screening adapter; new hit type surfaced | BE + FE |
-| 2.8 | M-14 ongoing monitoring v1: pg_cron monthly re-screen of approved customers; doc-expiry alerts; new audit events | BE + DB |
-| 2.9 | M-04 UBO engine: recursive resolution, threshold config, simple tree visual on customer detail | BE + FE |
-| 2.10 | M-06 EDD form: source of wealth, source of funds narrative, audited financials upload, surfaced when risk band is high+ | BE + FE |
-| 2.11 | DFSA / FSRA / CBUAE rule packs as workflow templates in `admin-config` | BE |
-| 2.12 | Implement test scenarios C-09 through C-16 + R-13 through R-21 + S-01 through S-13 | QA |
-| 2.13 | Hash-chained audit log per PRD §5.5 (add `prev_hash`, trigger, verification CLI) | DB |
+| 2.1 | UAE Pass identity bridge (OIDC), surfaced as a customer-facing "Sign in with UAE Pass" path on onboarding | BE + FE |
+| 2.2 | Emirates ID first-class field on individual KYC + parse helper | BE |
+| 2.3 | goAML XSD validation in `goaml-builder.ts`; fixture-based tests against real FIU schema | BE |
+| 2.4 | M-07 adverse media: enable in `complyadvantage` adapter; **default-ON at 85%+ confidence**; per-workflow override in admin config; new hit type surfaced in case UI | BE + FE |
+| 2.5 | M-14 ongoing monitoring v1: pg_cron monthly re-screen of approved customers; doc-expiry alerts; new audit events; bundled with subscription (not metered) | BE + DB |
+| 2.6 | M-04 UBO engine: recursive resolution, configurable threshold, simple tree visual on customer detail | BE + FE |
+| 2.7 | M-06 EDD form: source of wealth, source of funds narrative, audited financials upload, surfaced when risk band is high+ | BE + FE |
+| 2.8 | DFSA / FSRA / CBUAE rule packs as workflow templates in `admin-config` | BE |
+| 2.9 | Hash-chained audit log per PRD §5.5 (add `prev_hash`, trigger, verification CLI) | DB |
+| 2.10 | Implement test scenarios C-09 through C-16 + R-13 through R-21 + S-01 through S-13 | QA |
+| 2.11 | **Tenant Zero**: stand up TruVis as our own first tenant; dogfood the onboarding + workbench end-to-end; capture findings as a punch list | PM + all |
+| 2.12 | Friendly UAE pilot tenant identified, NDA/MSA signed, kickoff scheduled | Sales + PM |
 
-**Ship gate:** UAE pilot tenant can onboard a real customer in Arabic via UAE Pass + Emirates ID, get screened including adverse media, route through risk + EDD if needed, and get a SAR exported in valid goAML XML if MLRO flags. Ongoing monitoring re-screens them at month-1.
+**Ship gate:** TruVis (Tenant Zero) is using the platform internally. UAE pilot tenant can onboard a real customer via UAE Pass + Emirates ID, get screened including adverse media, route through risk + EDD if needed, and get a SAR exported in valid goAML XML if MLRO flags. Ongoing monitoring re-screens them at month-1.
 
-### Sprint 3 — Vendor-grade SaaS polish (4–6 weeks)
+### Sprint 3 — Self-serve launch readiness (4–6 weeks)
 
-**Goal:** any prospect can self-serve a sandbox tenant, embed a Web SDK, configure workflows visually, and read public API docs. SOC 2 path is started.
+**Goal:** any prospect can self-serve a paid tenant in under 10 minutes, embed a Web SDK, configure workflows visually, and read public API docs. SOC 2 path is in motion.
 
 | # | Task | Owner |
 |---|---|---|
 | 3.1 | Visual workflow builder UI (React Flow over existing JSON schema); sandbox preview | FE |
 | 3.2 | Web SDK (drop-in iframe + JS lib) for the customer-facing onboarding flow | FE |
 | 3.3 | Public API: version under `/v1`; OpenAPI spec generated from Zod; `/docs/api` page | BE + FE |
-| 3.4 | Sandbox tenant signup at `/signup?plan=sandbox` with seed data + 14-day expiry | BE |
+| 3.4 | **Self-serve signup** end-to-end: `/signup` → tenant + admin user + MFA setup + sample workflow + first invitation. 14-day trial sandbox tier auto-assigned; upgrade to paid via Nomod from `/admin/config`. | BE + FE |
 | 3.5 | Vertical templates: Fintech, Corporate, Real Estate, DNFBP, Crypto/VARA | Product + BE |
 | 3.6 | SLA tracking + breach alerts (email + dashboard widget) | BE + FE |
 | 3.7 | Bulk case actions (assign, prioritize, close batch) | FE |
@@ -422,13 +422,14 @@ Three sprints. Each ends with a demonstrable, testable ship gate. No work beyond
 | 3.9 | Channel + Relationship dimensions in risk scoring (5-dim per PRD) | BE |
 | 3.10 | Tenant-configurable risk weights with MLRO acknowledgement | BE + FE |
 | 3.11 | Sentry, Vercel log drain, Supabase alerts wired | DevOps |
-| 3.12 | SOC 2 Type I scoping kicked off; control mapping doc | Compliance |
-| 3.13 | Self-serve billing live (Nomod TODOs resolved); invoice surface | BE + FE |
+| 3.12 | **SOC 2 Type I via Drata**: account stood up, controls mapped, evidence-collection automation enabled across Supabase/Vercel/GitHub/AWS; auditor (Prescient Assurance) engaged; target Type I sign-off in ~3 months | Compliance |
+| 3.13 | **Billing live (Nomod)**: 4 tiers wired (Starter / Growth / Scale / Enterprise — see §11.3); per-verification metering; invoice surface on `/admin/billing`; trial-to-paid upgrade flow; test charge on each tier | BE + FE |
 | 3.14 | Performance test scenarios P-01 through P-05 | QA |
 | 3.15 | Backup + restore test on production Supabase | DevOps |
 | 3.16 | Operational runbook v1 reviewed with on-call team | PM |
+| 3.17 | Pricing page final with 4 tiers; "request quote" CTA on Enterprise | Marketing + FE |
 
-**Ship gate:** prospect signs up at `/signup`, embeds `<script src="…/sdk/v1.js">`, configures a workflow visually, runs a synthetic customer end-to-end, exports an audit pack — without any TruVis support intervention. Sentry receives a test error and alerts. Backup restoration test passes.
+**Ship gate:** prospect signs up at `/signup`, completes MFA + tenant setup, embeds `<script src="…/sdk/v1.js">`, configures a workflow visually, runs a synthetic customer end-to-end, upgrades to a paid tier via Nomod, gets first invoice — without any TruVis support intervention. Sentry receives a test error and alerts. Backup restoration test passes. Drata is collecting evidence.
 
 ---
 
@@ -448,25 +449,24 @@ S1-07  Docs cleanup per §7 — delete stale + add new
 S1-08  CI green: typecheck + lint + tests + check:pii + e2e
 
 Sprint 2
-S2-01  next-intl scaffolding
-S2-02  Arabic message catalog + translation pass (onboarding + emails)
-S2-03  RTL CSS audit on customer-facing surfaces
-S2-04  UAE Pass OIDC bridge end-to-end
-S2-05  Emirates ID first-class field + parse helper
-S2-06  goAML XSD validation + fixture tests
-S2-07  Enable adverse media in screening adapter; new hit type UI
-S2-08  Ongoing monitoring v1 (pg_cron re-screen + doc expiry)
-S2-09  UBO engine: recursion + threshold + tree viz
-S2-10  EDD form: source of wealth/funds, audited financials upload
-S2-11  Rule packs: DFSA, FSRA, CBUAE as workflow templates
-S2-12  Hash-chained audit log (prev_hash + trigger + CLI verify)
-S2-13  Remaining test scenarios (C-09→C-16, R-13→R-21, S-01→S-13)
+S2-01  UAE Pass OIDC bridge end-to-end
+S2-02  Emirates ID first-class field + parse helper
+S2-03  goAML XSD validation against real FIU schema + fixture tests
+S2-04  Enable adverse media in screening adapter (default-ON @ 85%); per-workflow override; new hit type UI
+S2-05  Ongoing monitoring v1 (pg_cron re-screen + doc expiry)
+S2-06  UBO engine: recursion + threshold + tree viz
+S2-07  EDD form: source of wealth/funds, audited financials upload
+S2-08  Rule packs: DFSA, FSRA, CBUAE as workflow templates
+S2-09  Hash-chained audit log (prev_hash + trigger + CLI verify)
+S2-10  Remaining test scenarios (C-09→C-16, R-13→R-21, S-01→S-13)
+S2-11  Tenant Zero: stand up TruVis as first tenant; dogfood end-to-end
+S2-12  Friendly UAE pilot tenant identified, NDA/MSA signed
 
 Sprint 3
 S3-01  Visual workflow builder (React Flow over JSON schema)
 S3-02  Web SDK (iframe + JS lib) for customer onboarding
 S3-03  Public API /v1 + OpenAPI spec + /docs/api
-S3-04  Sandbox tenant signup + seed + auto-expiry
+S3-04  Self-serve signup end-to-end (signup → MFA → tenant → sample workflow → trial)
 S3-05  Vertical templates (Fintech, Corporate, Real Estate, DNFBP, Crypto)
 S3-06  SLA tracking + breach alerts
 S3-07  Bulk case actions
@@ -474,11 +474,12 @@ S3-08  Multi-stage / parallel approval paths
 S3-09  5-dim risk scoring (add channel + relationship)
 S3-10  Tenant-configurable risk weights with MLRO ack
 S3-11  Sentry + log drain + Supabase alerts
-S3-12  SOC 2 Type I scoping + control map
-S3-13  Self-serve billing live (resolve Nomod TODOs)
+S3-12  SOC 2 Type I via Drata + Prescient Assurance auditor engaged
+S3-13  Billing live (Nomod): 4 tiers wired + metering + invoice surface
 S3-14  Performance scenarios P-01→P-05
 S3-15  Backup + restore test on prod
 S3-16  Runbook v1 review with on-call team
+S3-17  Pricing page final with 4 tiers; Enterprise "request quote" CTA
 ```
 
 ---
@@ -492,7 +493,6 @@ Tick every box before quoting a paying customer.
 - [ ] At least 90% of test scenarios in §5 passing on staging
 - [ ] No `TODO`, `FIXME`, or commented-out code in `modules/` or `app/api/`
 - [ ] Branding: tenant can upload logo, set primary color, customize email "from" name
-- [ ] Customer-facing flow has been QA'd in Arabic by a native speaker
 - [ ] No competitor name appears anywhere in customer-facing copy
 
 ### 10.2 Compliance
@@ -539,16 +539,48 @@ Tick every box before quoting a paying customer.
 
 ---
 
-## 11. Open Questions (decision required before Sprint 2 starts)
+## 11. Decisions (locked 2026-05-01)
 
-1. **Self-serve vs sales-led at launch?** Plan currently assumes both — sandbox at `/signup`, paid via sales call. Confirm.
-2. **First reference tenant?** Does TruVis itself become Tenant Zero, or do we onboard a friendly fintech / ADGM CSP first? Choice changes which vertical template ships first in Sprint 3.
-3. **Pricing model.** Per-verification, per-seat, or hybrid? This drives metering plumbing in Sprint 3.13.
-4. **goAML submission depth.** XML export (planned) is the safe answer. Direct goAML API submission requires each tenant's FIU credentials and likely regulator no-objection. Confirm: ship XML export only at v1?
-5. **KSA scope at launch.** Yakeen/Absher/Tasdeeq adapters are deferred. Confirm we are UAE-first, KSA-when-pilot-asks.
-6. **Arabic scope.** Customer-facing onboarding only (planned), or also operator/MLRO workbench? RTL on the workbench is non-trivial. Recommendation: customer-facing first; workbench defers until a tenant requests.
-7. **SOC 2 Type I sponsor / auditor.** Need to pick now to start Sprint 3.12.
-8. **First adverse media list.** ComplyAdvantage adverse media is a config flag; confirm we activate it as default-on for new tenants.
+All open questions resolved. This section is the durable record.
+
+### 11.1 Go-to-market posture — **self-serve only at launch**
+
+Public `/signup` creates a 14-day trial tenant. Trial converts to a paid tier from inside the platform via Nomod. No sales-led path for v1 (Enterprise quotes route through "request quote" but are still onboarded via the same self-serve flow with a coupon). Implication: Sprint 3 must polish signup → MFA → tenant-setup → workflow-config → first-customer flow to a 10-minute, no-support-needed experience.
+
+### 11.2 First tenants — **TruVis (Tenant Zero) + one friendly UAE pilot**
+
+TruVis becomes its own first tenant in Sprint 2 (dogfood). A friendly UAE pilot tenant is identified and signed in parallel — used for the Sprint 2 ship-gate validation. First vertical template to ship in Sprint 3 = the pilot's industry.
+
+### 11.3 Pricing — **Hybrid (subscription + metered verifications)**
+
+| Tier | Base / month | Included verifications | Overage | Seats | Notes |
+|---|---|---|---|---|---|
+| Starter | AED 1,500 | 100 | AED 15 / verification | 3 | Self-serve trial converts here |
+| Growth | AED 4,500 | 500 | AED 12 / verification | 10 | Default for fintechs |
+| Scale | AED 12,000 | 2,000 | AED 9 / verification | unlimited | Regulated FIs, mid-size |
+| Enterprise | custom | custom | custom | custom | Banks, multi-jurisdiction |
+
+A "verification" = one completed Individual KYC OR one completed Corporate KYB. Ongoing-monitoring re-screens are bundled in the subscription (not metered) so customers get predictable cost. Adverse-media hits are not separately metered. Internal source of truth for tier math: `docs/PRICING.md` (Sprint 3).
+
+### 11.4 goAML — **XML export only at v1**
+
+MLRO clicks "Export goAML XML" on a SAR-flagged case → file validated against the FIU XSD → downloaded for manual upload to goAML portal. No direct API submission in v1 (avoids per-tenant FIU credential management and regulator no-objection process).
+
+### 11.5 KSA — **deferred to v2**
+
+Two hard blockers: (a) KSA PDPL 2023 requires personal data of Saudi residents to be processed in KSA; we run on Vercel `me1` (Bahrain) + Supabase, which doesn't satisfy this. (b) SAMA AML rules effectively require Arabic-primary UI for KSA-licensed FIs; Arabic is also deferred (§11.6). Yakeen / Absher / Tasdeeq adapters are not built. KSA goes on the v2 roadmap as a parallel deployment with KSA-region infrastructure.
+
+### 11.6 Arabic / RTL — **deferred to v2**
+
+Not in v1. Onboarding, workbench, and marketing all ship English-only at v1. Reconsider after a paying tenant explicitly asks for Arabic. When we do build it, scope is customer-facing onboarding first (Sprint v2.x); workbench RTL only if a tenant requires it.
+
+### 11.7 SOC 2 Type I — **Drata + Prescient Assurance**
+
+Drata as the compliance-as-code platform (best fit for Supabase/Vercel/GitHub stack; ~80% of evidence collection automated). Prescient Assurance as the auditor (Drata partner, accepts Drata evidence directly). Target: Type I sign-off in ~3 months from Sprint 3.12 kickoff. Type II follows on a 12-month observation window. Estimated cost: ~USD 12–15k/year Drata + ~USD 15–20k Type I audit fee.
+
+### 11.8 Adverse media — **default-ON at 85%+ confidence threshold**
+
+Enabled by default for new tenants in the screening adapter. Match confidence threshold defaults to 85% so analyst hit-volume stays manageable. Tenant admin can lower the threshold (more hits, more sensitive) or disable adverse media per workflow. Surfaced as a distinct hit type in case UI alongside sanctions/PEP.
 
 ---
 
@@ -556,9 +588,9 @@ Tick every box before quoting a paying customer.
 
 - **What we have today is materially more than the older docs claim.** The platform already has 7 role dashboards, real IDV, SAR register with goAML export, working webhook queue, versioned tenant config, audit log, RLS everywhere, and a working marketing site.
 - **The most urgent fix is removing competitor names from customer-facing copy.** That's a 1–2 day job and it's a brand/legal liability.
-- **The biggest functional gap to a UAE pilot is i18n + UAE Pass + Emirates ID + adverse media + ongoing monitoring + UBO + EDD form.** Sprint 2 closes it.
-- **The biggest gap to a public launch (anyone can sign up and use it) is the visual workflow builder, Web SDK, public API docs, sandbox signup, vertical templates, and SOC 2 Type I scoping.** Sprint 3 closes it.
-- **Three sprints, ~10 weeks, and the platform is ready to sell.**
+- **The biggest functional gap to a UAE pilot is UAE Pass + Emirates ID + adverse media + ongoing monitoring + UBO + EDD form.** Sprint 2 closes it (~3 weeks).
+- **The biggest gap to public self-serve launch is the visual workflow builder, Web SDK, public API docs, polished signup, vertical templates, billing live, and SOC 2 Type I in motion via Drata.** Sprint 3 closes it (~4–6 weeks).
+- **Three sprints, ~8–10 weeks, and the platform is ready for self-serve public launch in the UAE market.** Arabic and KSA follow in v2.
 
 ---
 
