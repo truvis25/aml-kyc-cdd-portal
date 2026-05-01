@@ -28,8 +28,11 @@ const PUBLIC_PATHS = [
   '/reset-password',
 ];
 
-// Public marketing surface — landing site, pricing, legal pages and the
-// lead-capture API. These routes never require authentication.
+// Public marketing surface — landing site, pricing, legal pages, comparison
+// page, signup, and the lead-capture API. These routes never require
+// authentication. /signup and /compare were added in Sprint 1; without them
+// here, unauthenticated visitors get bounced to /sign-in and the public
+// pages are unreachable.
 const MARKETING_PATH_PREFIXES = [
   '/product',
   '/security',
@@ -37,7 +40,10 @@ const MARKETING_PATH_PREFIXES = [
   '/for',
   '/legal',
   '/book-demo',
+  '/compare',
+  '/signup',
   '/api/lead',
+  '/api/signup',
 ];
 
 // Routes requiring specific roles
