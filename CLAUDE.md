@@ -173,13 +173,12 @@ tests/
 9. **Webhook queue before provider calls** -- all async webhooks go through `webhook_events` queue
 10. **JWT enrichment is a Postgres hook (C-02)** -- `custom_access_token_hook` in migration 0005; the `enrich-jwt` Edge Function is retired and must NOT be deployed
 
-## Milestone Status
+## Project Plan & Status
 
-- **Milestone 1 (Foundation):** In Progress
-- **Milestone 2 (Onboarding):** Not started
-- **Milestone 3 (IDV/Screening/Risk/Cases):** Not started
-- **Milestone 4 (Admin Config):** Not started
-- **Milestone 5 (Hardening):** Not started
-- **Milestone 6 (Production):** Not started
+The canonical project plan is `docs/FINAL_LAUNCH_PLAN.md` — sprint structure, decisions log, gap analysis, test scenario matrix, and pre-launch checklist all live there.
 
-See `docs/MILESTONE_CHECKLISTS.md` for detailed acceptance criteria per milestone.
+`docs/MILESTONE_CHECKLISTS.md` is preserved as the historical acceptance-criteria reference for Milestones 1–4 (all complete). Milestones 5 and 6 are tracked as Sprints 2 and 3 in FINAL_LAUNCH_PLAN.md.
+
+`docs/ROLES_DASHBOARDS_FLOWS.md` is the policy doc for roles, navigation, dashboards, case flow, RAI, SAR, and the customer journey.
+
+When working on the codebase, default to `FINAL_LAUNCH_PLAN.md` for "what to do next."

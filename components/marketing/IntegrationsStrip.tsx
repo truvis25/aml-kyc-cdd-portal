@@ -4,7 +4,7 @@ interface Integration {
 }
 
 const INTEGRATIONS: Integration[] = [
-  { name: 'Sumsub', category: 'IDV' },
+  { name: 'Embedded IDV', category: 'Identity' },
   { name: 'ComplyAdvantage', category: 'Screening' },
   { name: 'Resend', category: 'Email' },
   { name: 'Supabase', category: 'Database' },

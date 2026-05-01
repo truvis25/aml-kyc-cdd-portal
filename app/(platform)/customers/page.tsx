@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { Users } from 'lucide-react';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { hasPermission } from '@/modules/auth/rbac';
 import { CustomerFilters } from '@/components/customers/customer-filters';
 import { Pagination } from '@/components/shared/pagination';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const PAGE_SIZE = 50;
 
@@ -93,9 +95,12 @@ export default async function CustomersPage({ searchParams }: Props) {
             </div>
             <CustomerFilters />
           </div>
-          <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
-            <p className="text-sm text-gray-500">No customers match the selected filters.</p>
-          </div>
+          <EmptyState
+            icon={<Users className="h-5 w-5" />}
+            title={`No customers match "${searchTerm}"`}
+            description="Try a different name or clear the search to see everything."
+            action={{ label: 'Clear search', href: '/customers' }}
+          />
         </div>
       );
     }
@@ -131,9 +136,12 @@ export default async function CustomersPage({ searchParams }: Props) {
               <p className="text-sm text-gray-500 mt-1">Customers assigned to you</p>
             </div>
           </div>
-          <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
-            <p className="text-sm text-gray-500">No customers assigned to you yet.</p>
-          </div>
+          <EmptyState
+            icon={<Users className="h-5 w-5" />}
+            title="No customers assigned to you"
+            description="Once a case is assigned, the customer record appears here. Your dashboard will alert you when a new case lands in your queue."
+          />
+
         </div>
       );
     }
@@ -156,9 +164,20 @@ export default async function CustomersPage({ searchParams }: Props) {
           </div>
           <CustomerFilters />
         </div>
-        <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
-          <p className="text-sm text-gray-500">No customers match the selected filters.</p>
-        </div>
+        <EmptyState
+          icon={<Users className="h-5 w-5" />}
+          title="No customers match these filters"
+          description={
+            filters.status || filters.type || filters.q
+              ? 'Try clearing a filter, or open the full list to see everything.'
+              : 'When customers complete onboarding, their records appear here.'
+          }
+          action={
+            filters.status || filters.type || filters.q
+              ? { label: 'Clear filters', href: '/customers' }
+              : undefined
+          }
+        />
       </div>
     );
   }

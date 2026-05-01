@@ -16,7 +16,7 @@ const SECTIONS: { eyebrow: string; title: string; body: string; bullets: string[
       'Tenant-branded portal with per-tenant branding (logo + colour)',
       'KYC-individual and KYB-corporate forms; every step recorded with timestamp and user IP',
       'Resumable flows: customers can pause at Step 2 and return days later — both timestamps tracked',
-      'Sumsub IDV (liveness, OCR, face match) embedded in the workflow',
+      'Embedded identity verification (liveness, OCR, face match) inside the workflow',
       'Document upload to private storage with 15-minute signed URLs — no caching, no ambiguity',
       'Consent capture with version, timestamp, and IP — GDPR evidence in one row',
     ],

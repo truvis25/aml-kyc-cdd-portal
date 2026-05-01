@@ -27,6 +27,14 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      // Old per-vendor compare pages collapsed into a generic /compare.
+      { source: "/compare/sumsub", destination: "/compare", permanent: true },
+      { source: "/compare/azakaw", destination: "/compare", permanent: true },
+    ];
+  },
+
   // Ensure Next.js does not expose build-time information in error responses.
   poweredByHeader: false,
 };

@@ -1,6 +1,8 @@
+import { Webhook } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const STATUS_BADGE: Record<string, string> = {
   pending:     'bg-blue-50 border-blue-200 text-blue-700',
@@ -89,9 +91,12 @@ export default async function AdminWebhooksPage() {
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
-          <p className="text-sm text-gray-500">No webhook events recorded yet.</p>
-        </div>
+        <EmptyState
+          icon={<Webhook className="h-5 w-5" />}
+          title="No webhook events recorded"
+          description="Webhook events from IDV, screening and billing providers appear here as they arrive. The retry-failed-webhooks pg_cron job runs hourly."
+          hint="Read-only inspection · last 200 events shown when populated."
+        />
       ) : (
         <div className="rounded-lg bg-white border border-gray-200 overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">

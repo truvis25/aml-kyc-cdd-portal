@@ -3,6 +3,7 @@ import { Role } from '@/lib/constants/roles';
 import { DashboardShell } from './dashboard-shell';
 import { StatCard } from './widgets/stat-card';
 import { QueueSummary } from './widgets/queue-summary';
+import { CompletenessCard } from './widgets/completeness-card';
 import {
   countActiveSessions,
   countActiveUsersInTenant,
@@ -11,6 +12,7 @@ import {
   countUnassignedOpenCases,
   daysAgoIso,
   getActiveWorkflow,
+  getTenantSetupCompleteness,
   startOfTodayIso,
 } from '@/modules/dashboards/queries';
 
@@ -30,6 +32,7 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
     activeSessions,
     openCases,
     unassigned,
+    completeness,
   ] = await Promise.all([
     countActiveUsersInTenant(supabase, tenantId),
     getActiveWorkflow(supabase, tenantId),
@@ -39,7 +42,31 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
     countActiveSessions(supabase, tenantId),
     countOpenCases(supabase, tenantId),
     countUnassignedOpenCases(supabase, tenantId),
+    getTenantSetupCompleteness(supabase, tenantId),
   ]);
+
+  const setupSignals = [
+    {
+      label: 'Active workflow published',
+      done: completeness.signals.workflowActive,
+      href: '/admin/workflows',
+    },
+    {
+      label: 'Tenant configuration set',
+      done: completeness.signals.configSet,
+      href: '/admin/config',
+    },
+    {
+      label: 'MLRO assigned',
+      done: completeness.signals.mlroAssigned,
+      href: '/admin/users',
+    },
+    {
+      label: 'At least one analyst or reviewer',
+      done: completeness.signals.reviewerOrAnalystAssigned,
+      href: '/admin/users',
+    },
+  ];
 
   return (
     <DashboardShell
@@ -66,7 +93,14 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <CompletenessCard
+          title="Setup completeness"
+          percent={completeness.percent}
+          completed={completeness.completed}
+          total={completeness.total}
+          signals={setupSignals}
+        />
         <QueueSummary
           title="Onboarding volume"
           rows={[

@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { Flag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { assertPermission } from '@/modules/auth/rbac';
 import { Pagination } from '@/components/shared/pagination';
+import { EmptyState } from '@/components/ui/empty-state';
 import { listSarReports } from '@/modules/sar';
 import { CreateSarFromCaseButton } from '@/components/sar/create-sar-from-case';
 
@@ -176,11 +178,21 @@ export default async function SARRegisterPage({ searchParams }: Props) {
       )}
 
       {visibleReports.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-500 text-sm">
-            No SAR reports {statusFilter !== 'all' ? `in "${statusFilter}" status` : ''} yet.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Flag className="h-5 w-5" />}
+          title={
+            statusFilter !== 'all'
+              ? `No SAR reports in "${statusFilter}" status`
+              : 'No SAR reports yet'
+          }
+          description={
+            statusFilter !== 'all'
+              ? 'Switch the filter to see drafts and submitted reports.'
+              : 'When the MLRO flags a case for SAR, the draft report appears here for review and goAML XML export.'
+          }
+          action={statusFilter !== 'all' ? { label: 'Show all', href: '/sar' } : undefined}
+          hint="SAR visibility is restricted to Tenant Admin and MLRO under tipping-off rules."
+        />
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
           <table className="w-full text-sm">
