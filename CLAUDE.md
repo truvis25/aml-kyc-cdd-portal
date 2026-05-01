@@ -65,6 +65,15 @@ supabase db reset
 # Run pgTAP database tests
 supabase test db
 
+# Run unit tests (vitest)
+npm test
+
+# Run end-to-end tests — see tests/e2e/README.md for full setup
+npx playwright install chromium     # one-time
+npm run build
+npm run test:e2e:marketing          # public pages, no auth required
+npm run test:e2e:app                # authenticated, requires seeded test users
+
 # Generate TypeScript types from Supabase schema
 npx supabase gen types typescript --local > lib/supabase/database.types.ts
 

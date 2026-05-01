@@ -13,6 +13,10 @@
     "test:unit": "vitest run tests/unit/",
     "test:watch": "vitest tests/unit/",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:marketing": "playwright test --project=marketing",
+    "test:e2e:app": "E2E_RUN_APP=1 playwright test --project=app",
+    "test:e2e:ui": "playwright test --ui",
     "validate:env": "node scripts/check-env.mjs",
     "check:pii": "node scripts/check-pii-logs.mjs --strict",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:pii",
@@ -46,6 +50,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
