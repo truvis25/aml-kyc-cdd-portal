@@ -9,7 +9,9 @@ import { SarFlagToggle } from '@/components/cases/sar-flag-toggle';
 import { CaseAssignPanel } from '@/components/cases/case-assign-panel';
 import { CaseRealtime } from '@/components/cases/case-realtime';
 import { CaseEventsRealtime } from '@/components/cases/case-events-realtime';
+import { EddPanel } from '@/components/cases/edd-panel';
 import { hasPermission } from '@/modules/auth/rbac';
+import { getLatestEddRecord } from '@/modules/edd/edd.service';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
 import type { CaseEvent } from '@/modules/cases/cases.types';
@@ -175,7 +177,22 @@ export default async function CaseDetailPage({ params }: Props) {
   const canApprove = hasPermission(role, 'cases:approve_standard');
   const canReject = hasPermission(role, 'cases:reject');
   const canAssign = hasPermission(role, 'cases:assign');
+  const canReadEdd = hasPermission(role, 'customers:read_edd_data');
   const isClosed = case_.status === 'approved' || case_.status === 'rejected' || case_.status === 'closed';
+
+  // EDD is surfaced to MLRO / Senior Reviewer / Tenant Admin only. We only
+  // fetch the record when the user has permission to read it — keeps this
+  // off analyst / onboarding-agent request paths entirely.
+  const eddRecord = canReadEdd
+    ? await getLatestEddRecord(case_.customer_id, tenant_id)
+    : null;
+  // EDD is most relevant when a case sat in the EDD or escalation queues, but
+  // a reviewer might still want to attach EDD post-hoc on any case.
+  const isEddRelevant =
+    case_.queue === 'edd' ||
+    case_.queue === 'escalation' ||
+    case_.queue === 'senior' ||
+    eddRecord !== null;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -326,6 +343,16 @@ export default async function CaseDetailPage({ params }: Props) {
                 )}
               </dl>
             </div>
+          )}
+
+          {/* Enhanced Due Diligence — only visible to roles with
+              customers:read_edd_data (mlro, senior_reviewer, tenant_admin). */}
+          {canReadEdd && isEddRelevant && (
+            <EddPanel
+              customerId={case_.customer_id}
+              latestRecord={eddRecord}
+              canCapture={!isClosed}
+            />
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">

@@ -64,6 +64,9 @@ export enum AuditEventType {
   APPROVAL_GRANTED = 'approval.granted',
   APPROVAL_REJECTED = 'approval.rejected',
 
+  // EDD (Enhanced Due Diligence) events
+  EDD_RECORDED = 'edd.recorded',
+
   // User/auth events
   USER_INVITED = 'user.invited',
   USER_ACTIVATED = 'user.activated',
@@ -103,4 +106,5 @@ export enum AuditEntityType {
   TENANT_CONFIG = 'tenant_config',
   WORKFLOW_DEFINITION = 'workflow_definitions',
   SAR_REPORT = 'sar_reports',
+  EDD_RECORD = 'customer_edd_records',
 }
