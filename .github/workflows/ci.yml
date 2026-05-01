@@ -8,6 +8,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Default least-privilege token. Every job below is read-only against the
+# repository. actions/upload-artifact@v4 uses the runner-side artifact API
+# and does not need a write scope. If a future job needs to write (e.g. post
+# a PR comment), grant the narrower scope on that job, not here.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '24'
   # actions/checkout and actions/setup-node are pinned at v4, which runs its
