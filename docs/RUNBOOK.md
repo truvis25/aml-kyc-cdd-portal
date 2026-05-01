@@ -72,6 +72,8 @@ with a small trailing edge of `pending`. **Alarm thresholds:**
 
 ### 2.4 Is the audit chain intact?
 
+Quick "every row has a hash" check:
+
 ```sql
 SELECT count(*)
   FROM audit_log
@@ -79,6 +81,30 @@ SELECT count(*)
 ```
 Must always return `0`. If non-zero, escalate immediately — the
 hash-chain trigger is failing or has been bypassed.
+
+**Full chain verification (forensic):** runs every audit row through
+`verify_audit_chain()` and reports `OK` / `BROKEN_CHAIN` / `TAMPERED_HASH`.
+Run after any incident touching the database, and on a routine cadence
+(at minimum monthly):
+
+```bash
+npm run verify:audit-chain                 # all tenants, human output
+npm run verify:audit-chain -- --json       # machine-readable summary
+npm run verify:audit-chain -- <tenant_id>  # single tenant
+```
+
+Exit code `0` = every chain OK. Exit code `1` = at least one tenant has
+broken or tampered rows — **P1 incident, page MLRO and engineering on-call
+immediately**. The migration history (0037) and pgTAP test
+(`tests/db/019_audit_hash_chain.sql`) document the expected behaviour.
+
+If you need to verify ad-hoc from `psql`:
+
+```sql
+SELECT row_id, event_time, status
+  FROM verify_audit_chain('<tenant_id>'::UUID)
+ WHERE status != 'OK';
+```
 
 ---
 
