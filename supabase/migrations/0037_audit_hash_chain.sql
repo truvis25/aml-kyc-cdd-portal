@@ -29,7 +29,7 @@
 CREATE OR REPLACE FUNCTION compute_audit_row_hash()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SET search_path = pg_catalog, public, extensions
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_prev_hash TEXT;
@@ -95,7 +95,7 @@ DECLARE
 BEGIN
   -- Search path includes extensions so unqualified digest() resolves to
   -- pgcrypto. (DO blocks don't accept SET; we use SET LOCAL inside.)
-  SET LOCAL search_path = pg_catalog, public, extensions;
+  SET LOCAL search_path = public, extensions;
 
   ALTER TABLE audit_log DISABLE TRIGGER USER;
 
@@ -156,7 +156,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = pg_catalog, public, extensions
+SET search_path = public, extensions
 AS $$
   WITH chain AS (
     SELECT
