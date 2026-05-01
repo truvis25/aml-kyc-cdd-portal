@@ -68,6 +68,10 @@ supabase test db
 # Run unit tests (vitest)
 npm test
 
+# Verify the audit_log hash chain (all tenants). Exit 0 = clean, 1 = tampered.
+# See docs/RUNBOOK.md §2.4 for full procedure.
+npm run verify:audit-chain
+
 # Run end-to-end tests — see tests/e2e/README.md for full setup
 npx playwright install chromium     # one-time
 npm run build
