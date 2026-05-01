@@ -1,8 +1,10 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { ShieldCheck } from 'lucide-react';
 import { hasPermission } from '@/modules/auth/rbac';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { AuditFilters } from '@/components/audit/audit-filters';
+import { EmptyState } from '@/components/ui/empty-state';
 import * as audit from '@/modules/audit/audit.service';
 import type { AuditEventType, AuditEntityType } from '@/lib/constants/events';
 
@@ -92,9 +94,12 @@ export default async function AuditPage({ searchParams }: PageProps) {
       </div>
 
       {pageEntries.length === 0 ? (
-        <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
-          <p className="text-sm text-gray-500">No audit events match your filters.</p>
-        </div>
+        <EmptyState
+          icon={<ShieldCheck className="h-5 w-5" />}
+          title="No audit events match your filters"
+          description="The audit log is append-only and tenant-scoped. Try a wider date range or clear the entity / event filters."
+          action={{ label: 'Clear filters', href: '/audit' }}
+        />
       ) : (
         <>
           <div className="rounded-lg bg-white border border-gray-200 overflow-hidden shadow-sm">

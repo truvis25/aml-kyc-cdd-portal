@@ -1,9 +1,11 @@
+import { GitBranch } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission } from '@/modules/auth/rbac';
 import { Role } from '@/lib/constants/roles';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { WorkflowToggle } from '@/components/admin/workflow-toggle';
 import { WorkflowAckButton } from '@/components/admin/workflow-ack-button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default async function AdminWorkflowsPage() {
   const { role, tenantId: tenant_id } = await getPageAuth();
@@ -71,10 +73,12 @@ export default async function AdminWorkflowsPage() {
       </div>
 
       {workflows.length === 0 ? (
-        <div className="rounded-lg bg-white border border-gray-200 p-8 text-center">
-          <p className="text-sm text-gray-500">No workflow definitions found.</p>
-          <p className="text-xs text-gray-400 mt-1">Run the database migrations to seed default workflows.</p>
-        </div>
+        <EmptyState
+          icon={<GitBranch className="h-5 w-5" />}
+          title="No workflow definitions found"
+          description="Run the database migrations to seed default individual KYC and corporate KYB workflows. Tenant Admins can clone and customize them once present."
+          hint="Tenant-scoped activations require MLRO acknowledgement before going live."
+        />
       ) : (
         <div className="rounded-lg bg-white border border-gray-200 overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">

@@ -321,3 +321,60 @@ export async function countActiveUsersInTenant(
     .eq('status', 'active');
   return count ?? 0;
 }
+
+// --- Tenant setup completeness ---
+
+/**
+ * Per-signal breakdown of tenant onboarding completeness. Each signal is a
+ * boolean; the score is the count of `true` signals over the total. Used by
+ * the Tenant Admin dashboard to surface what still needs configuring before
+ * a tenant goes live.
+ */
+export interface TenantCompleteness {
+  signals: {
+    workflowActive: boolean;
+    configSet: boolean;
+    mlroAssigned: boolean;
+    reviewerOrAnalystAssigned: boolean;
+  };
+  completed: number;
+  total: number;
+  percent: number;
+}
+
+export async function getTenantSetupCompleteness(
+  supabase: DB,
+  tenantId: string,
+): Promise<TenantCompleteness> {
+  const [workflow, configRow, mlroCountRes, reviewerCountRes] = await Promise.all([
+    getActiveWorkflow(supabase, tenantId),
+    supabase
+      .from('tenant_config')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId),
+    // Active mlro role assignment in this tenant
+    supabase
+      .from('user_roles')
+      .select('id, roles!inner(name)', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .is('revoked_at', null)
+      .eq('roles.name', 'mlro'),
+    // At least one analyst or senior_reviewer
+    supabase
+      .from('user_roles')
+      .select('id, roles!inner(name)', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .is('revoked_at', null)
+      .in('roles.name', ['analyst', 'senior_reviewer']),
+  ]);
+
+  const signals = {
+    workflowActive: !!workflow,
+    configSet: (configRow.count ?? 0) > 0,
+    mlroAssigned: (mlroCountRes.count ?? 0) > 0,
+    reviewerOrAnalystAssigned: (reviewerCountRes.count ?? 0) > 0,
+  };
+  const completed = Object.values(signals).filter(Boolean).length;
+  const total = Object.keys(signals).length;
+  return { signals, completed, total, percent: Math.round((completed / total) * 100) };
+}

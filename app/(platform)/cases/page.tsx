@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { FolderOpen } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { CaseFilters } from '@/components/cases/case-filters';
 import { CaseRealtime } from '@/components/cases/case-realtime';
 import { RiskScoreDisplay } from '@/components/cases/risk-score-display';
 import { Pagination } from '@/components/shared/pagination';
+import { EmptyState } from '@/components/ui/empty-state';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { hasPermission } from '@/modules/auth/rbac';
 import type { RiskBand } from '@/modules/risk/risk.types';
@@ -131,9 +133,26 @@ export default async function CasesPage({ searchParams }: Props) {
       </div>
 
       {cases.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-500 text-sm">No cases found matching the selected filters.</p>
-        </div>
+        <EmptyState
+          icon={<FolderOpen className="h-5 w-5" />}
+          title={
+            filters.queue || filters.status || filters.customer_id
+              ? 'No cases match these filters'
+              : 'No cases yet'
+          }
+          description={
+            filters.queue || filters.status || filters.customer_id
+              ? 'Try clearing a filter, or open the full queue to see everything.'
+              : canReadAll
+                ? 'When customers complete onboarding and risk routing assigns them to a queue, cases land here.'
+                : 'You have no cases assigned right now. Your dashboard will alert you when one is.'
+          }
+          action={
+            filters.queue || filters.status || filters.customer_id
+              ? { label: 'Clear filters', href: '/cases' }
+              : undefined
+          }
+        />
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
           <table className="w-full text-sm">
