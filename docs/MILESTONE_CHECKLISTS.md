@@ -1,10 +1,11 @@
 # AML/KYC/CDD Portal — Milestone Checklists
 > Source of truth: PRD v1.0 + Development Plan v1.0 · TruVis International Services
 > Classification: Internal · Confidential · 2026
+> **Status as of 2026-05-01:** M1, M2, M3, M4 are complete. M5 (hardening) and M6 (production) are tracked in `docs/FINAL_LAUNCH_PLAN.md` Sprints 1–3 — this file is preserved for historical acceptance criteria reference.
 
 ---
 
-## MILESTONE 1 — Foundation: Auth, RBAC, Audit, Tenant Setup
+## MILESTONE 1 — Foundation: Auth, RBAC, Audit, Tenant Setup · ✅ COMPLETE
 
 ### 1. Milestone Objective
 Establish the security and compliance backbone before any customer data flows. Authentication, role-based access control, Row Level Security, and the immutable audit trail must be proven before any onboarding code is written.
@@ -112,7 +113,7 @@ Establish the security and compliance backbone before any customer data flows. A
 
 ---
 
-## MILESTONE 2 — Consent, Onboarding Session, Individual KYC Form
+## MILESTONE 2 — Consent, Onboarding Session, Individual KYC Form · ✅ COMPLETE
 
 ### 1. Milestone Objective
 Implement the customer-facing onboarding journey for individual customers: consent capture, personal data collection, document upload. End of M2: a customer can complete consent → personal data → document upload with all data persisted correctly.
@@ -196,7 +197,7 @@ Implement the customer-facing onboarding journey for individual customers: conse
 
 ---
 
-## MILESTONE 3 — IDV, Screening, Risk Scoring, Case Management
+## MILESTONE 3 — IDV, Screening, Risk Scoring, Case Management · ✅ COMPLETE
 
 ### 1. Milestone Objective
 Implement the automated compliance checks — IDV verification, sanctions/PEP screening, risk scoring — and the analyst review queue for cases requiring human decision. End of M3: a complete onboarding flow from consent to analyst approval is working end-to-end.
@@ -296,7 +297,7 @@ Implement the automated compliance checks — IDV verification, sanctions/PEP sc
 
 ---
 
-## MILESTONE 4 — Admin Config UI and Tenant Workflow Management
+## MILESTONE 4 — Admin Config UI and Tenant Workflow Management · ✅ COMPLETE
 
 ### 1. Milestone Objective
 Implement the tenant-facing admin configuration interface so tenants can manage settings, workflows, users, and view audit logs without developer intervention.
@@ -359,7 +360,7 @@ Implement the tenant-facing admin configuration interface so tenants can manage 
 
 ---
 
-## MILESTONE 5 — Hardening, Error Handling, Pre-Launch Compliance Review
+## MILESTONE 5 — Hardening, Error Handling, Pre-Launch Compliance Review · 🟡 IN PROGRESS (FINAL_LAUNCH_PLAN Sprint 2)
 
 ### 1. Milestone Objective
 Harden the MVP for production: complete error handling, automated PII scan, full RLS test suite, MLRO walkthrough of complete high-risk flow, and production security review.
@@ -448,7 +449,7 @@ Harden the MVP for production: complete error handling, automated PII scan, full
 
 ---
 
-## MILESTONE 6 — Production Deployment and Operational Readiness
+## MILESTONE 6 — Production Deployment and Operational Readiness · ⬜ NOT STARTED (FINAL_LAUNCH_PLAN Sprint 3)
 
 ### 1. Milestone Objective
 Deploy the MVP to production with monitoring, backup, operational runbook, and first real customer onboarded.

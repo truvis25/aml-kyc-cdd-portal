@@ -87,7 +87,7 @@ export default function LandingPage() {
         bullets={[
           'Per-tenant branding (logo + colour) on the customer portal',
           'KYC-individual and KYB-corporate forms, each step audited',
-          'Sumsub IDV passthrough with liveness, OCR and face match',
+          'Embedded identity verification with liveness, OCR and face match',
           '15-minute signed URLs on every document — no caching, no leaks',
         ]}
         ctaLabel="Walk through onboarding"
@@ -138,35 +138,36 @@ export default function LandingPage() {
 
       <ResourceTeaser />
 
-      {/* Comparison teaser */}
+      {/* Comparison teaser — generic categories, no vendor names */}
       <section className="bg-paper">
         <div className="mx-auto max-w-6xl px-6 py-20 lg:px-10 lg:py-24">
           <div className="grid items-center gap-10 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
                 <span className="copper-rule" aria-hidden="true" />
-                <span>Honest comparisons</span>
+                <span>Where we fit</span>
               </p>
               <h2 className="font-display mt-6 text-[32px] leading-[1.15] text-ink sm:text-[40px]">
                 Where we lead, and where we don&rsquo;t.
               </h2>
               <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-soft">
                 We&rsquo;re an MLRO workbench, not an IDV provider. We&rsquo;re a SaaS, not a
-                bespoke integration. Read where that lands us versus the leading players.
+                bespoke integration. Read where that lands us versus the categories of tools
+                you may already be evaluating.
               </p>
             </div>
             <div className="grid gap-3 lg:col-span-7 sm:grid-cols-2">
               <CompareCard
-                competitor="Sumsub"
-                edge="Workflow + Bahrain residency"
+                category="vs global IDV platforms"
+                edge="Compliance workflow + UAE residency"
                 concede="They lead on global IDV breadth"
-                href="/compare/sumsub"
+                href="/compare"
               />
               <CompareCard
-                competitor="Azakaw"
-                edge="Pricing + workbench"
-                concede="They lead on direct goAML submission"
-                href="/compare/azakaw"
+                category="vs regional compliance suites"
+                edge="Transparent pricing + workbench depth"
+                concede="They lead on regulator-direct submissions"
+                href="/compare"
               />
             </div>
           </div>
@@ -208,12 +209,12 @@ function ProblemPoint({
 }
 
 function CompareCard({
-  competitor,
+  category,
   edge,
   concede,
   href,
 }: {
-  competitor: string;
+  category: string;
   edge: string;
   concede: string;
   href: string;
@@ -224,12 +225,12 @@ function CompareCard({
       className="group block rounded-2xl border border-line bg-cream/40 p-6 transition-colors hover:border-copper/40 hover:bg-cream"
     >
       <div className="flex items-baseline justify-between gap-3">
-        <div className="text-[12px] uppercase tracking-[0.16em] text-mute">vs</div>
+        <div className="text-[12px] uppercase tracking-[0.16em] text-mute">Compare</div>
         <span aria-hidden="true" className="text-mute transition-transform group-hover:translate-x-0.5">
           &rarr;
         </span>
       </div>
-      <div className="font-display mt-1 text-[28px] leading-[1.1] text-ink">{competitor}</div>
+      <div className="font-display mt-1 text-[24px] leading-[1.15] text-ink">{category}</div>
       <div className="mt-5 space-y-2 text-[13.5px]">
         <div className="flex items-start gap-2 text-ink">
           <span className="text-copper">+</span>
