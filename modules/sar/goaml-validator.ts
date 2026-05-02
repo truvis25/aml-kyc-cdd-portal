@@ -530,7 +530,18 @@ interface XmlNode {
 function parseXml(input: string): XmlNode {
   // Strip prolog + comments. Our builder doesn't emit DOCTYPE or CDATA, so we
   // don't bother with those branches.
-  const body = input.replace(/^<\?xml[^?]*\?>\s*/, '').replace(/<!--[\s\S]*?-->/g, '');
+  //
+  // The comment strip loops until stable: a single-pass replace can leave
+  // a re-formed `<!--` behind (e.g. input `<!-<!--x-->-->` becomes `<!---->`
+  // after one pass). Looping defeats that re-formation pattern. CodeQL JS
+  // rule "incomplete-multi-character-sanitization".
+  const withoutProlog = input.replace(/^<\?xml[^?]*\?>\s*/, '');
+  let body = withoutProlog;
+  for (;;) {
+    const next = body.replace(/<!--[\s\S]*?-->/g, '');
+    if (next === body) break;
+    body = next;
+  }
 
   const root: XmlNode = { name: '__root__', text: '', children: [] };
   const stack: XmlNode[] = [root];
