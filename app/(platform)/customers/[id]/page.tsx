@@ -27,6 +27,7 @@ const REVISION_FIELDS = [
   'id_number',
   'id_expiry',
   'id_issuing_country',
+  'emirates_id_number',
   'email',
   'phone',
   'address_line1',
@@ -68,6 +69,7 @@ interface DataVersionRow {
   pep_status: boolean | null;
   id_type: string | null;
   id_number: string | null;
+  emirates_id_number: string | null;
   version: number;
 }
 
@@ -168,7 +170,7 @@ export default async function CustomerDetailPage({ params }: Props) {
   const [dataResult, businessResult, docsResult, casesResult, hitsResult] = await Promise.all([
     supabase
       .from('customer_data_versions')
-      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, purpose_of_relationship, pep_status, id_type, id_number, version')
+      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, purpose_of_relationship, pep_status, id_type, id_number, emirates_id_number, version')
       .eq('customer_id', id)
       .eq('tenant_id', tenant_id)
       .order('version', { ascending: false })
@@ -425,6 +427,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                   ['Purpose of Relationship', latestData.purpose_of_relationship],
                   ['ID Type', latestData.id_type],
                   ['ID Number', latestData.id_number ? '••••' + latestData.id_number.slice(-4) : null],
+                  ['Emirates ID', latestData.emirates_id_number],
                   ['PEP Status', latestData.pep_status ? 'Politically exposed' : 'Not flagged'],
                 ] as [string, string | null][]).filter(([, v]) => v != null).map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-2">

@@ -175,6 +175,27 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
             <input name="id_issuing_country" required maxLength={2} className="input-field uppercase" placeholder="AE" />
             {fieldError('id_issuing_country')}
           </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Emirates ID
+              <span className="ml-1 text-xs font-normal text-gray-500">
+                — required for UAE nationals and residents
+              </span>
+            </label>
+            <input
+              name="emirates_id_number"
+              maxLength={18}
+              inputMode="numeric"
+              autoComplete="off"
+              className="input-field"
+              placeholder="784-YYYY-NNNNNNN-N"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              15 digits in the form 784-YYYY-NNNNNNN-N. Dashes optional — we&rsquo;ll
+              normalise them. Leave blank if you are not a UAE national or resident.
+            </p>
+            {fieldError('emirates_id_number')}
+          </div>
         </div>
       </section>
 

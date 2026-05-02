@@ -113,7 +113,7 @@ export default async function CaseDetailPage({ params }: Props) {
       .eq('tenant_id', tenant_id),
     supabase
       .from('customer_data_versions')
-      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, pep_status, id_type, id_number')
+      .select('full_name, date_of_birth, nationality, country_of_residence, occupation, source_of_funds, pep_status, id_type, id_number, emirates_id_number')
       .eq('customer_id', case_.customer_id)
       .eq('tenant_id', tenant_id)
       .order('version', { ascending: false })
@@ -152,6 +152,7 @@ export default async function CaseDetailPage({ params }: Props) {
     full_name: string | null; date_of_birth: string | null; nationality: string | null;
     country_of_residence: string | null; occupation: string | null; source_of_funds: string | null;
     pep_status: boolean | null; id_type: string | null; id_number: string | null;
+    emirates_id_number: string | null;
   } | null;
   const sessionStepData = (sessionResult.data as { step_data?: { customer_type?: string } } | null)?.step_data ?? null;
   const isCorporate = sessionStepData?.customer_type === 'corporate';
@@ -328,6 +329,7 @@ export default async function CaseDetailPage({ params }: Props) {
                   ['Source of Funds', customerData.source_of_funds],
                   ['ID Type', customerData.id_type],
                   ['ID Number', customerData.id_number ? '••••' + customerData.id_number.slice(-4) : null],
+                  ['Emirates ID', customerData.emirates_id_number],
                 ].filter(([, v]) => v != null).map(([label, value]) => (
                   <div key={label as string}>
                     <dt className="text-gray-400">{label}</dt>
