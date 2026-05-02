@@ -21,6 +21,7 @@ export interface CustomerDataVersion {
   id_number: string | null;
   id_expiry: string | null;
   id_issuing_country: string | null;
+  emirates_id_number: string | null;
   email: string | null;
   phone: string | null;
   address_line1: string | null;
