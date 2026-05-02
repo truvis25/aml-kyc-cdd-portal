@@ -3,10 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface PrefillIdentity {
+  full_name: string | null;
+  date_of_birth: string | null;
+  nationality: string | null;
+  emirates_id_number: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
 interface IdentityFormProps {
   tenantSlug: string;
   sessionId: string;
   customerId: string;
+  prefill?: PrefillIdentity | null;
 }
 
 const ID_TYPES = [
@@ -26,11 +36,12 @@ const SOURCE_OF_FUNDS_OPTIONS = [
   'Other',
 ];
 
-export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityFormProps) {
+export function IdentityForm({ tenantSlug, sessionId, customerId, prefill }: IdentityFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const pf = prefill ?? null;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -109,21 +120,40 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name <span className="text-red-500">*</span>
             </label>
-            <input name="full_name" required className="input-field" placeholder="As on official ID" />
+            <input
+              name="full_name"
+              required
+              defaultValue={pf?.full_name ?? ''}
+              className="input-field"
+              placeholder="As on official ID"
+            />
             {fieldError('full_name')}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Date of Birth <span className="text-red-500">*</span>
             </label>
-            <input name="date_of_birth" type="date" required className="input-field" />
+            <input
+              name="date_of_birth"
+              type="date"
+              required
+              defaultValue={pf?.date_of_birth ?? ''}
+              className="input-field"
+            />
             {fieldError('date_of_birth')}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nationality (ISO 2) <span className="text-red-500">*</span>
             </label>
-            <input name="nationality" required maxLength={2} className="input-field uppercase" placeholder="AE" />
+            <input
+              name="nationality"
+              required
+              maxLength={2}
+              defaultValue={pf?.nationality ?? ''}
+              className="input-field uppercase"
+              placeholder="AE"
+            />
             {fieldError('nationality')}
           </div>
           <div>
@@ -187,6 +217,7 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
               maxLength={18}
               inputMode="numeric"
               autoComplete="off"
+              defaultValue={pf?.emirates_id_number ?? ''}
               className="input-field"
               placeholder="784-YYYY-NNNNNNN-N"
             />
@@ -209,14 +240,26 @@ export function IdentityForm({ tenantSlug, sessionId, customerId }: IdentityForm
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email <span className="text-red-500">*</span>
             </label>
-            <input name="email" type="email" required className="input-field" />
+            <input
+              name="email"
+              type="email"
+              required
+              defaultValue={pf?.email ?? ''}
+              className="input-field"
+            />
             {fieldError('email')}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone <span className="text-red-500">*</span>
             </label>
-            <input name="phone" required className="input-field" placeholder="+971501234567" />
+            <input
+              name="phone"
+              required
+              defaultValue={pf?.phone ?? ''}
+              className="input-field"
+              placeholder="+971501234567"
+            />
             {fieldError('phone')}
           </div>
           <div className="sm:col-span-2">

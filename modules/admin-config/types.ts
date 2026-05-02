@@ -50,6 +50,22 @@ export interface TenantConfig {
     company_name: string | null;
     logo_url: string | null;
   };
+  /**
+   * UAE Pass identity bridge. When `enabled` is true and the deployment has
+   * UAE Pass credentials configured (UAE_PASS_CLIENT_ID + secret), the customer
+   * onboarding identity step renders a "Sign in with UAE Pass" affordance.
+   *
+   * `required_assurance_level` is the minimum UAE Pass userType that the
+   * tenant accepts for KYC. UAE Pass returns one of three levels:
+   *   SOP1 — basic registration (email+password, NO in-person verification)
+   *   SOP2 — verified by SMS one-time-password
+   *   SOP3 — verified in person at a UAE Pass kiosk (KYC-grade)
+   * Default is SOP3 because SOP1 fails KYC requirements outright.
+   */
+  uae_pass: {
+    enabled: boolean;
+    required_assurance_level: 'SOP2' | 'SOP3';
+  };
   /** Free-form extension point for per-tenant feature flags. */
   flags: Record<string, boolean | string | number>;
 }
@@ -77,6 +93,10 @@ export const DEFAULT_TENANT_CONFIG: TenantConfig = {
   branding: {
     company_name: null,
     logo_url: null,
+  },
+  uae_pass: {
+    enabled: false,
+    required_assurance_level: 'SOP3',
   },
   flags: {},
 };

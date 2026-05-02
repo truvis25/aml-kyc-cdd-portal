@@ -91,4 +91,38 @@ describe('mergeWithDefaults', () => {
       DEFAULT_TENANT_CONFIG.screening.adverse_media_enabled,
     );
   });
+
+  // UAE Pass is opt-in; legacy rows must default to disabled at SOP3.
+  it('fills in uae_pass defaults for rows missing the group', () => {
+    const out = mergeWithDefaults({
+      modules: {
+        individual_kyc: true,
+        corporate_kyb: true,
+        edd_enabled: true,
+        ongoing_screening: false,
+      },
+    });
+    expect(out.uae_pass.enabled).toBe(false);
+    expect(out.uae_pass.required_assurance_level).toBe('SOP3');
+  });
+
+  it('preserves explicit uae_pass overrides', () => {
+    const out = mergeWithDefaults({
+      uae_pass: { enabled: true, required_assurance_level: 'SOP2' },
+    });
+    expect(out.uae_pass.enabled).toBe(true);
+    expect(out.uae_pass.required_assurance_level).toBe('SOP2');
+  });
+
+  it('per-uae_pass-key merge: partial override keeps the other key default', () => {
+    const out = mergeWithDefaults({
+      uae_pass: { enabled: true } as Partial<
+        typeof DEFAULT_TENANT_CONFIG.uae_pass
+      > as never,
+    });
+    expect(out.uae_pass.enabled).toBe(true);
+    expect(out.uae_pass.required_assurance_level).toBe(
+      DEFAULT_TENANT_CONFIG.uae_pass.required_assurance_level,
+    );
+  });
 });

@@ -34,6 +34,11 @@ export enum AuditEventType {
   KYC_PASSED = 'kyc.passed',
   KYC_FAILED = 'kyc.failed',
 
+  // UAE Pass (national digital identity) authentication events
+  UAE_PASS_AUTHENTICATION_INITIATED = 'uae_pass.authentication_initiated',
+  UAE_PASS_AUTHENTICATION_SUCCEEDED = 'uae_pass.authentication_succeeded',
+  UAE_PASS_AUTHENTICATION_FAILED = 'uae_pass.authentication_failed',
+
   // Screening events
   SCREENING_INITIATED = 'screening.initiated',
   SCREENING_COMPLETED = 'screening.completed',
@@ -107,4 +112,5 @@ export enum AuditEntityType {
   WORKFLOW_DEFINITION = 'workflow_definitions',
   SAR_REPORT = 'sar_reports',
   EDD_RECORD = 'customer_edd_records',
+  UAE_PASS_AUTHENTICATION = 'uae_pass_authentications',
 }

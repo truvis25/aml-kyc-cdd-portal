@@ -44,6 +44,10 @@ export const TenantConfigSchema = z.object({
     company_name: z.string().min(1).max(200).nullable(),
     logo_url: z.string().url().nullable(),
   }),
+  uae_pass: z.object({
+    enabled: z.boolean(),
+    required_assurance_level: z.enum(['SOP2', 'SOP3']),
+  }),
   flags: z.record(z.string(), z.union([z.boolean(), z.string(), z.number()])),
 });
 

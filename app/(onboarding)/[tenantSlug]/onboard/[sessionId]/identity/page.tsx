@@ -1,7 +1,14 @@
 import { notFound, redirect } from 'next/navigation';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { getSessionState } from '@/modules/onboarding/onboarding.service';
+import { getLatestTenantConfig } from '@/modules/admin-config/admin-config.service';
+import {
+  getLatestSucceededAuthentication,
+  readUaePassConfig,
+  userInfoToPrefill,
+} from '@/modules/auth/uae-pass';
 import { IdentityForm } from '@/components/onboarding/identity-form';
+import { UaePassButton } from '@/components/onboarding/uae-pass-button';
 import { ProgressIndicator } from '@/components/onboarding/progress-indicator';
 
 const STEPS = [
@@ -36,6 +43,18 @@ export default async function IdentityPage({ params }: Props) {
     redirect(`/${tenantSlug}/onboard/${sessionId}/complete`);
   }
 
+  const tenantConfig = await getLatestTenantConfig(auth.user.tenant_id);
+  const envStatus = readUaePassConfig();
+  const uaePassEnabled = tenantConfig.config.uae_pass.enabled && envStatus.configured;
+
+  let prefill = null;
+  if (uaePassEnabled) {
+    const succeeded = await getLatestSucceededAuthentication(sessionId, auth.user.tenant_id);
+    if (succeeded?.claims) {
+      prefill = userInfoToPrefill(succeeded.claims);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="mx-auto max-w-2xl">
@@ -50,6 +69,12 @@ export default async function IdentityPage({ params }: Props) {
           completedSteps={session.completed_steps}
         />
 
+        {uaePassEnabled && (
+          <div className="mb-6">
+            <UaePassButton sessionId={sessionId} />
+          </div>
+        )}
+
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-1">Personal Information</h2>
           <p className="text-sm text-gray-500 mb-6">
@@ -59,6 +84,7 @@ export default async function IdentityPage({ params }: Props) {
             tenantSlug={tenantSlug}
             sessionId={sessionId}
             customerId={session.customer_id}
+            prefill={prefill}
           />
         </div>
       </div>

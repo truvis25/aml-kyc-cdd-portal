@@ -161,6 +161,7 @@ export function mergeWithDefaults(stored: Partial<TenantConfig> | null | undefin
     },
     screening: { ...DEFAULT_TENANT_CONFIG.screening, ...(s.screening ?? {}) },
     branding: { ...DEFAULT_TENANT_CONFIG.branding, ...(s.branding ?? {}) },
+    uae_pass: { ...DEFAULT_TENANT_CONFIG.uae_pass, ...(s.uae_pass ?? {}) },
     flags: { ...DEFAULT_TENANT_CONFIG.flags, ...(s.flags ?? {}) },
   };
 }
