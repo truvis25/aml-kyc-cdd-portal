@@ -81,6 +81,17 @@ export function ScreeningHitsPanel({ initialHits, canResolve }: Props) {
     return 'bg-yellow-50 text-yellow-700';
   };
 
+  // Distinct visual per hit type so analysts can scan a long list and
+  // immediately see which kind of hit they're looking at. Adverse media
+  // (default-on per FINAL_LAUNCH_PLAN §11.8) is amber to differentiate
+  // from the harder-edged sanctions-red and PEP-purple.
+  const hitTypeColor = (t: string) => {
+    if (t === 'sanction') return 'border-red-200 bg-red-50 text-red-700';
+    if (t === 'pep') return 'border-purple-200 bg-purple-50 text-purple-700';
+    if (t === 'adverse_media') return 'border-amber-200 bg-amber-50 text-amber-700';
+    return 'border-gray-200 bg-gray-50 text-gray-600';
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
       <h2 className="text-sm font-semibold text-gray-900 mb-3">
@@ -98,12 +109,16 @@ export function ScreeningHitsPanel({ initialHits, canResolve }: Props) {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-gray-900 truncate">{hit.match_name}</p>
-                <p className="text-xs text-gray-500 capitalize mt-0.5">
-                  {hit.hit_type.replace(/_/g, ' ')}
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${hitTypeColor(hit.hit_type)}`}
+                  >
+                    {hit.hit_type.replace(/_/g, ' ')}
+                  </span>
                   {hit.match_score != null && (
-                    <span className="ml-2 text-gray-400">· score {hit.match_score}</span>
+                    <span className="text-xs text-gray-400">score {hit.match_score}</span>
                   )}
-                </p>
+                </div>
               </div>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusColor(hit.status)}`}>
                 {hit.status.replace(/_/g, ' ')}

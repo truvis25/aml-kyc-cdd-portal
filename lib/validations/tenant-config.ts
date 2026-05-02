@@ -34,6 +34,12 @@ export const TenantConfigSchema = z.object({
       (t) => t.medium < t.high && t.high < t.unacceptable,
       'Thresholds must satisfy medium < high < unacceptable',
     ),
+  screening: z.object({
+    adverse_media_enabled: z.boolean(),
+    // 0-100; hits below this score are filtered out before persistence.
+    // Lower = more sensitive, higher analyst load.
+    adverse_media_min_confidence: z.number().int().min(0).max(100),
+  }),
   branding: z.object({
     company_name: z.string().min(1).max(200).nullable(),
     logo_url: z.string().url().nullable(),

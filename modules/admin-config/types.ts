@@ -28,6 +28,23 @@ export interface TenantConfig {
     high: number;     // ≤ high → 'high' band
     unacceptable: number; // > unacceptable → 'unacceptable' band
   };
+  /**
+   * Screening behaviour. Adverse media defaults to ON per FINAL_LAUNCH_PLAN.md
+   * §11.8 with a conservative confidence threshold so analyst hit-volume stays
+   * manageable. Tenant admins may lower the threshold or disable adverse media
+   * entirely.
+   */
+  screening: {
+    /** Whether adverse-media hits are requested from the screening provider. */
+    adverse_media_enabled: boolean;
+    /**
+     * Minimum match-score (0-100) for adverse-media hits to surface in the
+     * case UI. Hits below this score are filtered out by the screening
+     * service before persistence. Sanctions and PEP hits are NOT subject to
+     * this filter — they always surface regardless of score.
+     */
+    adverse_media_min_confidence: number;
+  };
   /** Branding placeholders; logo upload itself ships in a follow-up sprint. */
   branding: {
     company_name: string | null;
@@ -52,6 +69,10 @@ export const DEFAULT_TENANT_CONFIG: TenantConfig = {
     medium: 30,
     high: 60,
     unacceptable: 80,
+  },
+  screening: {
+    adverse_media_enabled: true,
+    adverse_media_min_confidence: 85,
   },
   branding: {
     company_name: null,

@@ -9,6 +9,14 @@ export class ComplyAdvantageAdapter implements ScreeningAdapter {
   }
 
   async submitScreening(params: ScreeningParams): Promise<{ job_id: string }> {
+    // Request types: always sanctions + PEP. Adverse media is opt-in per tenant
+    // config (FINAL_LAUNCH_PLAN §11.8). When disabled we drop the type from the
+    // request entirely so the provider doesn't even compute those hits.
+    const requestedTypes: string[] = ['sanction', 'pep', 'warning'];
+    if (params.adverse_media_enabled !== false) {
+      requestedTypes.push('adverse-media');
+    }
+
     const response = await fetch(`${this.baseUrl}/searches`, {
       method: 'POST',
       headers: {
@@ -21,6 +29,7 @@ export class ComplyAdvantageAdapter implements ScreeningAdapter {
         filters: {
           birth_year: params.date_of_birth ? parseInt(params.date_of_birth.split('-')[0] ?? '0', 10) : undefined,
           fuzziness: 0.6,
+          types: requestedTypes,
         },
         tags: [params.tenant_id],
       }),
