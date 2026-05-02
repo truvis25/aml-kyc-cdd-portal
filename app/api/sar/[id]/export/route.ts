@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
-import { exportSarAsXml } from '@/modules/sar';
+import { exportSarAsXml, GoamlValidationFailedError } from '@/modules/sar';
 import { log } from '@/lib/logger';
 
 interface RouteContext {
@@ -29,6 +29,20 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     });
   } catch (err) {
     if (err instanceof Response) return err;
+    if (err instanceof GoamlValidationFailedError) {
+      // 422 Unprocessable Entity — the request is well-formed but the SAR
+      // does not satisfy goAML structural rules. The MLRO UI consumes
+      // `errors[]` to highlight fields.
+      return NextResponse.json(
+        {
+          error: 'goaml_validation_failed',
+          mode: err.mode,
+          errors: err.result.errors,
+          warnings: err.result.warnings,
+        },
+        { status: 422 },
+      );
+    }
     if (err instanceof Error && err.message === 'SAR not found') {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }

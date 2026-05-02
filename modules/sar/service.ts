@@ -13,6 +13,13 @@ import { emit } from '@/modules/audit/audit.service';
 import { AuditEventType, AuditEntityType } from '@/lib/constants/events';
 import type { Role } from '@/lib/constants/roles';
 import { buildSarXml } from './goaml-builder';
+import {
+  validateForGoaml,
+  validateGoamlXml,
+  type GoamlValidationError,
+  type GoamlValidationResult,
+  type ValidationMode,
+} from './goaml-validator';
 import type {
   CreateSarDraftInput,
   UpdateSarDraftInput,
@@ -21,6 +28,27 @@ import type {
   SarSubject,
   SarTransaction,
 } from './types';
+
+/**
+ * Thrown by `exportSarAsXml` and `submitSarReport` when the SAR fails goAML
+ * structural validation. Routes catch this and return 422 with the error
+ * list so the MLRO UI can render field-level annotations.
+ */
+export class GoamlValidationFailedError extends Error {
+  readonly result: GoamlValidationResult;
+  readonly mode: ValidationMode;
+
+  constructor(result: GoamlValidationResult, mode: ValidationMode) {
+    const summary = result.errors
+      .slice(0, 3)
+      .map((e: GoamlValidationError) => `${e.field}: ${e.message}`)
+      .join('; ');
+    super(`goAML validation failed (${mode}): ${summary}`);
+    this.name = 'GoamlValidationFailedError';
+    this.result = result;
+    this.mode = mode;
+  }
+}
 
 interface ServiceContext {
   tenantId: string;
@@ -320,7 +348,24 @@ export async function exportSarAsXml(
     contact_phone: process.env.GOAML_CONTACT_PHONE,
   };
 
+  // Refuse to render an invalid envelope. Returning a 422 here is cheaper
+  // than catching the rejection at the FIU gateway and explaining to the
+  // MLRO that their SAR was lost in transit.
+  const inputValidation = validateForGoaml({ report, institution, subject, mode: 'export' });
+  if (!inputValidation.ok) {
+    throw new GoamlValidationFailedError(inputValidation, 'export');
+  }
+
   const xml = buildSarXml({ report, institution, subject });
+
+  // Defence in depth: parse the produced XML and re-check the same rules
+  // against the wire-shape. If the builder ever drifts from the validator
+  // this catches it before the file leaves our system.
+  const xmlValidation = validateGoamlXml(xml);
+  if (!xmlValidation.ok) {
+    throw new GoamlValidationFailedError(xmlValidation, 'export');
+  }
+
   const xmlHash = createHash('sha256').update(xml, 'utf8').digest('hex');
 
   // Persist hash + bump export version.
@@ -357,6 +402,31 @@ export async function submitSarReport(
   submissionId?: string,
 ): Promise<SarReport> {
   const supabase = await createClient();
+
+  // The MLRO must have rendered (and therefore validated) the goAML XML at
+  // least once before submission. This is enforced by `goaml_xml_hash`
+  // being non-null — `exportSarAsXml` only sets it after validation passes.
+  const existing = await getSarReport(ctx, id);
+  if (!existing) {
+    throw new Error('SAR not found');
+  }
+  if (!existing.goaml_xml_hash) {
+    throw new GoamlValidationFailedError(
+      {
+        ok: false,
+        errors: [
+          {
+            code: 'export_required_before_submit',
+            field: 'report.goaml_xml_hash',
+            message:
+              'Export the SAR as goAML XML at least once before submitting; the export pass-validates the envelope.',
+          },
+        ],
+        warnings: [],
+      },
+      'submit',
+    );
+  }
 
   const { data, error } = await supabase
     .from('sar_reports')
