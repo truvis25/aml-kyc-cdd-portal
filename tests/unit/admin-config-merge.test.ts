@@ -52,4 +52,43 @@ describe('mergeWithDefaults', () => {
     mergeWithDefaults(stored);
     expect(JSON.stringify(stored)).toBe(before);
   });
+
+  // §11.8: adverse media is default-ON at 85% confidence. Older config rows
+  // written before migration 0030 land here without a `screening` group at
+  // all — they must transparently inherit the default-on policy.
+  it('fills in screening defaults for legacy rows missing the screening group', () => {
+    const out = mergeWithDefaults({
+      modules: {
+        individual_kyc: true,
+        corporate_kyb: true,
+        edd_enabled: true,
+        ongoing_screening: false,
+      },
+    });
+    expect(out.screening.adverse_media_enabled).toBe(true);
+    expect(out.screening.adverse_media_min_confidence).toBe(85);
+  });
+
+  it('preserves explicit screening overrides', () => {
+    const out = mergeWithDefaults({
+      screening: {
+        adverse_media_enabled: false,
+        adverse_media_min_confidence: 60,
+      },
+    });
+    expect(out.screening.adverse_media_enabled).toBe(false);
+    expect(out.screening.adverse_media_min_confidence).toBe(60);
+  });
+
+  it('per-screening-key merge: partial override keeps the other key default', () => {
+    const out = mergeWithDefaults({
+      screening: { adverse_media_min_confidence: 70 } as Partial<
+        typeof DEFAULT_TENANT_CONFIG.screening
+      > as never,
+    });
+    expect(out.screening.adverse_media_min_confidence).toBe(70);
+    expect(out.screening.adverse_media_enabled).toBe(
+      DEFAULT_TENANT_CONFIG.screening.adverse_media_enabled,
+    );
+  });
 });

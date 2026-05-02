@@ -159,6 +159,7 @@ export function mergeWithDefaults(stored: Partial<TenantConfig> | null | undefin
       ...DEFAULT_TENANT_CONFIG.risk_thresholds,
       ...(s.risk_thresholds ?? {}),
     },
+    screening: { ...DEFAULT_TENANT_CONFIG.screening, ...(s.screening ?? {}) },
     branding: { ...DEFAULT_TENANT_CONFIG.branding, ...(s.branding ?? {}) },
     flags: { ...DEFAULT_TENANT_CONFIG.flags, ...(s.flags ?? {}) },
   };

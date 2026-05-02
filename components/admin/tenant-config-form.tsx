@@ -158,6 +158,75 @@ export function TenantConfigForm({ initial, initialVersion, canEdit }: Props) {
           </div>
         </section>
 
+        {/* Screening */}
+        <section>
+          <h3 className="text-sm font-semibold text-gray-700">Screening behaviour</h3>
+          <p className="text-xs text-gray-500 mt-1 mb-3">
+            Sanctions and PEP screening are always on. Adverse media is opt-out per
+            FINAL_LAUNCH_PLAN §11.8 — disabling reduces analyst hit-volume but means
+            negative-news matches won&rsquo;t reach the case queue.
+          </p>
+          <div className="space-y-3">
+            <label className="flex items-start gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={config.screening.adverse_media_enabled}
+                disabled={!canEdit}
+                onChange={() =>
+                  setConfig((c) => ({
+                    ...c,
+                    screening: {
+                      ...c.screening,
+                      adverse_media_enabled: !c.screening.adverse_media_enabled,
+                    },
+                  }))
+                }
+                className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                <span className="font-medium">Adverse media screening</span>
+                <span className="block text-xs text-gray-500">
+                  Search negative-news + watchlist sources alongside sanctions and PEP.
+                </span>
+              </span>
+            </label>
+
+            <div className={config.screening.adverse_media_enabled ? '' : 'opacity-50'}>
+              <label className="block text-sm font-medium text-gray-700">
+                Minimum match confidence (%) for adverse-media hits
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5 mb-2">
+                Hits below this score are filtered out before reaching analysts. Lower =
+                more sensitive (more hits to review). Sanctions and PEP hits are not
+                affected by this threshold.
+              </p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={config.screening.adverse_media_min_confidence}
+                  disabled={!canEdit || !config.screening.adverse_media_enabled}
+                  onChange={(e) =>
+                    setConfig((c) => ({
+                      ...c,
+                      screening: {
+                        ...c.screening,
+                        adverse_media_min_confidence: parseInt(e.target.value, 10),
+                      },
+                    }))
+                  }
+                  className="w-64 max-w-full"
+                />
+                <span className="tabular-nums text-sm font-semibold text-gray-900">
+                  {config.screening.adverse_media_min_confidence}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Branding */}
         <section>
           <h3 className="text-sm font-semibold text-gray-700">Branding</h3>

@@ -9,6 +9,12 @@ export interface ScreeningParams {
   date_of_birth?: string;
   nationality?: string;
   search_type?: 'individual' | 'corporate';
+  /**
+   * Whether to request adverse-media hits from the provider in addition to
+   * sanctions + PEP. Defaults to true via tenant config (FINAL_LAUNCH_PLAN
+   * §11.8); false disables adverse media for this search.
+   */
+  adverse_media_enabled?: boolean;
 }
 
 export interface ScreeningHit {
