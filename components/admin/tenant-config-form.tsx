@@ -227,6 +227,68 @@ export function TenantConfigForm({ initial, initialVersion, canEdit }: Props) {
           </div>
         </section>
 
+        {/* UAE Pass */}
+        <section>
+          <h3 className="text-sm font-semibold text-gray-700">UAE Pass identity bridge</h3>
+          <p className="text-xs text-gray-500 mt-1 mb-3">
+            Surfaces a &ldquo;Sign in with UAE Pass&rdquo; affordance on the customer
+            onboarding identity step. Requires UAE Pass credentials to be configured
+            on the deployment (UAE_PASS_CLIENT_ID + secret) — toggling this on
+            without those keys keeps the button hidden.
+          </p>
+          <div className="space-y-3">
+            <label className="flex items-start gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={config.uae_pass.enabled}
+                disabled={!canEdit}
+                onChange={() =>
+                  setConfig((c) => ({
+                    ...c,
+                    uae_pass: { ...c.uae_pass, enabled: !c.uae_pass.enabled },
+                  }))
+                }
+                className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                <span className="font-medium">Enable UAE Pass sign-in</span>
+                <span className="block text-xs text-gray-500">
+                  Verified identity claims pre-fill the onboarding form; the audit
+                  log records the authentication.
+                </span>
+              </span>
+            </label>
+
+            <div className={config.uae_pass.enabled ? '' : 'opacity-50'}>
+              <label className="block text-sm font-medium text-gray-700">
+                Minimum assurance level
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5 mb-2">
+                SOP3 (in-person verification) is the strictest. SOP2 (SMS OTP) is
+                acceptable for lower-risk products. SOP1 and Visitor are always
+                rejected for KYC.
+              </p>
+              <select
+                value={config.uae_pass.required_assurance_level}
+                disabled={!canEdit || !config.uae_pass.enabled}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    uae_pass: {
+                      ...c.uae_pass,
+                      required_assurance_level: e.target.value as 'SOP2' | 'SOP3',
+                    },
+                  }))
+                }
+                className="rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+              >
+                <option value="SOP3">SOP3 — in-person verified (recommended)</option>
+                <option value="SOP2">SOP2 — SMS-OTP verified</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
         {/* Branding */}
         <section>
           <h3 className="text-sm font-semibold text-gray-700">Branding</h3>
