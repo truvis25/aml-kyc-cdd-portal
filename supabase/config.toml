@@ -89,6 +89,12 @@ verify_enabled = true
 enroll_enabled = false
 verify_enabled = false
 
+# Custom Access Token Hook — enriches JWTs with tenant_id, user_role, permissions.
+# See migration 0005 / 0021 for the function definition.
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Edge Functions
 #
