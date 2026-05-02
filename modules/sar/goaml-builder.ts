@@ -22,6 +22,10 @@ import type {
   SarSubject,
   SarTransaction,
 } from './types';
+import {
+  mapReasonToReportCode,
+  mapInstrumentToTransmodeCode,
+} from './goaml-codes';
 
 /** XML 1.0 well-formed escaping. Never `eval` or interpolate raw values. */
 export function xmlEscape(s: string): string {
@@ -131,24 +135,13 @@ export function buildSarXml(input: BuildSarXmlInput): string {
   return lines.join('\n');
 }
 
-/**
- * goAML report_code mapping. UAE FIU uses STR (Suspicious Transaction
- * Report) for most submissions; CTR (Cash Threshold Report) when the
- * primary reason is a cash threshold breach.
- */
-function mapReasonToReportCode(reasons: string[]): string {
-  if (reasons.includes('CTR')) return 'CTR';
-  if (reasons.includes('TFS')) return 'TFS-STR';
-  return 'STR';
-}
-
 function renderTransaction(tx: SarTransaction, parentRef: string): string[] {
   const out: string[] = [];
   out.push('  <transaction>');
   out.push(`    <transactionnumber>${xmlEscape(tx.reference ?? `${parentRef}-tx`)}</transactionnumber>`);
   out.push(`    <transaction_location>AE</transaction_location>`);
   out.push(`    <date_transaction>${xmlEscape(tx.date)}</date_transaction>`);
-  out.push(`    <transmode_code>${xmlEscape(mapInstrumentToCode(tx.instrument_type))}</transmode_code>`);
+  out.push(`    <transmode_code>${xmlEscape(mapInstrumentToTransmodeCode(tx.instrument_type))}</transmode_code>`);
   out.push(`    <amount_local>${tx.amount_aed.toFixed(2)}</amount_local>`);
   if (tx.description) {
     out.push(`    <comments>${xmlEscape(tx.description)}</comments>`);
@@ -162,21 +155,4 @@ function renderTransaction(tx: SarTransaction, parentRef: string): string[] {
   }
   out.push('  </transaction>');
   return out;
-}
-
-function mapInstrumentToCode(instrument: SarTransaction['instrument_type']): string {
-  switch (instrument) {
-    case 'cash':
-      return 'CASH';
-    case 'wire':
-      return 'WIRE';
-    case 'cheque':
-      return 'CHEQUE';
-    case 'card':
-      return 'CARD';
-    case 'crypto':
-      return 'CRYPTO';
-    default:
-      return 'OTHER';
-  }
 }

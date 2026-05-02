@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/modules/auth/auth.service';
 import { assertPermission } from '@/modules/auth/rbac';
-import { submitSarReport } from '@/modules/sar';
+import { submitSarReport, GoamlValidationFailedError } from '@/modules/sar';
 import { log } from '@/lib/logger';
 
 const SubmitSchema = z.object({
@@ -37,6 +37,20 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     if (err instanceof Response) return err;
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: 'invalid_request', details: err.issues }, { status: 400 });
+    }
+    if (err instanceof GoamlValidationFailedError) {
+      return NextResponse.json(
+        {
+          error: 'goaml_validation_failed',
+          mode: err.mode,
+          errors: err.result.errors,
+          warnings: err.result.warnings,
+        },
+        { status: 422 },
+      );
+    }
+    if (err instanceof Error && err.message === 'SAR not found') {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
     log.error('POST /api/sar/[id]/submit error', { code: 'sar_submit_failed' });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
