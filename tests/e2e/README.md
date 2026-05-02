@@ -19,11 +19,22 @@ Two Playwright `projects` are defined in `playwright.config.ts`:
 | `app`      | auth, role routing, cases, customers, SAR, audit                    | ⛔ until seed lands |
 
 The `app` project is gated by `E2E_RUN_APP=1` because it needs:
-1. A seeded test tenant in Supabase (test schema or dedicated project).
-2. One test user per role with `E2E_<ROLE>_EMAIL` and `E2E_<ROLE>_PASSWORD` env vars.
-3. MFA pre-completed for `tenant_admin` and `mlro` roles in the seed.
+1. A seeded test tenant in Supabase (the seed in `supabase/seed.sql` does this for local dev).
+2. The four non-MFA test users from the seed (analyst, senior_reviewer,
+   onboarding_agent, read_only). Credentials live as constants in
+   `tests/e2e/helpers/seed-config.ts` — no env vars needed for these.
 
-Until the seed job lands, `app` tests are silently skipped (`grep: /__never_match__/`).
+**MFA-required roles** (tenant_admin, mlro) are NOT yet covered. The proxy
+enforces `aal=aal2` for those roles (`MFA_REQUIRED_ROLES` in `proxy.ts`),
+and bypassing it in middleware would be a security backdoor. Enrolling
+a TOTP factor at seed time via `auth.mfa_factors` is fragile and
+Supabase-version-specific. Deferred to a "seed v2" pass that either
+runs against a no-MFA Supabase project or adds an admin script using
+`supabase.auth.admin.mfa.*`. Until then, those role tests are absent
+from the suite.
+
+When `E2E_RUN_APP` is unset, `app` tests are silently skipped
+(`grep: /__never_match__/` in `playwright.config.ts`).
 
 ## Run locally
 
@@ -43,16 +54,32 @@ npm run test:e2e:ui -- --project=marketing
 
 ### App project (authenticated, requires seed)
 
-```bash
-# Required env (export before running)
-export E2E_TENANT_ADMIN_EMAIL='admin@test.local'
-export E2E_TENANT_ADMIN_PASSWORD='…'
-export E2E_MLRO_EMAIL='mlro@test.local'
-# … and the rest
+The seed credentials live in `tests/e2e/helpers/seed-config.ts` — you do
+NOT need to export env vars. The flow is:
 
+```bash
+# 1. Reset the local Supabase db so all migrations + seed.sql apply
+supabase db reset
+
+# 2. Build the app
 npm run build
+
+# 3. Run the app project (E2E_RUN_APP=1 is set by the npm script)
 npm run test:e2e:app
 ```
+
+Seeded test users (local dev only; password `TestPass123!` for all four):
+
+| Role             | Email                          |
+| ---------------- | ------------------------------ |
+| analyst          | analyst@truvis-test.local       |
+| senior_reviewer  | sr@truvis-test.local            |
+| onboarding_agent | agent@truvis-test.local         |
+| read_only        | readonly@truvis-test.local      |
+
+Plus two seeded customers + two cases (one assigned to analyst, one to
+senior_reviewer). Customer / case IDs are exported by `seed-config.ts`
+so tests can reference them without hard-coding.
 
 ### Run against a Vercel preview deployment
 
@@ -86,11 +113,21 @@ When `E2E_BASE_URL` is set, Playwright skips spawning a local server.
 
 ### `app/sign-in.spec.ts` (gated)
 - Unauthenticated `/dashboard` → `/sign-in`
-- Analyst lands on the analyst dashboard
+- Analyst signs in and lands on the analyst dashboard
 - Analyst is RBAC-blocked from `/audit`
 
 ### `app/role-routing.spec.ts` (gated)
-- All 6 in-tenant roles land on the correct role-specific dashboard fingerprint
+- The four non-MFA roles (analyst, senior_reviewer, onboarding_agent,
+  read_only) each land on the correct role-specific dashboard fingerprint
+- tenant_admin / mlro variants are absent until MFA seed lands
+
+### `app/case-workflow.spec.ts` (gated)
+- Analyst sees their seeded medium-risk case in `/cases`
+- Analyst can open the case detail; EDD section is NOT visible (RBAC)
+- Senior Reviewer sees their seeded high-risk EDD case in `/cases`
+- Senior Reviewer can see the EDD section on the case detail
+- Read-only lands on `/reporting`; `/cases` is blocked or unavailable
+- Onboarding agent sees the New Onboarding entry points
 
 ## What's NOT covered yet
 
