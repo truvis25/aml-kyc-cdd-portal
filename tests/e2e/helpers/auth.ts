@@ -1,84 +1,51 @@
 import type { Page } from '@playwright/test';
+import { TEST_USERS, type TestUser } from './seed-config';
 
 /**
  * Auth helpers for the `app` Playwright project.
  *
- * Two modes are supported:
+ * Sign-in goes through the real form so we exercise:
+ *   - the proxy (auth guard, tenant resolution, MFA enforcement)
+ *   - the JWT enrichment hook (custom_access_token_hook)
+ *   - the role-aware dashboard router
  *
- * 1. **Sign-in via UI** (`signInAs`): drives the real sign-in form with a
- *    seeded test user. Slower but exercises the full auth path including
- *    JWT enrichment via the Postgres custom_access_token_hook.
- *
- * 2. **Storage-state bypass** (`useStorageStateForRole`): pre-saved Supabase
- *    session cookies for each test role. ~10x faster but requires the seed
- *    job to have written the storage-state files first.
- *
- * Until the seed lands, both paths require the env vars below to be set.
- * See tests/e2e/README.md for the full setup.
+ * Only non-MFA roles (analyst, senior_reviewer, onboarding_agent,
+ * read_only) are seeded by `supabase/seed.sql`. tenant_admin and mlro
+ * are blocked by the MFA wall in proxy.ts; we don't have a clean way
+ * to enrol a TOTP factor at seed time, so those roles are deferred.
  */
 
-export interface TestUser {
-  email: string;
-  password: string;
-  expectedRole: string;
-}
+export type SeededRole = keyof typeof TEST_USERS;
 
-export const TEST_USERS: Record<string, TestUser> = {
-  tenant_admin: {
-    email: process.env.E2E_TENANT_ADMIN_EMAIL ?? '',
-    password: process.env.E2E_TENANT_ADMIN_PASSWORD ?? '',
-    expectedRole: 'tenant_admin',
-  },
-  mlro: {
-    email: process.env.E2E_MLRO_EMAIL ?? '',
-    password: process.env.E2E_MLRO_PASSWORD ?? '',
-    expectedRole: 'mlro',
-  },
-  senior_reviewer: {
-    email: process.env.E2E_SENIOR_REVIEWER_EMAIL ?? '',
-    password: process.env.E2E_SENIOR_REVIEWER_PASSWORD ?? '',
-    expectedRole: 'senior_reviewer',
-  },
-  analyst: {
-    email: process.env.E2E_ANALYST_EMAIL ?? '',
-    password: process.env.E2E_ANALYST_PASSWORD ?? '',
-    expectedRole: 'analyst',
-  },
-  onboarding_agent: {
-    email: process.env.E2E_ONBOARDING_AGENT_EMAIL ?? '',
-    password: process.env.E2E_ONBOARDING_AGENT_PASSWORD ?? '',
-    expectedRole: 'onboarding_agent',
-  },
-  read_only: {
-    email: process.env.E2E_READ_ONLY_EMAIL ?? '',
-    password: process.env.E2E_READ_ONLY_PASSWORD ?? '',
-    expectedRole: 'read_only',
-  },
-};
-
-export function requireUser(role: keyof typeof TEST_USERS): TestUser {
-  const u = TEST_USERS[role];
-  if (!u || !u.email || !u.password) {
-    throw new Error(
-      `Missing test credentials for role "${role}". Set E2E_${role.toUpperCase()}_EMAIL ` +
-        `and E2E_${role.toUpperCase()}_PASSWORD before running app-project tests.`,
-    );
-  }
-  return u;
+export function getSeededUser(role: SeededRole): TestUser {
+  return TEST_USERS[role];
 }
 
 /**
- * Sign in via the real sign-in form. Returns once the post-auth dashboard
- * has rendered. MFA-required roles (tenant_admin, mlro) must have MFA
- * pre-completed in the seed.
+ * Sign in via the real sign-in form. Returns once the post-auth
+ * dashboard has rendered.
  */
-export async function signInAs(page: Page, role: keyof typeof TEST_USERS): Promise<void> {
-  const user = requireUser(role);
+export async function signInAs(page: Page, role: SeededRole): Promise<void> {
+  const user = getSeededUser(role);
+
   await page.goto('/sign-in');
   await page.getByLabel(/email/i).fill(user.email);
   await page.getByLabel(/password/i).fill(user.password);
   await page.getByRole('button', { name: /sign in/i }).click();
 
-  // Land on /dashboard or whichever role-specific landing page the proxy chose.
+  // Land on /dashboard. waitForURL covers the proxy redirect chain even
+  // if Supabase issues a re-fetch on first request.
   await page.waitForURL(/\/dashboard(?:$|\/|\?)/, { timeout: 15_000 });
+}
+
+/**
+ * Sign out by clearing storage. Faster than driving the UI sign-out
+ * button when a test only needs a clean slate before signInAs.
+ */
+export async function signOut(page: Page): Promise<void> {
+  await page.context().clearCookies();
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
 }
