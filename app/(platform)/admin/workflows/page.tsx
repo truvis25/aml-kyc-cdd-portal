@@ -5,6 +5,8 @@ import { Role } from '@/lib/constants/roles';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import { WorkflowToggle } from '@/components/admin/workflow-toggle';
 import { WorkflowAckButton } from '@/components/admin/workflow-ack-button';
+import { RulePackCatalog } from '@/components/admin/rule-pack-catalog';
+import { RULE_PACKS } from '@/modules/admin-config/rule-packs/catalog';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export default async function AdminWorkflowsPage() {
@@ -63,6 +65,24 @@ export default async function AdminWorkflowsPage() {
   const canToggle = hasPermission(role, 'admin:activate_workflow');
   const canAcknowledge = role === Role.MLRO;
 
+  // Compute which rule packs the tenant has already cloned (by checking
+  // metadata.cloned_from.pack_id on tenant-scoped workflows). This drives
+  // the "Already cloned" badge on the catalog cards.
+  let alreadyClonedPackIds: string[] = [];
+  if (canToggle) {
+    const { data: tenantWorkflows } = await supabase
+      .from('workflow_definitions')
+      .select('definition')
+      .eq('tenant_id', tenant_id);
+    alreadyClonedPackIds = ((tenantWorkflows ?? []) as { definition: Record<string, unknown> }[])
+      .map((w) => {
+        const meta = w.definition?.metadata as Record<string, unknown> | undefined;
+        const cloned = meta?.cloned_from as { pack_id?: string } | undefined;
+        return cloned?.pack_id;
+      })
+      .filter((id): id is string => typeof id === 'string');
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -71,6 +91,25 @@ export default async function AdminWorkflowsPage() {
           Onboarding workflow definitions. Tenant-scoped activations require MLRO acknowledgement.
         </p>
       </div>
+
+      {/* Regulator rule packs — only Tenant Admin sees the catalog (MLRO
+          only acknowledges; doesn't clone). */}
+      {canToggle && (
+        <section className="mb-10">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Regulator templates</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Pre-configured workflows tuned to UAE regulators. Clone one to seed a tenant-scoped
+              workflow that you can then customize and activate (with MLRO acknowledgement).
+            </p>
+          </div>
+          <RulePackCatalog
+            packs={RULE_PACKS}
+            alreadyClonedPackIds={alreadyClonedPackIds}
+            canClone={canToggle}
+          />
+        </section>
+      )}
 
       {workflows.length === 0 ? (
         <EmptyState
