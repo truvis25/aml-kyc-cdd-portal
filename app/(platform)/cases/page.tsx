@@ -54,12 +54,25 @@ export default async function CasesPage({ searchParams }: Props) {
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
 
+  const canReadAssigned = hasPermission(role, 'cases:read_assigned');
+  const canReadAll = hasPermission(role, 'cases:read_all');
+
+  if (!canReadAssigned && !canReadAll) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm font-medium text-red-900">Access denied</p>
+        <p className="mt-1 text-sm text-red-700">
+          Your role does not have permission to view case records.
+        </p>
+      </div>
+    );
+  }
+
   const currentPage = Math.max(1, parseInt(filters.page ?? '1', 10));
   const offset = (currentPage - 1) * PAGE_SIZE;
 
   // Build query — only roles with cases:read_all see all cases; others see only assigned.
   // Fetch PAGE_SIZE + 1 to detect a next page without a separate count query.
-  const canReadAll = hasPermission(role, 'cases:read_all');
   let q = supabase
     .from('cases')
     .select('id, customer_id, status, queue, opened_at, risk_assessment_id, assigned_to')

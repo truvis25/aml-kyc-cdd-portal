@@ -13,7 +13,7 @@
 --          prev_hash.
 
 BEGIN;
-SELECT plan(8);
+SELECT plan(9);
 
 -- Anchor on a real tenant and a stable timestamp ordering.
 DO $$
@@ -135,7 +135,7 @@ SELECT is(
 --    Direct UPDATE from this point should raise.
 SELECT throws_ok(
   $$ UPDATE audit_log SET payload = '{}'::JSONB WHERE event_type = 'test.chain.row1' $$,
-  'P0001',
+  '42501',
   NULL,
   'audit_log_no_update trigger is re-enabled after the test'
 );

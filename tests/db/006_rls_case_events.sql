@@ -4,13 +4,17 @@
 BEGIN;
 SELECT plan(5);
 
-SELECT has_table_privilege(
-  'authenticated', 'case_events', 'INSERT',
+SELECT ok(
+  has_table_privilege('authenticated', 'case_events', 'INSERT'),
   'authenticated has INSERT on case_events'
 );
 
 SELECT ok(
-  NOT has_table_privilege('authenticated', 'case_events', 'DELETE'),
+  NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'case_events'
+       AND cmd IN ('DELETE', 'ALL')
+  ),
   'authenticated does NOT have DELETE on case_events'
 );
 

@@ -4,8 +4,8 @@
 BEGIN;
 SELECT plan(6);
 
-SELECT has_table_privilege(
-  'authenticated', 'workflow_activation_acks', 'INSERT',
+SELECT ok(
+  has_table_privilege('authenticated', 'workflow_activation_acks', 'INSERT'),
   'authenticated has INSERT on workflow_activation_acks'
 );
 

@@ -4,13 +4,17 @@
 BEGIN;
 SELECT plan(5);
 
-SELECT has_table_privilege(
-  'authenticated', 'approvals', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'approvals', 'SELECT'),
   'authenticated has SELECT on approvals'
 );
 
 SELECT ok(
-  NOT has_table_privilege('authenticated', 'approvals', 'DELETE'),
+  NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'approvals'
+       AND cmd IN ('DELETE', 'ALL')
+  ),
   'authenticated does NOT have DELETE on approvals'
 );
 

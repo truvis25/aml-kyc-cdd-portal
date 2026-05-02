@@ -48,7 +48,7 @@ for (const { role, path, reason } of FORBIDDEN_ROUTES) {
       const url = page.url();
       if (url.includes(path)) {
         // We stayed on the path — must show an access-denied surface.
-        await expect(page.getByText(/access denied|forbidden|permission/i)).toBeVisible({
+        await expect(page.getByText('Access denied', { exact: true })).toBeVisible({
           timeout: 5000,
         });
       }

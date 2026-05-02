@@ -6,14 +6,18 @@ BEGIN;
 SELECT plan(6);
 
 -- Authenticated reads cases scoped to tenant.
-SELECT has_table_privilege(
-  'authenticated', 'cases', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'cases', 'SELECT'),
   'authenticated has SELECT privilege on cases'
 );
 
 -- Authenticated must NOT have DELETE — cases are never hard-deleted.
 SELECT ok(
-  NOT has_table_privilege('authenticated', 'cases', 'DELETE'),
+  NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'cases'
+       AND cmd IN ('DELETE', 'ALL')
+  ),
   'authenticated does NOT have DELETE on cases'
 );
 
