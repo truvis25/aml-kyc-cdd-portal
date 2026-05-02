@@ -10,7 +10,7 @@ import { CaseAssignPanel } from '@/components/cases/case-assign-panel';
 import { CaseRealtime } from '@/components/cases/case-realtime';
 import { CaseEventsRealtime } from '@/components/cases/case-events-realtime';
 import { EddPanel } from '@/components/cases/edd-panel';
-import { hasPermission } from '@/modules/auth/rbac';
+import { hasAnyPermission, hasPermission } from '@/modules/auth/rbac';
 import { getLatestEddRecord } from '@/modules/edd/edd.service';
 import { getPageAuth } from '@/lib/auth/page-auth';
 import type { RiskBand } from '@/modules/risk/risk.types';
@@ -79,6 +79,14 @@ export default async function CaseDetailPage({ params }: Props) {
   const { userId, role, tenantId: tenant_id } = await getPageAuth();
   const supabase = await createClient();
 
+  if (!hasAnyPermission(role, ['cases:read_assigned', 'cases:read_all'])) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+        <p className="text-sm font-medium text-red-900">Access denied</p>
+        <p className="mt-1 text-sm text-red-700">You do not have permission to view cases.</p>
+      </div>
+    );
+  }
 
   // Fetch case
   const { data: rawCase } = await supabase

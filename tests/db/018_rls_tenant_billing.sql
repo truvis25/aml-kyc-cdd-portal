@@ -8,7 +8,7 @@
 -- the migration lands the tier-enum assertion below should be updated.
 
 BEGIN;
-SELECT plan(13);
+SELECT plan(14);
 
 -- Tables present
 SELECT has_table('public', 'tenant_billing', 'tenant_billing table exists');

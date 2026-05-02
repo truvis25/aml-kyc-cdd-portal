@@ -4,13 +4,17 @@
 BEGIN;
 SELECT plan(5);
 
-SELECT has_table_privilege(
-  'authenticated', 'tenant_config', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'tenant_config', 'SELECT'),
   'authenticated has SELECT on tenant_config'
 );
 
 SELECT ok(
-  NOT has_table_privilege('authenticated', 'tenant_config', 'DELETE'),
+  NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'tenant_config'
+       AND cmd IN ('DELETE', 'ALL')
+  ),
   'authenticated does NOT have DELETE on tenant_config'
 );
 

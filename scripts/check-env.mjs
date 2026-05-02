@@ -8,13 +8,51 @@
  *   npm run validate:env                  — same, via package.json script
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+
+function loadDotenvLocal() {
+  if (!existsSync('.env.local')) return;
+
+  for (const line of readFileSync('.env.local', 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+
+    const key = trimmed.slice(0, eq).trim();
+    if (!key || process.env[key] !== undefined) continue;
+
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
+loadDotenvLocal();
+
 const VARS = [
   // ─── Required in all environments ────────────────────────────────────────
   {
     name: 'NEXT_PUBLIC_SUPABASE_URL',
     public: true,
     description: 'Supabase project URL (Project Settings → API → Project URL)',
-    validate: (v) => v.startsWith('https://') && v.includes('.supabase'),
+    validate: (v) => {
+      try {
+        const url = new URL(v);
+        return (
+          (url.protocol === 'https:' && url.hostname.endsWith('.supabase.co')) ||
+          (url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))
+        );
+      } catch {
+        return false;
+      }
+    },
   },
   {
     name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',

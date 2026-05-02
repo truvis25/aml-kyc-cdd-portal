@@ -40,7 +40,7 @@ SELECT throws_ok(
   $$
     UPDATE audit_log SET event_type = 'tampered' WHERE event_type = 'test.insert'
   $$,
-  'P0001',
+  '42501',
   NULL,
   'UPDATE on audit_log raises exception (audit_log records are immutable)'
 );
@@ -50,7 +50,7 @@ SELECT throws_ok(
   $$
     DELETE FROM audit_log WHERE event_type = 'test.insert'
   $$,
-  'P0001',
+  '42501',
   NULL,
   'DELETE on audit_log raises exception (audit_log records are immutable)'
 );

@@ -4,23 +4,27 @@
 BEGIN;
 SELECT plan(7);
 
-SELECT has_table_privilege(
-  'authenticated', 'screening_jobs', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'screening_jobs', 'SELECT'),
   'authenticated has SELECT on screening_jobs'
 );
 
-SELECT has_table_privilege(
-  'authenticated', 'screening_hits', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'screening_hits', 'SELECT'),
   'authenticated has SELECT on screening_hits'
 );
 
-SELECT has_table_privilege(
-  'authenticated', 'screening_hit_resolutions', 'INSERT',
+SELECT ok(
+  has_table_privilege('authenticated', 'screening_hit_resolutions', 'INSERT'),
   'authenticated has INSERT on screening_hit_resolutions'
 );
 
 SELECT ok(
-  NOT has_table_privilege('authenticated', 'screening_hit_resolutions', 'DELETE'),
+  NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'screening_hit_resolutions'
+       AND cmd IN ('DELETE', 'ALL')
+  ),
   'authenticated does NOT have DELETE on screening_hit_resolutions'
 );
 

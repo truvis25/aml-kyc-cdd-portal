@@ -72,11 +72,10 @@ export function IDVForm({ tenantSlug, sessionId }: IDVFormProps) {
             accessToken,
             applicantId: appId,
             // Lifecycle callbacks
-            onMessage: (msg: Record<string, unknown>) => {
-              console.log('SDK message:', msg);
+            onMessage: () => {
+              // SDK progress events can include identity metadata; do not log them.
             },
             onError: (error: { message: string }) => {
-              console.error('SDK error:', error);
               setError(`Identity verification error: ${error.message}`);
             },
             onComplete: async () => {

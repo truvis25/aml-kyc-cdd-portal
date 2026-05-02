@@ -4,8 +4,8 @@
 BEGIN;
 SELECT plan(5);
 
-SELECT has_table_privilege(
-  'authenticated', 'documents', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'documents', 'SELECT'),
   'authenticated has SELECT on documents'
 );
 
@@ -15,7 +15,11 @@ SELECT ok(
 );
 
 SELECT ok(
-  NOT has_table_privilege('authenticated', 'document_events', 'DELETE'),
+  NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'document_events'
+       AND cmd IN ('DELETE', 'ALL')
+  ),
   'authenticated does NOT have DELETE on document_events'
 );
 

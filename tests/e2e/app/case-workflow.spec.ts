@@ -77,7 +77,7 @@ test.describe('Read-only — aggregate reporting only', () => {
     if ((res?.status() ?? 0) === 200) {
       const url = page.url();
       if (url.includes('/cases')) {
-        await expect(page.getByText(/access denied|permission|forbidden/i)).toBeVisible();
+        await expect(page.getByText('Access denied', { exact: true })).toBeVisible();
       }
     }
   });

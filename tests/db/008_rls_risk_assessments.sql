@@ -4,8 +4,8 @@
 BEGIN;
 SELECT plan(4);
 
-SELECT has_table_privilege(
-  'authenticated', 'risk_assessments', 'SELECT',
+SELECT ok(
+  has_table_privilege('authenticated', 'risk_assessments', 'SELECT'),
   'authenticated has SELECT on risk_assessments'
 );
 
