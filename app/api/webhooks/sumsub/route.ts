@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { log } from '@/lib/logger';
 import { getSumsubClient } from '@/modules/sumsub/client';
 import { handleApplicantReviewedWebhook } from '@/modules/sumsub';
 import { ApplicantReviewedWebhookSchema } from '@/modules/sumsub/types';
@@ -64,8 +65,8 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
 
-    // Log error but return 200 to avoid Sumsub retries on validation errors
-    console.error('Sumsub webhook error:', message);
+    // Log error but return 200 to avoid Sumsub retries on validation errors.
+    log.error('Sumsub webhook error', error, { code: 'sumsub_webhook_failed' });
 
     // Return 200 for signature/parsing errors (don't retry)
     // Return 500 for transient errors (Sumsub will retry)
