@@ -260,3 +260,108 @@ No migration should use `DROP TABLE`, `DROP COLUMN`, or `TRUNCATE` without expli
 | Set GitHub Actions secrets | First repo setup | GitHub secrets require dashboard or gh CLI with auth |
 | Create GitHub Environment `production` with required reviewers | Before first production migration | GitHub UI only |
 | Provision first admin with `provision_admin_user()` | New project / new tenant | Requires knowing the auth user UUID |
+
+---
+
+## 14. Environment Variable Checklist
+
+All variables are defined in `.env.example`. Reference for onboarding new environments.
+
+| Variable | Required | Server-only | Description |
+|---|---|---|---|
+| `NEXT_TELEMETRY_DISABLED` | Yes | No | Disable Next.js anonymous build telemetry |
+| `CHECKPOINT_DISABLE` | Yes | No | Disable Prisma checkpoint calls |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | No | Supabase project URL (safe for browser) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | No | Supabase anon/public key (safe for browser; RLS enforces access) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | **Yes** | Service-role key — bypasses RLS; never expose to browser or `app/` |
+| `NEXT_PUBLIC_APP_URL` | Yes | No | Public base URL of this deployment (no trailing slash) |
+| `RESEND_API_KEY` | Recommended | **Yes** | Resend transactional email API key; no-op when unset (email fails gracefully) |
+| `RESEND_FROM_ADDRESS` | Recommended | **Yes** | Verified sender address on a Resend domain |
+| `RESEND_REPLY_TO` | No | **Yes** | Optional Reply-To header for outbound email |
+| `UAE_PASS_DISCOVERY_URL` | No | **Yes** | OIDC discovery document URL for UAE Pass (staging or prod) |
+| `UAE_PASS_CLIENT_ID` | No | **Yes** | Service provider client ID from TDRA registration |
+| `UAE_PASS_CLIENT_SECRET` | No | **Yes** | Service provider client secret |
+| `UAE_PASS_REDIRECT_URI` | No | **Yes** | OAuth callback URI; defaults to `NEXT_PUBLIC_APP_URL + /api/auth/uae-pass/callback` |
+| `UAE_PASS_SCOPES` | No | **Yes** | OIDC scopes; default: `urn:uae:digitalid:profile:general` |
+| `UAE_PASS_ACR_VALUES` | No | **Yes** | Assurance level requested at UAE Pass IdP |
+
+Run `npm run validate:env` to confirm all required variables are present.
+
+---
+
+## 15. Supabase Secret Rotation
+
+Rotate secrets on a schedule (quarterly recommended) or immediately after a suspected compromise.
+
+1. **Supabase service-role key:**
+   - Generate new key: Supabase Dashboard → Project Settings → API → Reveal + copy new key.
+   - Update Vercel: Project → Settings → Environment Variables → `SUPABASE_SERVICE_ROLE_KEY` (Production + Preview).
+   - Update GitHub Actions secrets: repo → Settings → Secrets → `SUPABASE_SERVICE_ROLE_KEY`.
+   - Redeploy Vercel to pick up the new key (or wait for next deployment).
+   - Re-arm pg_cron webhook retry job if it embeds a bearer token (see `CLAUDE.md` §"Post-Deploy").
+   - Revoke the old key in the Supabase Dashboard.
+
+2. **Database password:**
+   - Supabase Dashboard → Project Settings → Database → Reset database password.
+   - Update GitHub Actions secrets: `SUPABASE_DB_PASSWORD` and `PROD_SUPABASE_DB_PASSWORD`.
+   - Reconnect any direct DB connection strings (not used in the app itself — service-role client uses the API, not a direct connection).
+
+3. **Resend API key:**
+   - Resend Dashboard → API Keys → Create new key.
+   - Update Vercel env var `RESEND_API_KEY`.
+   - Revoke old key in Resend Dashboard.
+   - Verify: trigger a test notification and check `notification_events` table for `status = 'sent'`.
+
+---
+
+## 16. Resend Email Domain Setup (SPF / DKIM / DMARC)
+
+Required to ensure high deliverability and prevent spoofing of the `RESEND_FROM_ADDRESS` domain.
+
+### SPF
+
+Add a TXT record to the sending domain's DNS:
+
+```
+Type: TXT
+Host: @  (or the subdomain if using a subdomain sender)
+Value: v=spf1 include:amazonses.com ~all
+```
+
+Resend uses Amazon SES under the hood; the `include:amazonses.com` directive authorises Resend to send on your behalf.
+
+### DKIM
+
+Resend provides two CNAME records after domain verification. Add them to DNS:
+
+```
+Type: CNAME
+Host: resend1._domainkey.<yourdomain.com>
+Value: <resend-provided-value>
+
+Type: CNAME
+Host: resend2._domainkey.<yourdomain.com>
+Value: <resend-provided-value>
+```
+
+Verify in Resend Dashboard → Domains → DKIM status turns green.
+
+### DMARC
+
+Add a TXT record to enforce DMARC:
+
+```
+Type: TXT
+Host: _dmarc.<yourdomain.com>
+Value: v=DMARC1; p=quarantine; rua=mailto:dmarc-reports@<yourdomain.com>; ruf=mailto:dmarc-forensic@<yourdomain.com>; pct=100
+```
+
+Start with `p=quarantine` for monitoring; move to `p=reject` after verifying no legitimate email is caught. DMARC reports are sent to the `rua` address weekly by receiving mail servers.
+
+### Verification
+
+After DNS propagation (up to 48 hours):
+
+1. Resend Dashboard → Domains → all checks green.
+2. Send a test email via `npm run dev` + trigger a notification action.
+3. Check the received email headers for `DKIM=pass` and `SPF=pass` in `Authentication-Results`.
