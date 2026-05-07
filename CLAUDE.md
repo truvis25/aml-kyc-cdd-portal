@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Operating Mode (TRUVIS DevOs Team)
+
+**Every signal — bug fix, restyle, refactor, schema change, new feature — routes through the Tech Lead agent.**
+Tech Lead triages and dispatches the minimum necessary specialists only. Do not blanket-dispatch all agents.
+
+Use `/develop-next-module` to run the full 12-step per-module cycle.
+See `docs/development-workflow.md` for the triage table and workflow SOP.
+See `PROJECT.md` for the launch checklist path and dispatch defaults.
+
+## In-flight modules
+
+<!-- Tech Lead inserts <!-- PROJECT:<slug> --> anchors here as modules are started -->
+
+
 ## Project Overview
 
 This repository is the **AML/KYC/CDD Portal** — a compliance portal for Anti-Money Laundering (AML), Know Your Customer (KYC), and Customer Due Diligence (CDD) workflows.
