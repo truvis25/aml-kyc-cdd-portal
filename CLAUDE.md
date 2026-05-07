@@ -20,7 +20,9 @@ See `PROJECT.md` for the launch checklist path and dispatch defaults.
 <!-- PROJECT:empty-loading-states -->
 <!-- PROJECT:pgtap-coverage -->
 Status: shipped — PR #82 — 2026-05-07 (marketing-competitor-cleanup)
-Status: in-flight — 2026-05-07 (dashboard-improvements, empty-loading-states, pgtap-coverage)
+Status: shipped — PR #83 — 2026-05-07 (dashboard-improvements)
+Status: shipped — PR #85 — 2026-05-07 (pgtap-coverage)
+Status: in-flight — 2026-05-07 (empty-loading-states)
 
 
 ## Project Overview
