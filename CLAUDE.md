@@ -21,8 +21,10 @@ See `PROJECT.md` for the launch checklist path and dispatch defaults.
 <!-- PROJECT:pgtap-coverage -->
 Status: shipped — PR #82 — 2026-05-07 (marketing-competitor-cleanup)
 Status: shipped — PR #83 — 2026-05-07 (dashboard-improvements)
+Status: shipped — PR #84 — 2026-05-07 (empty-loading-states)
 Status: shipped — PR #85 — 2026-05-07 (pgtap-coverage)
-Status: in-flight — 2026-05-07 (empty-loading-states)
+Status: shipped — PR #86 — 2026-05-07 (marketing-content-rewrite)
+Status: shipped — PR #87 — 2026-05-07 (marketing-humanize)
 
 
 ## Project Overview
