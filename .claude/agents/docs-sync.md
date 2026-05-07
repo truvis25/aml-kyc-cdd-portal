@@ -2,10 +2,10 @@
 name: docs-sync
 description: |
   Syncs CLAUDE.md, the launch checklist, the Google Sheets command center
-  (read), the Notion Executive Launch Dashboard, and the PR description after
-  each module ships. Also aggregates manual QA verification files into
-  MANUAL_QA_BACKLOG.md. Dispatched by Tech Lead as the final step before
-  sign-off.
+  (live write via service account), the Notion Executive Launch Dashboard,
+  and the PR description after each module ships. Also aggregates manual QA
+  verification files into MANUAL_QA_BACKLOG.md. Dispatched by Tech Lead as
+  the final step before sign-off.
 ---
 
 # Docs-Sync
@@ -36,53 +36,60 @@ not implement features — you only update documentation and the PR description.
 - In that file, find the checklist item for this module and mark it `[x]`.
 - Do not modify any other items.
 
-### 3. Sync Google Sheets command center
+### 3. Sync Google Sheets command center (live write)
 
-Read `PROJECT.md` → `externalSpecSources` to find the entry with
-`type: google-sheets`. Use the `fileId` value.
+Read `PROJECT.md` → `externalSpecSources` → `google-sheets` entry to get
+`fileId` and `slugToModuleName`.
 
-**Step 3a — Read the sheet**
+**Step 3a — Identify features addressed by this PR**
 
-Call `mcp__7747192d-eb57-4307-b135-d75414e1e6dd__read_file_content` with:
-```json
-{ "file_id": "<fileId from PROJECT.md>" }
-```
+Cross-reference the QA Report and branch diff with the module's feature list.
+Build two lists:
+- `completed_features`: features that moved from Missing/In Progress to done
+- `in_progress_features`: features partially addressed (still incomplete)
 
-**Step 3b — Map slug to module name**
-
-Look up `slugToModuleName.<slug>` in the `google-sheets` entry to get the
-Google Sheets module name (e.g., `risk` → `"Risk / CDD / EDD"`).
-
-**Step 3c — Identify rows needing a status update**
-
-Scan the Feature Registry rows for the matching module name (column A).
-For each row where Status (column C) is `Missing` or `🟡 In Progress`,
-cross-reference with the QA Report and branch diff to decide if the PR
-addressed that feature.
-
-**Step 3d — Add "Sheets sync needed" block to the PR description**
-
-The Google Drive MCP is read-only — you cannot write to the sheet. Instead,
-append this block to the PR description under `### Sheets sync needed`:
+**Step 3b — Map slug to Sheets module name**
 
 ```
-**Google Sheets — TruVis AML/KYC/CDD Full SaaS Command Center**
-Sheet: Feature Registry  |  Module: <sheets module name>
-
-Features to mark ✅ Completed:
-- <feature name 1>
-- <feature name 2>
-
-Features still In Progress (verify manually):
-- <feature name>
-
-No changes needed for: <feature name> (already ✅)
-
-Direct link: https://docs.google.com/spreadsheets/d/<fileId>/edit
+moduleName = slugToModuleName[<slug>]   # e.g. "Risk / CDD / EDD"
 ```
 
-If no features changed status, write:
-`> Sheets sync: no status changes for this module in this PR.`
+**Step 3c — Live write via service account script**
+
+Run the sync script for each feature in `completed_features`:
+
+```bash
+npm run sync:feature-sheet -- \
+  --module "<moduleName>" \
+  --features "<feature1>,<feature2>" \
+  --status "✅ Completed" \
+  --pr <PR_NUMBER>
+```
+
+The script exits 0 whether or not `GOOGLE_SERVICE_ACCOUNT_JSON` is set:
+- **Configured**: updates Status (col C) → `✅ Completed` and Next Sprint
+  (col J) → `Shipped PR #<N>` for each matched row in the Feature Registry.
+- **Not configured**: prints a no-op message and exits 0 — never breaks CI.
+
+For `in_progress_features` (partially done), run with `--status "🟡 In Progress"`.
+
+**Step 3d — Always include a Sheets sync block in the PR description**
+
+Regardless of whether the script succeeded, append to the PR description:
+
+```
+### Sheets sync — Google Sheets Command Center
+Module: <moduleName>
+Script: `npm run sync:feature-sheet -- --module "..." --features "..." --pr <N>`
+
+Rows updated ✅: <feature1>, <feature2>
+Rows still 🟡: <feature3>  (partial — update manually if needed)
+
+Spreadsheet: https://docs.google.com/spreadsheets/d/<fileId>/edit
+```
+
+If `GOOGLE_SERVICE_ACCOUNT_JSON` was not set during this run, prefix with:
+`> ⚠ Live write skipped (GOOGLE_SERVICE_ACCOUNT_JSON not set). Run the command above locally to update the sheet.`
 
 ### 4. Update Notion Executive Launch Dashboard
 
