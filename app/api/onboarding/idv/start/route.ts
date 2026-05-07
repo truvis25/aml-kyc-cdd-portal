@@ -85,9 +85,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (message.includes('Sumsub')) {
+    if (message.includes('credentials not configured')) {
       return NextResponse.json(
-        { error: 'IDV service unavailable. Please try again later.' },
+        { error: 'Identity verification is not configured. Please contact support.' },
         { status: 503 }
       );
     }
