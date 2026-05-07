@@ -439,8 +439,8 @@ This is the queue. It's a flattened version of §8.
 
 ```
 Sprint 1
-S1-01  Strip "Sumsub"/"Azakaw" from marketing surfaces (§6.1)
-S1-02  Delete /compare/sumsub + /compare/azakaw, build generic /compare
+S1-01  [x] Strip "Sumsub"/"Azakaw" from marketing surfaces (§6.1) — PR #82
+S1-02  [x] Delete /compare/sumsub + /compare/azakaw, build generic /compare — PR #82
 S1-03  Dashboard improvements per §4 (all 7 dashboards)
 S1-04  Empty + loading states audit for all list pages
 S1-05  Playwright harness + e2e scenarios (≥20)
@@ -493,7 +493,7 @@ Tick every box before quoting a paying customer.
 - [ ] At least 90% of test scenarios in §5 passing on staging
 - [ ] No `TODO`, `FIXME`, or commented-out code in `modules/` or `app/api/`
 - [ ] Branding: tenant can upload logo, set primary color, customize email "from" name
-- [ ] No competitor name appears anywhere in customer-facing copy
+- [x] No competitor name appears anywhere in customer-facing copy
 
 ### 10.2 Compliance
 - [ ] DPA reviewed by legal (UAE PDPL + ADGM DPR + DIFC PDPL)
