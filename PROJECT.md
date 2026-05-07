@@ -84,8 +84,9 @@ externalSpecSources:
     name: "TruVis AML/KYC/CDD Full SaaS Command Center"
     fileId: "1Xbi2tkMjwa6qrbxXRQTvvuOIegje0j1M"
     featureSheet: "Feature Registry"
-    # MCP tool: mcp__7747192d-eb57-4307-b135-d75414e1e6dd__read_file_content
-    # Read-only: manual update required after Docs-Sync identifies changed rows.
+    # Live write: scripts/sync-feature-sheet.ts via `npm run sync:feature-sheet`
+    # Requires: GOOGLE_SERVICE_ACCOUNT_JSON + GOOGLE_SHEETS_SPREADSHEET_ID env vars.
+    # Falls back to manual-update report when env vars are not set (non-blocking).
     # Column layout: A=Module  B=Feature  C=Status  D=Full SaaS Req  G=Phase
     #                H=Priority  I=MVP Req.  J=Next Sprint
     slugToModuleName:

@@ -14,6 +14,7 @@ See `PROJECT.md` for the launch checklist path and dispatch defaults.
 ## In-flight modules
 
 <!-- Tech Lead inserts <!-- PROJECT:<slug> --> anchors here as modules are started -->
+<!-- PROJECT:docs-cleanup -->
 
 
 ## Project Overview

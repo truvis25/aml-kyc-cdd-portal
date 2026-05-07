@@ -360,6 +360,49 @@ Use before any production change that mutates data or configuration:
 
 ---
 
-*Runbook v1.0 — generated alongside Sprint D hardening. Update with every
-new operational scenario discovered during the M5 walkthrough and the first
-production cohort.*
+---
+
+## 10. Pre-Launch Checklist
+
+See `docs/RELEASE_CHECKLIST.md` for the full pre-deploy gate (typecheck, lint, tests, DB migration dry-run, smoke test, post-deploy verification).
+
+For product, compliance, security, and commercial readiness gates before the first paying tenant, see `docs/FINAL_LAUNCH_PLAN.md` §10.
+
+---
+
+## 11. Incident Response (stub — expand before first tenant onboards)
+
+### Severity classification
+
+| Severity | Definition | Target response |
+|---|---|---|
+| P1 | Customer flow blocked, cross-tenant leak, audit_log writes failing | Page on-call within 15 min; mitigate before debug |
+| P2 | Reviewer queue not loading, webhook backlog growing, email failing | Acknowledge within 1 hour; resolve within 4 hours |
+| P3 | Slow queries, cosmetic issue, single-user problem | Triage next business day |
+
+### Response steps
+
+1. **Identify** — determine scope from Sentry, Vercel logs, Supabase logs, and `webhook_events` queue.
+2. **Contain** — if cross-tenant leak or audit corruption suspected, take affected route(s) offline immediately (Vercel rollback — §12).
+3. **Communicate** — notify affected tenant admins and MLRO within 30 minutes for P1. Log the incident in `audit_log` using the `system` actor pattern.
+4. **Resolve** — apply fix via PR (no hotfixes directly to production).
+5. **Review** — post-incident review within 48 hours for P1; document findings and preventive action.
+
+> Full incident-response playbooks (runbook for each scenario type) to be written during Sprint 3 operational hardening (S3-16).
+
+---
+
+## 12. On-Call Rotation (stub — define before Sprint 3 ship gate)
+
+| Week | Primary on-call | Secondary on-call |
+|---|---|---|
+| TBD | TBD | TBD |
+
+- PagerDuty (or equivalent) integration: to be wired in Sprint 3 (S3-11).
+- Escalation path for P1: Primary on-call → CTO → DPO (if data involved) → regulator notice path (if required under UAE PDPL / ADGM DPR).
+- Contact details stored in the engineering team's shared password manager (not in this runbook).
+
+---
+
+*Runbook v1.1 — updated 2026-05-07 (Sprint 1 S1-07). Update with every
+new operational scenario discovered during the first production cohort.*
