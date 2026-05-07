@@ -1,7 +1,11 @@
 #!/usr/bin/env tsx
 /**
  * Docs-Sync utility: update the TruVis AML/KYC/CDD Full SaaS Command Center
- * Google Sheet after a module ships.
+ * spreadsheet after a module ships.
+ *
+ * Works directly with the xlsx file in Google Drive — no file conversion or
+ * extra storage used. Flow: download xlsx → parse with SheetJS → update cells
+ * → re-upload in place via Drive API media update.
  *
  * Usage:
  *   npx tsx scripts/sync-feature-sheet.ts \
@@ -11,38 +15,32 @@
  *     --pr 63
  *
  * Required env vars:
- *   GOOGLE_SERVICE_ACCOUNT_JSON  — full JSON key of the service account
- *                                   (single-line or pretty-printed)
- *   GOOGLE_SHEETS_SPREADSHEET_ID — spreadsheet ID
- *                                   (default: 1Xbi2tkMjwa6qrbxXRQTvvuOIegje0j1M)
+ *   GOOGLE_SERVICE_ACCOUNT_JSON  — full JSON key (single-line or pretty-printed)
+ *   GOOGLE_SHEETS_SPREADSHEET_ID — Drive file ID (default: TruVis Command Center)
  *
  * Column layout (Feature Registry sheet):
  *   A = Module   B = Feature   C = Status   J = Next Sprint
  *
- * Exit 0 on success or when env is not configured (no-op, non-blocking).
- * Exit 1 only on unexpected errors so CI never breaks due to Sheets issues.
+ * Exit 0 always — never blocks CI. Falls back to a no-op log when env is unset.
  */
 
 import * as path from 'node:path'
 import * as dotenv from 'dotenv'
 import { google } from 'googleapis'
+import * as XLSX from 'xlsx'
 
-// Load .env.local for local dev runs; CI/CD sets env vars directly.
+// Load .env.local for local dev; CI/CD sets env vars directly.
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
-const SPREADSHEET_ID =
+const FILE_ID =
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? '1Xbi2tkMjwa6qrbxXRQTvvuOIegje0j1M'
 const SHEET_NAME = 'Feature Registry'
 
-// Column indices (0-based) — used to compute A1 notation ranges
-const COL_MODULE = 0        // A
-const COL_FEATURE = 1       // B
-const COL_STATUS = 2        // C
-const COL_NEXT_SPRINT = 9   // J
-
-function colLetter(idx: number): string {
-  return String.fromCharCode(65 + idx)
-}
+// Column indices (0-based)
+const COL_MODULE = 0       // A
+const COL_FEATURE = 1      // B
+const COL_STATUS = 2       // C
+const COL_NEXT_SPRINT = 9  // J
 
 interface Args {
   moduleName: string
@@ -64,7 +62,9 @@ function parseArgs(): Args | null {
   const prRaw = get('--pr')
 
   if (!moduleName || !featuresRaw) {
-    console.error('Usage: sync-feature-sheet.ts --module "<name>" --features "<f1,f2>" [--status "✅ Completed"] [--pr <N>]')
+    console.error(
+      'Usage: sync-feature-sheet.ts --module "<name>" --features "<f1,f2>" [--status "✅ Completed"] [--pr <N>]',
+    )
     return null
   }
 
@@ -83,64 +83,44 @@ function buildAuth() {
     const key = JSON.parse(raw)
     return new google.auth.GoogleAuth({
       credentials: key,
-      scopes: [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive',
-      ],
+      scopes: ['https://www.googleapis.com/auth/drive'],
     })
   } catch {
-    console.warn('WARN: GOOGLE_SERVICE_ACCOUNT_JSON is set but not valid JSON — Sheets sync skipped.')
+    console.warn('WARN: GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON — Sheets sync skipped.')
     return null
   }
 }
 
-/**
- * If the spreadsheet is an Office (.xlsx) file the Sheets API refuses to read it.
- * Auto-convert by creating a native Google Sheets copy via Drive API.
- * Returns the new spreadsheet ID (the original file is left untouched).
- */
-async function ensureNativeSheet(
-  auth: ReturnType<typeof buildAuth>,
-  spreadsheetId: string,
-): Promise<string> {
+async function downloadXlsx(auth: ReturnType<typeof buildAuth>, fileId: string): Promise<Buffer> {
   const drive = google.drive({ version: 'v3', auth: auth! })
-
-  // Check MIME type
-  const meta = await drive.files.get({ fileId: spreadsheetId, fields: 'mimeType,name' })
-  const mimeType = meta.data.mimeType ?? ''
-
-  if (mimeType === 'application/vnd.google-apps.spreadsheet') {
-    return spreadsheetId // already native
-  }
-
-  console.log(`ℹ File is "${mimeType}" — converting to Google Sheets format…`)
-  const copy = await drive.files.copy({
-    fileId: spreadsheetId,
-    requestBody: {
-      name: `${meta.data.name ?? 'Command Center'} (Google Sheets)`,
-      mimeType: 'application/vnd.google-apps.spreadsheet',
-    },
-  })
-
-  const newId = copy.data.id!
-  console.log(`✅ Converted to Google Sheets. New spreadsheet ID: ${newId}`)
-  console.log(`   Update GOOGLE_SHEETS_SPREADSHEET_ID=${newId} in .env.local and Vercel.`)
-  return newId
+  const res = await drive.files.get(
+    { fileId, alt: 'media', supportsAllDrives: true },
+    { responseType: 'arraybuffer' },
+  )
+  return Buffer.from(res.data as ArrayBuffer)
 }
 
-async function getSheetData(sheets: ReturnType<typeof google.sheets>, spreadsheetId: string) {
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: `${SHEET_NAME}!A:K`,
+async function uploadXlsx(
+  auth: ReturnType<typeof buildAuth>,
+  fileId: string,
+  buffer: Buffer,
+): Promise<void> {
+  const drive = google.drive({ version: 'v3', auth: auth! })
+  const { Readable } = await import('node:stream')
+  await drive.files.update({
+    fileId,
+    supportsAllDrives: true,
+    media: {
+      mimeType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      body: Readable.from(buffer),
+    },
   })
-  return res.data.values ?? []
 }
 
 async function main() {
   const args = parseArgs()
-  if (!args) {
-    process.exit(1)
-  }
+  if (!args) process.exit(1)
 
   const auth = buildAuth()
   if (!auth) {
@@ -149,75 +129,78 @@ async function main() {
     process.exit(0)
   }
 
-  let spreadsheetId = SPREADSHEET_ID
+  // Download xlsx
+  let xlsxBuffer: Buffer
   try {
-    spreadsheetId = await ensureNativeSheet(auth, SPREADSHEET_ID)
+    console.log(`Downloading spreadsheet ${FILE_ID}…`)
+    xlsxBuffer = await downloadXlsx(auth, FILE_ID)
+    console.log(`Downloaded ${Math.round(xlsxBuffer.length / 1024)} KB`)
   } catch (err) {
     const msg = (err as Error).message ?? ''
-    if (msg.includes('not have permission') || msg.includes('forbidden') || msg.includes('403')) {
-      console.error(`ERROR: Service account does not have access to spreadsheet ${SPREADSHEET_ID}.`)
-      console.error(`Share the sheet with: amna-930@truvis-n8n-automation.iam.gserviceaccount.com (Editor role)`)
+    if (msg.includes('not have permission') || msg.includes('403') || msg.includes('not found')) {
+      console.error(`ERROR: Cannot access file ${FILE_ID}.`)
+      console.error(
+        `Share the spreadsheet with: amna-930@truvis-n8n-automation.iam.gserviceaccount.com (Editor role)`,
+      )
     } else {
-      console.error('ERROR: Could not access spreadsheet:', msg)
+      console.error('ERROR downloading spreadsheet:', msg)
     }
     process.exit(0) // non-blocking
   }
 
-  const sheets = google.sheets({ version: 'v4', auth })
-
-  let rows: string[][]
-  try {
-    rows = (await getSheetData(sheets, spreadsheetId)) as string[][]
-  } catch (err) {
-    console.error('ERROR: Could not read Feature Registry sheet:', (err as Error).message)
-    process.exit(0) // non-blocking
+  // Parse xlsx
+  const workbook = XLSX.read(xlsxBuffer, { type: 'buffer' })
+  const sheet = workbook.Sheets[SHEET_NAME]
+  if (!sheet) {
+    const available = workbook.SheetNames.join(', ')
+    console.error(`ERROR: Sheet "${SHEET_NAME}" not found. Available sheets: ${available}`)
+    process.exit(0)
   }
 
-  const normalise = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+  const rows: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+
+  // Find matching rows
+  const normalise = (s: string) =>
+    String(s).toLowerCase().replace(/\s+/g, ' ').trim()
   const targetModule = normalise(args.moduleName)
   const targetFeatures = new Set(args.features.map(normalise))
+  const nextSprintNote = args.pr ? `Shipped PR #${args.pr}` : 'Shipped'
 
-  const updates: Array<{ row: number; feature: string }> = []
+  const updated: string[] = []
 
   rows.forEach((row, i) => {
     if (i === 0) return // header
     const rowModule = normalise(row[COL_MODULE] ?? '')
     const rowFeature = normalise(row[COL_FEATURE] ?? '')
     if (rowModule === targetModule && targetFeatures.has(rowFeature)) {
-      updates.push({ row: i + 1, feature: row[COL_FEATURE] ?? '' }) // 1-based
+      row[COL_STATUS] = args.status
+      row[COL_NEXT_SPRINT] = nextSprintNote
+      updated.push(row[COL_FEATURE] ?? `row ${i + 1}`)
     }
   })
 
-  if (updates.length === 0) {
-    console.log(`No matching rows found for module "${args.moduleName}" with the given features.`)
+  if (updated.length === 0) {
+    console.log(`No matching rows for module "${args.moduleName}".`)
     console.log('Features searched:', args.features.join(', '))
     process.exit(0)
   }
 
-  const nextSprintNote = args.pr ? `Shipped PR #${args.pr}` : 'Shipped'
+  // Write rows back into the sheet
+  XLSX.utils.sheet_add_aoa(sheet, rows, { origin: 'A1' })
 
-  for (const { row, feature } of updates) {
-    const statusRange = `${SHEET_NAME}!${colLetter(COL_STATUS)}${row}`
-    const nextSprintRange = `${SHEET_NAME}!${colLetter(COL_NEXT_SPRINT)}${row}`
-
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetId,
-      range: statusRange,
-      valueInputOption: 'RAW',
-      requestBody: { values: [[args.status]] },
-    })
-
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetId,
-      range: nextSprintRange,
-      valueInputOption: 'RAW',
-      requestBody: { values: [[nextSprintNote]] },
-    })
-
-    console.log(`✅ Updated row ${row}: "${feature}" → ${args.status} | ${nextSprintNote}`)
+  // Re-upload
+  const updatedBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+  try {
+    console.log('Uploading updated spreadsheet…')
+    await uploadXlsx(auth, FILE_ID, updatedBuffer)
+    console.log(`\n✅ Sheets sync complete — ${updated.length} row(s) updated:`)
+    for (const f of updated) {
+      console.log(`   • "${f}" → ${args.status} | ${nextSprintNote}`)
+    }
+  } catch (err) {
+    console.error('ERROR uploading updated spreadsheet:', (err as Error).message)
+    process.exit(0) // non-blocking
   }
-
-  console.log(`\nSheets sync complete — ${updates.length} row(s) updated in "${SHEET_NAME}".`)
 }
 
 main().catch((err) => {
