@@ -2,31 +2,46 @@ import type { Metadata } from 'next';
 import { CTASection } from '@/components/marketing/CTASection';
 
 export const metadata: Metadata = {
-  title: 'TruVis for DNFBPs',
+  title: 'TruVis for UAE DNFBPs — AML compliance without a full compliance team',
   description:
-    'TruVis for UAE DNFBPs — real estate brokers, gold and precious-metals dealers, law firms, accountants and corporate service providers. Onboard, screen, score and decide with regulator-ready audit.',
+    'AML compliance for UAE real estate, gold dealers, VASPs, and CSPs. Beneficial ownership tree, cash transaction risk flags, goAML STR pre-fill, DNFBP risk questionnaire. CBUAE and EMLO examination-ready.',
 };
+
+const PAIN_POINTS: { title: string; body: string }[] = [
+  {
+    title: 'CBUAE and EMLO now examine DNFBPs with the same rigour as banks — but most tools are built for banks.',
+    body: 'The Ministry of Economy and CBUAE have issued specific DNFBP AML guidance under Federal Decree-Law No. 10 of 2025. Generic compliance tools do not map to DNFBP-specific risk categories, transaction thresholds, or beneficial ownership requirements.',
+  },
+  {
+    title: 'Cash transactions above AED 55,000 trigger STR obligations — manual tracking fails at volume.',
+    body: 'The AED 55,000 threshold applies per transaction and per customer across a relationship. Manual spreadsheet tracking misses aggregation. TruVis flags threshold breaches automatically and pre-fills the goAML STR form.',
+  },
+  {
+    title: 'Beneficial ownership verification for complex corporate structures takes days, not minutes.',
+    body: 'Tracing UBO chains through multiple holding entities, different jurisdictions, and nominee arrangements is the highest-risk gap in DNFBP compliance. TruVis maps the corporate hierarchy and records each verification step in the audit trail.',
+  },
+];
 
 const SEGMENTS: { name: string; pain: string; truvisFit: string }[] = [
   {
-    name: 'Real-estate brokers and agents',
+    name: 'Real Estate',
     pain: 'Source-of-funds checks under MoE supervision, beneficial-owner mapping for corporate buyers, ongoing PEP screening on landlords and tenants.',
-    truvisFit: 'KYB with corporate-purchaser flow, sanctions and PEP screening, document evidence in the case file.',
+    truvisFit: 'KYB with beneficial ownership tree, sanctions and PEP screening, document evidence in the case file, cash transaction risk flags.',
   },
   {
-    name: 'Dealers in valuable metals and precious stones',
+    name: 'Gold & Precious Metals',
     pain: 'AED 55,000 cash-transaction threshold, walk-in customers, repeat-buyer monitoring, retention of identification evidence.',
-    truvisFit: 'Quick KYC capture, retention timer per record, audit chain that survives a thematic inspection.',
+    truvisFit: 'Quick KYC capture, AED 55,000 STR trigger, goAML STR pre-fill, audit chain that survives a thematic inspection.',
   },
   {
-    name: 'Lawyers, notaries and accountants',
-    pain: 'Conflict-of-interest screening on engagements, ongoing client risk reviews, MLRO sign-off recorded.',
-    truvisFit: 'Four-eyes approval workflow, MLRO queue, append-only audit log per matter.',
+    name: 'Crypto / VASPs (VARA)',
+    pain: 'VARA Travel Rule compliance, VASP counterparty due diligence, ongoing transaction monitoring, SAR obligations.',
+    truvisFit: 'VARA-aligned risk questionnaire, real-time screening against 235+ lists, SAR drafting with goAML XML export.',
   },
   {
-    name: 'Company and trust service providers',
-    pain: 'UBO recursion, multi-entity structures, constant change-of-circumstance updates.',
-    truvisFit: 'KYB with corporate hierarchy, customer-data versioning so every change is recorded.',
+    name: 'CSPs & TCSPs',
+    pain: 'UBO recursion, multi-entity structures, nominee arrangements, constant change-of-circumstance updates.',
+    truvisFit: 'KYB with full corporate hierarchy tree, customer-data versioning so every UBO change is recorded and re-scored.',
   },
 ];
 
