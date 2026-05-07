@@ -7,33 +7,33 @@ interface Differentiator {
 const ITEMS: Differentiator[] = [
   {
     numeral: '01',
-    title: 'One platform, end-to-end.',
-    body: 'KYC onboarding, corporate KYB, AML screening, case management, SAR filing, and MLRO workbench in one workflow. Replace five tools with one.',
+    title: 'Everything in one place.',
+    body: 'KYC onboarding, AML screening, case review, SAR filing, and the MLRO workbench — all connected. No switching between tools, no re-entering data, no gaps between systems.',
   },
   {
     numeral: '02',
-    title: 'Audit-grade backbone.',
-    body: 'Append-only, hash-chained audit log. Every decision, every document version, every access event &mdash; mathematically proven untampered.',
+    title: 'A record your regulator can trust.',
+    body: 'Every decision, approval, and document change is permanently recorded and can never be altered. When an examiner asks what happened on a case, you pull the file &mdash; it&rsquo;s all there.',
   },
   {
     numeral: '03',
-    title: 'Real-time AML screening.',
-    body: 'Screen against 235+ sanctions lists, PEP registers, and adverse media in under 150ms. Push alerts on every update &mdash; not batch.',
+    title: 'AML screening that keeps up.',
+    body: 'Screen customers against hundreds of sanctions lists, PEP registers, and adverse media sources the moment they apply. Get alerted when a match appears &mdash; not after the weekly batch run.',
   },
   {
     numeral: '04',
-    title: 'UAE-native regulatory stack.',
-    body: 'Built for CBUAE, DFSA (DIFC), FSRA (ADGM), VARA, and UAE PDPL. Not a global platform adapted after the fact &mdash; UAE-native from the first line of code.',
+    title: 'Designed for UAE regulators.',
+    body: 'Built for CBUAE, DFSA (DIFC), FSRA (ADGM), and VARA from the ground up. UAE Pass sign-in, Emirates ID reading, goAML filing, and AED pricing &mdash; not an afterthought.',
   },
   {
     numeral: '05',
-    title: 'Tipping-off-safe by construction.',
-    body: 'SAR visibility is restricted to MLRO and Tenant Admin. The schema enforces it &mdash; analysts and reviewers literally cannot read SAR rows.',
+    title: 'SAR confidentiality enforced.',
+    body: 'Only your MLRO and Compliance Officer can see Suspicious Activity Reports. Analysts and reviewers cannot access them &mdash; protecting your firm from tipping-off risk.',
   },
   {
     numeral: '06',
-    title: 'Transparent SaaS pricing in AED.',
-    body: 'Published AED tiers. Foundations, Compliance Suite, Enterprise. No quote-to-buy for the first two. No hidden per-verification sticker shock.',
+    title: 'Pricing you can read.',
+    body: 'Published AED tiers. Starter, Compliance Suite, Enterprise. No quote required for the first two tiers. No surprise charges per verification on top.',
   },
 ];
 
@@ -47,11 +47,11 @@ export function Differentiators() {
             <span>Why TruVis</span>
           </p>
           <h2 className="font-display mt-6 text-[40px] leading-[1.1] text-ink sm:text-[52px]">
-            Six choices we made differently.
+            Six things that matter to compliance teams.
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-ink-soft">
-            None of them are accidental. Each is a position we have already had to defend
-            in front of a regulator, an auditor, or our own MLRO.
+            We built TruVis by talking to MLROs, compliance officers, and regulators —
+            not by adapting a product designed for a different market.
           </p>
         </div>
 

@@ -7,28 +7,26 @@ interface Stat {
 
 const STATS: Stat[] = [
   {
-    numeral: '500',
-    unit: '+',
-    label: 'Regulated firms trust TruVis',
-    hint: 'Fintechs, DNFBPs, EMIs, and CSPs across the UAE',
+    numeral: '7',
+    label: 'Modules in one platform',
+    hint: 'KYC · KYB · AML screening · Risk · Cases · SAR · Audit — no stitching required',
   },
   {
-    numeral: '99.9',
-    unit: '%',
-    label: 'Uptime SLA',
-    hint: 'Contractual SLA available on Growth and Enterprise tiers',
+    numeral: '5',
+    label: 'UAE regulatory frameworks supported',
+    hint: 'CBUAE · DFSA · FSRA · VARA · UAE PDPL — all addressed out of the box',
   },
   {
-    numeral: '50',
-    unit: 'ms',
-    label: 'Average AML screening latency',
-    hint: '235+ sanctions lists, PEP registers, and adverse media — real-time',
+    numeral: '14',
+    unit: '-day',
+    label: 'Free trial, no card needed',
+    hint: 'Full Compliance Suite access from day one — cancel or upgrade anytime',
   },
   {
     numeral: '100',
     unit: '%',
-    label: 'Of compliance decisions in immutable audit',
-    hint: 'Hash-chained, tamper-detectable, 7-year retention by default',
+    label: 'Of decisions permanently recorded',
+    hint: 'Every approval, rejection, and document change — permanent and auditable',
   },
 ];
 
@@ -38,7 +36,7 @@ export function StatsBanner() {
       <div className="mx-auto max-w-6xl px-6 py-16 lg:px-10 lg:py-20">
         <div className="mb-10 flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
           <span className="copper-rule" aria-hidden="true" />
-          <span>Built to a regulator&rsquo;s standard, not a marketer&rsquo;s</span>
+          <span>What you get from day one</span>
         </div>
 
         <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">

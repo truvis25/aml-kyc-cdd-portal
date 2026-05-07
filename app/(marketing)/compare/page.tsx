@@ -6,7 +6,7 @@ import { CTASection } from '@/components/marketing/CTASection';
 export const metadata: Metadata = {
   title: 'How TruVis compares to global and regional compliance platforms',
   description:
-    'TruVis vs global IDV platforms and regional GCC compliance suites. UAE Pass, goAML, hash-chained audit, white-label, API-first — compared feature by feature.',
+    'TruVis vs global IDV platforms and regional GCC compliance suites. UAE Pass, goAML, permanent audit trail, white-label, API-first — compared feature by feature.',
 };
 
 const VS_GLOBAL_IDV = [
@@ -17,7 +17,7 @@ const VS_GLOBAL_IDV = [
   },
   {
     feature: 'UAE Pass integration',
-    truvis: '✓ Native liveness and Emirates ID parse',
+    truvis: '✓ UAE Pass liveness and Emirates ID reading built in',
     competitor: '— (UAE Pass not supported)',
   },
   {
@@ -42,8 +42,8 @@ const VS_GLOBAL_IDV = [
   },
   {
     feature: 'Audit trail',
-    truvis: '✓ Append-only, hash-chained, SHA-256 tamper-detectable',
-    competitor: 'Webhook + event logs — not always append-only',
+    truvis: '✓ Permanent, tamper-evident record — every decision locked after the fact',
+    competitor: 'Webhook + event logs — not always permanent',
   },
   {
     feature: 'AML screening',
@@ -75,18 +75,18 @@ const VS_REGIONAL_SUITE = [
   },
   {
     feature: 'UAE Pass / Emirates ID',
-    truvis: '✓ UAE Pass liveness and Emirates ID parse',
+    truvis: '✓ UAE Pass liveness and Emirates ID reading built in',
     competitor: '✓ Native',
   },
   {
     feature: 'goAML export',
-    truvis: '✓ goAML XML export with audit hash bound to SAR row',
+    truvis: '✓ goAML XML export — linked to the SAR case record',
     competitor: '✓ Direct API integration where supported',
   },
   {
-    feature: 'Hash-chained audit trail',
-    truvis: '✓ Append-only, SHA-256 hash-chained, tamper-detectable',
-    competitor: 'Audit log per platform — append-only not always enforced',
+    feature: 'Permanent audit trail',
+    truvis: '✓ Every decision permanently recorded — nothing can be altered after the fact',
+    competitor: 'Audit log per platform — permanence not always guaranteed',
   },
   {
     feature: 'API-first architecture',
@@ -110,7 +110,7 @@ const VS_REGIONAL_SUITE = [
   },
   {
     feature: 'Case queue & four-eyes approvals',
-    truvis: '✓ Role-aware queues, four-eyes enforced at database layer',
+    truvis: '✓ Role-aware queues, four-eyes enforced — two sign-offs required',
     competitor: '✓ Workflow + queues',
   },
   {
@@ -131,13 +131,14 @@ export default function CompareIndex() {
               <span>How TruVis compares</span>
             </p>
             <h1 className="font-display mt-6 text-[40px] leading-[1.1] text-ink sm:text-[52px]">
-              How TruVis compares to global and regional compliance platforms.
+              An honest comparison.
             </h1>
             <p className="mt-6 max-w-2xl text-[16px] leading-relaxed text-ink-soft">
-              Teams evaluating TruVis are usually also looking at two categories: global
-              identity-verification platforms (broad document library, global reach) and
-              regional GCC compliance suites (UAE regulatory alignment). TruVis is the platform
-              that gives you both — UAE-native and global-grade, without the trade-off.
+              How TruVis compares to global and regional compliance platforms. Teams evaluating
+              TruVis are usually looking at two categories: global identity-verification platforms
+              (broad document library, global reach) and regional GCC compliance suites (UAE
+              regulatory alignment). TruVis gives you both — UAE-native and global-grade, without
+              the trade-off.
             </p>
           </div>
         </div>
@@ -151,7 +152,7 @@ export default function CompareIndex() {
               <span>Category 1</span>
             </p>
             <h2 className="font-display mt-5 text-[32px] leading-[1.15] text-ink sm:text-[36px]">
-              vs global IDV platforms
+              vs global identity-verification platforms
             </h2>
             <p className="mt-5 text-[15px] leading-relaxed text-ink-soft">
               Global IDV platforms have broad document libraries, deepfake detection, and
@@ -180,8 +181,8 @@ export default function CompareIndex() {
             <p className="mt-5 text-[15px] leading-relaxed text-ink-soft">
               Regional GCC suites offer UAE regulatory alignment — UAE Pass, Emirates ID, goAML
               templates. TruVis shares that orientation and adds what regional suites typically
-              lack: API-first architecture, full white-label multi-tenancy, hash-chained
-              append-only audit trail, and transparent published pricing in AED.
+              lack: API-first architecture, full white-label multi-tenancy, a permanent audit
+              trail, and transparent published pricing in AED.
             </p>
           </div>
           <div className="mt-10">
@@ -200,7 +201,7 @@ export default function CompareIndex() {
               If you need a broad global document library with mobile SDKs, a global IDV
               platform covers that — and you can run TruVis above it for the MLRO workbench
               and audit. If you need UAE regulatory alignment with an API-first architecture,
-              white-label capability, and a hash-chained audit trail you can hand to CBUAE or
+              white-label capability, and a permanent audit trail you can hand to CBUAE or
               DFSA on demand, that is TruVis.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
