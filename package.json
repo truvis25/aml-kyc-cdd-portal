@@ -25,7 +25,11 @@
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
     "db:push:dry": "supabase db push --dry-run",
-    "db:migrate:list": "supabase migration list"
+    "db:migrate:list": "supabase migration list",
+    "check:foundations": "tsx scripts/check-foundations.ts",
+    "check:architect-triggers": "tsx scripts/check-architect-triggers.ts",
+    "check:env": "tsx scripts/check-env-readiness.ts",
+    "lint:migrations": "tsx scripts/check-migration-safety.ts"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -61,6 +65,8 @@
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "tsx": "^4.7.0",
+    "dotenv": "^16.4.0"
   }
 }
