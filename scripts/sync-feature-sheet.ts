@@ -23,7 +23,12 @@
  * Exit 1 only on unexpected errors so CI never breaks due to Sheets issues.
  */
 
+import * as path from 'node:path'
+import * as dotenv from 'dotenv'
 import { google } from 'googleapis'
+
+// Load .env.local for local dev runs; CI/CD sets env vars directly.
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
 const SPREADSHEET_ID =
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? '1Xbi2tkMjwa6qrbxXRQTvvuOIegje0j1M'
@@ -78,12 +83,49 @@ function buildAuth() {
     const key = JSON.parse(raw)
     return new google.auth.GoogleAuth({
       credentials: key,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      scopes: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive',
+      ],
     })
   } catch {
     console.warn('WARN: GOOGLE_SERVICE_ACCOUNT_JSON is set but not valid JSON — Sheets sync skipped.')
     return null
   }
+}
+
+/**
+ * If the spreadsheet is an Office (.xlsx) file the Sheets API refuses to read it.
+ * Auto-convert by creating a native Google Sheets copy via Drive API.
+ * Returns the new spreadsheet ID (the original file is left untouched).
+ */
+async function ensureNativeSheet(
+  auth: ReturnType<typeof buildAuth>,
+  spreadsheetId: string,
+): Promise<string> {
+  const drive = google.drive({ version: 'v3', auth: auth! })
+
+  // Check MIME type
+  const meta = await drive.files.get({ fileId: spreadsheetId, fields: 'mimeType,name' })
+  const mimeType = meta.data.mimeType ?? ''
+
+  if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+    return spreadsheetId // already native
+  }
+
+  console.log(`ℹ File is "${mimeType}" — converting to Google Sheets format…`)
+  const copy = await drive.files.copy({
+    fileId: spreadsheetId,
+    requestBody: {
+      name: `${meta.data.name ?? 'Command Center'} (Google Sheets)`,
+      mimeType: 'application/vnd.google-apps.spreadsheet',
+    },
+  })
+
+  const newId = copy.data.id!
+  console.log(`✅ Converted to Google Sheets. New spreadsheet ID: ${newId}`)
+  console.log(`   Update GOOGLE_SHEETS_SPREADSHEET_ID=${newId} in .env.local and Vercel.`)
+  return newId
 }
 
 async function getSheetData(sheets: ReturnType<typeof google.sheets>, spreadsheetId: string) {
@@ -107,11 +149,25 @@ async function main() {
     process.exit(0)
   }
 
+  let spreadsheetId = SPREADSHEET_ID
+  try {
+    spreadsheetId = await ensureNativeSheet(auth, SPREADSHEET_ID)
+  } catch (err) {
+    const msg = (err as Error).message ?? ''
+    if (msg.includes('not have permission') || msg.includes('forbidden') || msg.includes('403')) {
+      console.error(`ERROR: Service account does not have access to spreadsheet ${SPREADSHEET_ID}.`)
+      console.error(`Share the sheet with: amna-930@truvis-n8n-automation.iam.gserviceaccount.com (Editor role)`)
+    } else {
+      console.error('ERROR: Could not access spreadsheet:', msg)
+    }
+    process.exit(0) // non-blocking
+  }
+
   const sheets = google.sheets({ version: 'v4', auth })
 
   let rows: string[][]
   try {
-    rows = (await getSheetData(sheets, SPREADSHEET_ID)) as string[][]
+    rows = (await getSheetData(sheets, spreadsheetId)) as string[][]
   } catch (err) {
     console.error('ERROR: Could not read Feature Registry sheet:', (err as Error).message)
     process.exit(0) // non-blocking
@@ -145,14 +201,14 @@ async function main() {
     const nextSprintRange = `${SHEET_NAME}!${colLetter(COL_NEXT_SPRINT)}${row}`
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: statusRange,
       valueInputOption: 'RAW',
       requestBody: { values: [[args.status]] },
     })
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: nextSprintRange,
       valueInputOption: 'RAW',
       requestBody: { values: [[nextSprintNote]] },
