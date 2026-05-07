@@ -16,7 +16,11 @@ See `PROJECT.md` for the launch checklist path and dispatch defaults.
 <!-- Tech Lead inserts <!-- PROJECT:<slug> --> anchors here as modules are started -->
 <!-- PROJECT:docs-cleanup -->
 <!-- PROJECT:marketing-competitor-cleanup -->
-Status: shipped — PR #82 — 2026-05-07
+<!-- PROJECT:dashboard-improvements -->
+<!-- PROJECT:empty-loading-states -->
+<!-- PROJECT:pgtap-coverage -->
+Status: shipped — PR #82 — 2026-05-07 (marketing-competitor-cleanup)
+Status: in-flight — 2026-05-07 (dashboard-improvements, empty-loading-states, pgtap-coverage)
 
 
 ## Project Overview
