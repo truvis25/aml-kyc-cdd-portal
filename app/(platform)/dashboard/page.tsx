@@ -7,15 +7,28 @@ import { SeniorReviewerDashboard } from '@/components/dashboards/senior-reviewer
 import { AnalystDashboard } from '@/components/dashboards/analyst-dashboard';
 import { OnboardingAgentDashboard } from '@/components/dashboards/onboarding-agent-dashboard';
 import { ReadOnlyDashboard } from '@/components/dashboards/read-only-dashboard';
+import type { Period } from '@/components/dashboards/widgets/period-toggle';
 
-export default async function DashboardPage() {
+interface Props {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function getPeriod(raw: string | string[] | undefined): Period {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (v === 'today' || v === 'month') return v;
+  return 'week';
+}
+
+export default async function DashboardPage({ searchParams }: Props) {
   const { userId, role, tenantId } = await getPageAuth();
+  const params = await searchParams;
+  const period = getPeriod(params['period']);
 
   switch (role) {
     case Role.PLATFORM_SUPER_ADMIN:
       return <PlatformAdminDashboard tenantId={tenantId} />;
     case Role.TENANT_ADMIN:
-      return <TenantAdminDashboard tenantId={tenantId} />;
+      return <TenantAdminDashboard tenantId={tenantId} period={period} />;
     case Role.MLRO:
       return <MLRODashboard userId={userId} tenantId={tenantId} />;
     case Role.SENIOR_REVIEWER:
@@ -23,7 +36,7 @@ export default async function DashboardPage() {
     case Role.ANALYST:
       return <AnalystDashboard userId={userId} />;
     case Role.ONBOARDING_AGENT:
-      return <OnboardingAgentDashboard tenantId={tenantId} />;
+      return <OnboardingAgentDashboard tenantId={tenantId} period={period} />;
     case Role.READ_ONLY:
       return <ReadOnlyDashboard tenantId={tenantId} />;
     default:

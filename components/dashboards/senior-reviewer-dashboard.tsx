@@ -3,6 +3,7 @@ import { Role } from '@/lib/constants/roles';
 import { DashboardShell } from './dashboard-shell';
 import { StatCard } from './widgets/stat-card';
 import { QueueSummary } from './widgets/queue-summary';
+import { EmptyState } from './widgets/empty-state';
 import {
   countCasesAssignedTo,
   countCasesAssignedToWithStatus,
@@ -54,16 +55,28 @@ export async function SeniorReviewerDashboard({ userId }: Props) {
       </div>
 
       <div className="mt-6">
-        <QueueSummary
-          title="My recent decisions"
-          rows={recent.map((r) => ({
-            label: `Case ${r.case_id.slice(0, 8)}…`,
-            value: r.decision,
-            hint: new Date(r.decided_at).toLocaleString(),
-            href: `/cases/${r.case_id}`,
-          }))}
-          emptyText="You have not recorded any decisions yet"
-        />
+        {openCount === 0 ? (
+          <EmptyState
+            title="No cases assigned to you"
+            body="Your queue is clear. Cases will appear here once assigned by an admin or MLRO."
+          />
+        ) : recent.length === 0 ? (
+          <EmptyState
+            title="No decisions recorded yet"
+            body="Recent approvals and rejections will appear here once you start reviewing cases."
+          />
+        ) : (
+          <QueueSummary
+            title="My recent decisions"
+            rows={recent.map((r) => ({
+              label: `Case ${r.case_id.slice(0, 8)}…`,
+              value: r.decision,
+              hint: new Date(r.decided_at).toLocaleString(),
+              href: `/cases/${r.case_id}`,
+            }))}
+            emptyText="You have not recorded any decisions yet"
+          />
+        )}
       </div>
     </DashboardShell>
   );

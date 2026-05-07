@@ -2,7 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { Role } from '@/lib/constants/roles';
 import { DashboardShell } from './dashboard-shell';
 import { StatCard } from './widgets/stat-card';
+import { StatCardWithSparkline } from './widgets/stat-card-with-sparkline';
 import { QueueSummary } from './widgets/queue-summary';
+import { EmptyState } from './widgets/empty-state';
 import {
   countCasesAssignedTo,
   countCasesByQueue,
@@ -10,6 +12,7 @@ import {
   countSarFlagged,
   countUnresolvedHits,
   getOldestOpenInQueue,
+  getDailyCaseVolume,
 } from '@/modules/dashboards/queries';
 import { getRiskBandDistribution } from '@/modules/reporting/queries';
 
@@ -36,6 +39,7 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
     pendingApprovals,
     unresolvedHits,
     bandDistribution,
+    dailyCases,
   ] = await Promise.all([
     countOpenCasesByRiskBand(supabase, tenantId, ['high', 'unacceptable']),
     getOldestOpenInQueue(supabase, tenantId, ['edd', 'escalation', 'senior']),
@@ -44,6 +48,7 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
     countCasesAssignedTo(supabase, userId, { openOnly: true }),
     countUnresolvedHits(supabase, tenantId),
     getRiskBandDistribution(supabase, tenantId, 1),
+    getDailyCaseVolume(supabase, tenantId, 30),
   ]);
 
   const bandTotal = bandDistribution.reduce((sum, r) => sum + r.count, 0);
@@ -60,12 +65,14 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
       role={Role.MLRO}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
+        <StatCardWithSparkline
           label="High-Risk Open"
           value={highRiskCount}
           hint={daysAgo(oldestHighRisk)}
           href="/cases?queue=edd"
           urgent={highRiskCount > 0}
+          trend={dailyCases}
+          trendColor={highRiskCount > 0 ? '#f97316' : '#3b82f6'}
         />
         <StatCard
           label="SAR Flagged"
@@ -89,11 +96,18 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <QueueSummary
-          title="Risk band distribution (last 30 days)"
-          rows={bandRows}
-          emptyText="No assessments in the last 30 days"
-        />
+        {bandTotal === 0 ? (
+          <EmptyState
+            title="No risk assessments in the last 30 days"
+            body="Risk band distribution will appear once customers complete onboarding."
+          />
+        ) : (
+          <QueueSummary
+            title="Risk band distribution (last 30 days)"
+            rows={bandRows}
+            emptyText="No assessments in the last 30 days"
+          />
+        )}
         <QueueSummary
           title="My queue"
           rows={[

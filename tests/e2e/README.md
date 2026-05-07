@@ -129,13 +129,41 @@ When `E2E_BASE_URL` is set, Playwright skips spawning a local server.
 - Read-only lands on `/reporting`; `/cases` is blocked or unavailable
 - Onboarding agent sees the New Onboarding entry points
 
+### `app/customer-journeys.spec.ts` (gated) — Sprint 1 S1-05
+Customer journey scenarios C-01 through C-08:
+- C-01: IDV API surface returns correct auth error shapes (not 500)
+- C-02: Medium-risk case visible in analyst queue; case detail renders
+- C-03: High-risk case visible in senior_reviewer queue; EDD section present
+- C-04: Analyst cannot see EDD-queue case (queue filter RBAC)
+- C-05: Onboard route reachable with tenant slug
+- C-06: Onboarding agent dashboard surfaces "Stuck Sessions" widget
+- C-07: Consent API route returns 400/401 on malformed/unauthenticated request
+- C-08: Document upload/status routes return 401 for unauthenticated requests
+
+### `app/role-workflows.spec.ts` (gated) — Sprint 1 S1-05
+Role workflow scenarios R-01 through R-12:
+- R-01 through R-10: `test.skip` stubs targeting MFA roles (tenant_admin, mlro).
+  Deferred to seed v2 (Sprint 2). The skip message preserves the tracking link.
+- R-11: Senior Reviewer case detail renders; approval surface present; risk band visible
+- R-12: Escalation API returns correct auth error; SR does not see SAR controls
+- R-07 proxy: SAR route blocked for all 4 non-MLRO seeded roles (tipping-off guard)
+- R-10 proxy: Audit log blocked for analyst, onboarding_agent, read_only
+
+### `app/dashboard-polish.spec.ts` (gated) — Sprint 1 S1-03 / S1-04
+Dashboard-polish regression guards:
+- Analyst: stat card labels render; empty state or quick-actions panel renders
+- Senior Reviewer: four stat card labels render
+- Onboarding Agent: PeriodToggle renders; clicking "30 days" updates URL + label
+- Read-only: four aggregate stat cards; sparkline SVG in DOM; empty state or real data
+- Loading: no uncaught JS errors when navigating to /dashboard
+
 ## What's NOT covered yet
 
-The full FINAL_LAUNCH_PLAN.md §5 matrix has 57 named scenarios. This PR ships
-the harness + ~15 of them. The remaining ~42 (customer journeys C-01 through
-C-16, role workflows R-13 through R-21, security S-01 through S-13, performance
-P-01 through P-05) require the seed and per-feature scaffolding to land in
-Sprint 2. Authoring them is fast once the seed is in place — the shape is set.
+The full FINAL_LAUNCH_PLAN.md §5 matrix has 57 named scenarios. Sprint 1 ships
+≥20 scenarios (C-01→C-08 structural + R-11/R-12 live + R-01→R-10 stubs +
+dashboard-polish guards + security/RBAC). The remaining scenarios
+(C-09→C-16, R-13→R-21, S-01→S-13, P-01→P-05) require either MFA seed or
+Sprint 2 feature work. Authoring them is fast once the seed + features land.
 
 ## Adding a new test
 

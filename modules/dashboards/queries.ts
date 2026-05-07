@@ -322,6 +322,60 @@ export async function countActiveUsersInTenant(
   return count ?? 0;
 }
 
+// --- Daily sparkline series ---
+
+/**
+ * Returns a 30-element array (one per day, oldest first) counting onboarding
+ * sessions started on each UTC day. Used for sparkline trend widgets.
+ */
+export async function getDailySessionVolume(
+  supabase: DB,
+  tenantId: string,
+  days: number = 30,
+): Promise<number[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  since.setUTCHours(0, 0, 0, 0);
+  const { data } = await supabase
+    .from('onboarding_sessions')
+    .select('started_at')
+    .eq('tenant_id', tenantId)
+    .gte('started_at', since.toISOString());
+
+  // Build a bucket per day
+  const counts = new Array<number>(days).fill(0);
+  for (const row of (data ?? []) as { started_at: string }[]) {
+    const msAgo = Date.now() - new Date(row.started_at).getTime();
+    const dayIdx = days - 1 - Math.floor(msAgo / (24 * 60 * 60 * 1000));
+    if (dayIdx >= 0 && dayIdx < days) counts[dayIdx] += 1;
+  }
+  return counts;
+}
+
+/**
+ * Returns a `days`-element array counting new cases opened per day (oldest first).
+ */
+export async function getDailyCaseVolume(
+  supabase: DB,
+  tenantId: string,
+  days: number = 30,
+): Promise<number[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  since.setUTCHours(0, 0, 0, 0);
+  const { data } = await supabase
+    .from('cases')
+    .select('opened_at')
+    .eq('tenant_id', tenantId)
+    .gte('opened_at', since.toISOString());
+
+  const counts = new Array<number>(days).fill(0);
+  for (const row of (data ?? []) as { opened_at: string }[]) {
+    const msAgo = Date.now() - new Date(row.opened_at).getTime();
+    const dayIdx = days - 1 - Math.floor(msAgo / (24 * 60 * 60 * 1000));
+    if (dayIdx >= 0 && dayIdx < days) counts[dayIdx] += 1;
+  }
+  return counts;
+}
+
 // --- Tenant setup completeness ---
 
 /**
