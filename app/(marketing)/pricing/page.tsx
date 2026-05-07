@@ -17,10 +17,10 @@ const TIERS: PricingTier[] = [
     audience: 'For growing fintechs and DNFBPs. Up to 500 customer records.',
     features: [
       'Up to 500 customer records',
-      'KYC onboarding with liveness and document parse',
+      'KYC onboarding — identity verification and document checks',
       'AML screening — sanctions and PEP registers',
-      'Basic case management with audit trail',
-      'Append-only hash-chained audit log on every action',
+      'Case management with full audit trail',
+      'Permanent record of every compliance decision',
       'Email support, 1 business day response SLA',
     ],
     ctaHref: '/book-demo',
@@ -34,12 +34,12 @@ const TIERS: PricingTier[] = [
     features: [
       'Unlimited customer records',
       'Full MLRO workbench with role-aware case queues',
-      'Four-eyes enforcement on approvals',
-      'UAE Pass liveness and Emirates ID parse',
+      'Four-eyes enforcement — two sign-offs required before any case closes',
+      'UAE Pass sign-in and Emirates ID reading built in',
       'SAR drafting with goAML XML export',
       'EDD section with structured evidence capture',
       'Audit trail export and 7-year retention',
-      'Advanced risk scoring — 3-D model with per-tenant thresholds',
+      'Advanced risk scoring with configurable thresholds per tenant',
       'Priority support, same-day response SLA',
     ],
     ctaHref: '/book-demo',
@@ -57,7 +57,7 @@ const TIERS: PricingTier[] = [
       'Contractual uptime SLA with incident response',
       'Penetration test reports available under NDA',
       'SSO (SAML 2.0 and OpenID Connect)',
-      'Dedicated infrastructure in Bahrain region (me1)',
+      'Dedicated UAE-based infrastructure',
       'Data Processing Agreement and sub-processor disclosures',
     ],
     ctaHref: '/book-demo',
@@ -76,7 +76,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'What data residency do you provide?',
-    a: 'All customer data and audit logs are stored in Supabase region me1 (Bahrain) and served from Vercel region me1. Your data does not leave the GCC for processing or storage without your written instruction. See the Security page for architecture detail.',
+    a: 'All customer data and audit records are stored in UAE-based infrastructure. Your data does not leave the GCC for processing or storage without your written instruction. See the Security page for details.',
   },
   {
     q: 'Is implementation support included?',
@@ -91,31 +91,34 @@ const FAQ: { q: string; a: string }[] = [
 export default function PricingPage() {
   return (
     <>
-      <header className="border-b border-gray-200 bg-gradient-to-b from-white to-blue-50/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Pricing</p>
-          <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
+      <section className="bg-cream">
+        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 lg:pb-20 lg:pt-28 lg:px-10">
+          <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+            <span className="copper-rule" aria-hidden="true" />
+            <span>Pricing</span>
+          </p>
+          <h1 className="font-display mt-6 max-w-[28ch] text-[40px] leading-[1.08] text-ink sm:text-[56px]">
             Transparent pricing in AED. No NDA required.
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-gray-700">
+          <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-soft">
             Most compliance platforms hide their price until you sign a non-disclosure. TruVis
-            publishes in AED so you know what you pay before the demo. Every tier includes the
-            hash-chained audit trail your regulator will inspect.
+            publishes in AED so you know what you pay before the demo. Every tier includes a
+            permanent audit trail your regulator can inspect.
           </p>
         </div>
-      </header>
+      </section>
 
-      <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="bg-paper">
+        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-3">
             {TIERS.map((t) => (
               <PricingCard key={t.name} tier={t} />
             ))}
           </div>
-          <p className="mt-8 max-w-2xl text-sm text-gray-500">
+          <p className="mt-8 max-w-2xl text-[13px] text-mute">
             Prices exclude VAT. Annual billing earns a 15% discount on Foundations and Compliance Suite.
             Start a 14-day free trial with no credit card —{' '}
-            <Link href="/signup" className="text-blue-600 hover:underline">
+            <Link href="/signup" className="text-copper hover:underline">
               sign up now
             </Link>
             .
@@ -123,16 +126,20 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="border-t border-gray-200 bg-gray-50/60">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-            Pricing FAQ
+      <section className="bg-cream">
+        <div className="mx-auto max-w-3xl px-6 py-16 lg:py-20 lg:px-10">
+          <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+            <span className="copper-rule" aria-hidden="true" />
+            <span>Pricing FAQ</span>
+          </p>
+          <h2 className="font-display mt-5 text-[32px] leading-[1.15] text-ink">
+            Common questions.
           </h2>
-          <dl className="mt-8 divide-y divide-gray-200 border-t border-gray-200">
+          <dl className="mt-8 divide-y divide-line border-t border-line">
             {FAQ.map((item) => (
               <div key={item.q} className="py-5">
-                <dt className="text-base font-semibold text-gray-900">{item.q}</dt>
-                <dd className="mt-2 text-sm text-gray-700">{item.a}</dd>
+                <dt className="text-[15px] font-semibold text-ink">{item.q}</dt>
+                <dd className="mt-2 text-[14px] leading-relaxed text-ink-soft">{item.a}</dd>
               </div>
             ))}
           </dl>
@@ -141,7 +148,7 @@ export default function PricingPage() {
 
       <CTASection
         title="Not sure which tier fits? Ask us."
-        body="Reserve your demo — 30 minutes, no pitch deck, your workflow our focus. We will recommend the right tier on the call."
+        body="30 minutes, no pitch deck. We&rsquo;ll recommend the right tier on the call."
         primaryLabel="Book a Demo"
         secondaryLabel="Start Free Trial"
         secondaryHref="/signup"

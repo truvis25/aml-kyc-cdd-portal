@@ -2,99 +2,109 @@ import type { Metadata } from 'next';
 import { CTASection } from '@/components/marketing/CTASection';
 
 export const metadata: Metadata = {
-  title: 'TruVis for UAE DNFBPs — AML compliance without a full compliance team',
+  title: 'TruVis for UAE DNFBPs | AML Compliance',
   description:
-    'AML compliance for UAE real estate, gold dealers, VASPs, and CSPs. Beneficial ownership tree, cash transaction risk flags, goAML STR pre-fill, DNFBP risk questionnaire. CBUAE and EMLO examination-ready.',
+    'AML compliance for UAE real estate agents, gold dealers, VASPs, and CSPs. Beneficial ownership mapping, cash transaction monitoring, SAR filing, and goAML export — built for CBUAE and EMLO examination.',
 };
 
 const PAIN_POINTS: { title: string; body: string }[] = [
   {
     title: 'CBUAE and EMLO now examine DNFBPs with the same rigour as banks — but most tools are built for banks.',
-    body: 'The Ministry of Economy and CBUAE have issued specific DNFBP AML guidance under Federal Decree-Law No. 10 of 2025. Generic compliance tools do not map to DNFBP-specific risk categories, transaction thresholds, or beneficial ownership requirements.',
+    body: 'The Ministry of Economy and CBUAE have issued specific DNFBP AML guidance. Generic compliance tools do not map to DNFBP-specific risk categories, transaction thresholds, or beneficial ownership requirements. TruVis is built for DNFBP workflows from the ground up.',
   },
   {
     title: 'Cash transactions above AED 55,000 trigger STR obligations — manual tracking fails at volume.',
-    body: 'The AED 55,000 threshold applies per transaction and per customer across a relationship. Manual spreadsheet tracking misses aggregation. TruVis flags threshold breaches automatically and pre-fills the goAML STR form.',
+    body: 'The AED 55,000 threshold applies per transaction and per customer across a relationship. Manual spreadsheet tracking misses aggregation. TruVis flags threshold breaches automatically and pre-fills the goAML Suspicious Transaction Report form.',
   },
   {
-    title: 'Beneficial ownership verification for complex corporate structures takes days, not minutes.',
-    body: 'Tracing UBO chains through multiple holding entities, different jurisdictions, and nominee arrangements is the highest-risk gap in DNFBP compliance. TruVis maps the corporate hierarchy and records each verification step in the audit trail.',
+    title: 'Tracing beneficial ownership through complex corporate structures takes days, not minutes.',
+    body: 'Mapping UBO chains through holding entities, different jurisdictions, and nominee arrangements is the highest-risk gap in DNFBP compliance. TruVis maps the corporate hierarchy and records each verification step in the case file.',
   },
 ];
 
 const SEGMENTS: { name: string; pain: string; truvisFit: string }[] = [
   {
     name: 'Real Estate',
-    pain: 'Source-of-funds checks under MoE supervision, beneficial-owner mapping for corporate buyers, ongoing PEP screening on landlords and tenants.',
-    truvisFit: 'KYB with beneficial ownership tree, sanctions and PEP screening, document evidence in the case file, cash transaction risk flags.',
+    pain: 'Source-of-funds checks under MoE supervision, beneficial owner mapping for corporate buyers, ongoing PEP screening on landlords and tenants.',
+    truvisFit: 'Company onboarding with full ownership tree, sanctions and PEP screening, document evidence in the case file, cash transaction risk flags.',
   },
   {
     name: 'Gold & Precious Metals',
-    pain: 'AED 55,000 cash-transaction threshold, walk-in customers, repeat-buyer monitoring, retention of identification evidence.',
-    truvisFit: 'Quick KYC capture, AED 55,000 STR trigger, goAML STR pre-fill, audit chain that survives a thematic inspection.',
+    pain: 'AED 55,000 cash-transaction threshold, walk-in customers, repeat-buyer monitoring, keeping identification evidence on file.',
+    truvisFit: 'Quick individual onboarding, automatic AED 55,000 STR trigger, goAML pre-fill, complete audit record that survives a thematic inspection.',
   },
   {
     name: 'Crypto / VASPs (VARA)',
     pain: 'VARA Travel Rule compliance, VASP counterparty due diligence, ongoing transaction monitoring, SAR obligations.',
-    truvisFit: 'VARA-aligned risk questionnaire, real-time screening against 235+ lists, SAR drafting with goAML XML export.',
+    truvisFit: 'VARA-aligned risk questionnaire, real-time screening against hundreds of sanctions lists, SAR drafting with goAML XML export.',
   },
   {
     name: 'CSPs & TCSPs',
-    pain: 'UBO recursion, multi-entity structures, nominee arrangements, constant change-of-circumstance updates.',
-    truvisFit: 'KYB with full corporate hierarchy tree, customer-data versioning so every UBO change is recorded and re-scored.',
+    pain: 'UBO tracing, multi-entity structures, nominee arrangements, constant change-of-circumstance updates.',
+    truvisFit: 'Company onboarding with full corporate ownership tree — every UBO change is recorded and the risk score updated automatically.',
   },
 ];
 
 export default function DnfbpsPage() {
   return (
     <>
-      <header className="border-b border-gray-200 bg-gradient-to-b from-white to-blue-50/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-            For DNFBPs
+      <section className="bg-cream">
+        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 lg:pb-20 lg:pt-28 lg:px-10">
+          <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+            <span className="copper-rule" aria-hidden="true" />
+            <span>For DNFBPs</span>
           </p>
-          <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-            AML compliance for UAE real estate, gold dealers, and VASPs &mdash; without a full compliance team.
+          <h1 className="font-display mt-6 max-w-[26ch] text-[40px] leading-[1.08] text-ink sm:text-[56px]">
+            AML compliance for UAE real estate, gold dealers, and VASPs.
           </h1>
-          <p className="mt-4 max-w-3xl text-lg text-gray-700">
-            CBUAE and EMLO now examine DNFBPs with the same rigour as banks. Fines reach AED 5
-            million per violation. TruVis gives DNFBPs a defensible onboarding, screening, and
-            audit workflow built specifically for the FATF DNFBP categories — not adapted from a
-            bank product.
+          <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-soft">
+            CBUAE and EMLO now examine DNFBPs with the same rigour as banks. TruVis gives you
+            a defensible onboarding, screening, and audit workflow built specifically for FATF
+            DNFBP categories — not adapted from a bank product.
           </p>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-          The three compliance pressures DNFBPs face today
-        </h2>
-        <div className="mt-8 grid gap-5 lg:grid-cols-3">
-          {PAIN_POINTS.map((p) => (
-            <article key={p.title} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-base font-semibold text-gray-900">{p.title}</h3>
-              <p className="mt-3 text-sm text-gray-700">{p.body}</p>
-            </article>
-          ))}
         </div>
       </section>
 
-      <section className="border-y border-gray-200 bg-gray-50/60">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-            By DNFBP vertical
+      <section className="bg-paper">
+        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20 lg:px-10">
+          <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+            <span className="copper-rule" aria-hidden="true" />
+            <span>The pressure DNFBPs face today</span>
+          </p>
+          <h2 className="font-display mt-5 text-[32px] leading-[1.15] text-ink sm:text-[40px]">
+            Three compliance challenges every DNFBP needs to solve.
           </h2>
-          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {PAIN_POINTS.map((p) => (
+              <article key={p.title} className="rounded-2xl border border-line bg-cream p-6">
+                <h3 className="text-[15px] font-semibold leading-snug text-ink">{p.title}</h3>
+                <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">{p.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-cream">
+        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20 lg:px-10">
+          <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+            <span className="copper-rule" aria-hidden="true" />
+            <span>By DNFBP vertical</span>
+          </p>
+          <h2 className="font-display mt-5 text-[32px] leading-[1.15] text-ink sm:text-[40px]">
+            Built for your sector, not adapted from another one.
+          </h2>
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
             {SEGMENTS.map((s) => (
-              <article key={s.name} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900">{s.name}</h3>
-                <p className="mt-3 text-sm">
-                  <span className="font-semibold text-gray-700">The pain: </span>
-                  <span className="text-gray-700">{s.pain}</span>
+              <article key={s.name} className="rounded-2xl border border-line bg-paper p-6">
+                <h3 className="text-[16px] font-semibold text-ink">{s.name}</h3>
+                <p className="mt-3 text-[14px]">
+                  <span className="font-semibold text-ink-soft">The challenge: </span>
+                  <span className="text-ink-soft">{s.pain}</span>
                 </p>
-                <p className="mt-3 text-sm">
-                  <span className="font-semibold text-blue-700">TruVis fit: </span>
-                  <span className="text-gray-800">{s.truvisFit}</span>
+                <p className="mt-3 text-[14px]">
+                  <span className="font-semibold text-copper">TruVis: </span>
+                  <span className="text-ink-soft">{s.truvisFit}</span>
                 </p>
               </article>
             ))}
@@ -102,39 +112,45 @@ export default function DnfbpsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid items-start gap-10 lg:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-              DNFBP-specific features included in every tier
-            </h2>
-            <p className="mt-3 text-gray-700">
-              TruVis is not a bank compliance tool adapted for DNFBPs. The DNFBP risk
-              questionnaire, beneficial ownership tree, cash transaction risk flags, and goAML
-              STR pre-fill are built in — not add-ons.
-            </p>
+      <section className="bg-paper">
+        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20 lg:px-10">
+          <div className="grid items-start gap-10 lg:grid-cols-2">
+            <div>
+              <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
+                <span className="copper-rule" aria-hidden="true" />
+                <span>DNFBP-specific features</span>
+              </p>
+              <h2 className="font-display mt-5 text-[32px] leading-[1.15] text-ink sm:text-[40px]">
+                Included in every tier.
+              </h2>
+              <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">
+                TruVis is not a bank compliance tool adapted for DNFBPs. The beneficial
+                ownership mapping, cash transaction monitoring, and goAML SAR pre-fill are
+                built in — not add-ons.
+              </p>
+            </div>
+            <ul className="rounded-2xl border border-line bg-cream p-6">
+              {[
+                'Beneficial ownership mapping — trace UBO chains through multiple corporate layers',
+                'Cash transaction monitoring — AED 55,000 threshold triggers an automatic alert',
+                'goAML SAR pre-fill — reduce SAR drafting time significantly',
+                'DNFBP risk questionnaire — MoE and CBUAE-aligned customer risk assessment',
+                'Risk scores update automatically whenever customer circumstances change',
+                'Every risk decision recorded in the case file — defensible under examination',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3 py-2 text-[14px] text-ink-soft">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-copper" aria-hidden="true" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-800 shadow-sm">
-            {[
-              'Beneficial ownership tree — map UBO chains through multiple corporate layers',
-              'Cash transaction risk flags — AED 55,000 threshold triggers automatic alert',
-              'goAML STR pre-fill — reduce SAR drafting time by 80%',
-              'DNFBP risk questionnaire — MoE and CBUAE-aligned customer risk assessment',
-              'Re-score automatically on every customer-data change of circumstance',
-              'Score linked to inputs in the audit trail — every band is defensible',
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-2 py-1.5">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true" />
-                {item}
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
       <CTASection
         title="See TruVis for your DNFBP vertical."
-        body="Reserve your demo — 30 minutes, no pitch deck, your workflow our focus."
+        body="30 minutes, no pitch deck. Tell us your sector and we&rsquo;ll show you exactly how TruVis fits your compliance workflow."
         primaryLabel="Book a Demo"
         secondaryLabel="Start Free Trial"
         secondaryHref="/signup"
