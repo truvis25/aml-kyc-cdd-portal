@@ -11,9 +11,11 @@ export default function DpaPage() {
   return (
     <LegalPage title="Data Processing Agreement" lastUpdated="29 April 2026">
       <p>
-        This Data Processing Agreement (&quot;DPA&quot;) supplements the TruVis customer agreement
-        and governs the processing of personal data submitted by your end-users into a TruVis
-        tenant. The customer is the data controller; TruVis is the processor.
+        This Data Processing Agreement (&quot;DPA&quot;) supplements the TruVis Technologies LLC
+        customer agreement and governs the processing of personal data submitted by your end-users
+        into a TruVis tenant. The customer is the data controller; TruVis Technologies LLC is the
+        processor. This DPA covers obligations under UAE Federal Decree-Law No. 45 of 2021 (UAE PDPL)
+        and, where applicable, the EU General Data Protection Regulation (GDPR).
       </p>
 
       <h2>1. Subject matter and duration</h2>
@@ -77,15 +79,17 @@ export default function DpaPage() {
       <h2>7. Audit rights</h2>
       <p>
         On request and reasonable notice, we will provide a current security overview and
-        independent test or audit reports we hold (e.g. penetration test, SOC 2 Type 1 once
-        available). On Enterprise tiers, on-site audits may be agreed subject to confidentiality.
+        independent test or audit reports we hold (e.g. penetration test, SOC 2 Type II report
+        once available). On Enterprise tiers, on-site audits may be agreed subject to
+        confidentiality.
       </p>
 
       <h2>8. Breach response</h2>
       <p>
-        We notify customers of confirmed personal-data breaches within 48 hours of confirmation,
-        with a description of the breach, categories and approximate volume of records affected,
-        likely consequences, and remedial steps taken or proposed.
+        We notify customers of confirmed personal-data breaches within 72 hours of confirmation, in
+        accordance with UAE PDPL (Federal Decree-Law No. 45 of 2021) and GDPR obligations. The
+        notification will include a description of the breach, categories and approximate volume of
+        records affected, likely consequences, and remedial steps taken or proposed.
       </p>
 
       <h2>9. Termination</h2>
