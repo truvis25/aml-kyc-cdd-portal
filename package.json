@@ -30,7 +30,8 @@
     "check:architect-triggers": "tsx scripts/check-architect-triggers.ts",
     "check:env": "tsx scripts/check-env-readiness.ts",
     "lint:migrations": "tsx scripts/check-migration-safety.ts",
-    "sync:feature-sheet": "tsx scripts/sync-feature-sheet.ts"
+    "sync:feature-sheet": "tsx scripts/sync-feature-sheet.ts",
+    "rebuild:command-center": "tsx scripts/rebuild-command-center.ts"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
