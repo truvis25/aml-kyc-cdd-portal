@@ -53,26 +53,26 @@ export default function LandingPage() {
                 The bar moved. The toolkit didn&rsquo;t.
               </h2>
               <p className="mt-6 max-w-md text-[16px] leading-relaxed text-ink-soft">
-                UAE Federal Decree-Law No. 10 of 2025 raised the standard for customer risk
-                assessment, ongoing monitoring and SAR filing. Most compliance teams are still
-                running the workflow on spreadsheets and email threads.
+                CBUAE, DFSA, FSRA, and VARA now examine compliance programmes with the same
+                rigour as full banking inspections. Most regulated firms are still stitching
+                together four vendors and a spreadsheet to keep up.
               </p>
             </div>
             <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line lg:col-span-7">
               <ProblemPoint
                 index="A"
-                title="Fines range from AED 10,000 to AED 5 million per violation."
-                body="The regulator&rsquo;s first question: show me your evidence. A spreadsheet can&rsquo;t prove who decided what, when, or why. Email threads are not a control."
+                title="Manual KYC reviews eat your compliance team&rsquo;s week."
+                body="False positives flood your analyst queue. Each manual review takes 20 minutes. At 50 onboardings a day, your team is permanently behind — and customer activation slows to match."
               />
               <ProblemPoint
                 index="B"
-                title="IDV and screening vendors sell to engineers."
-                body="Your MLRO is left wiring them together in Zapier and Slack. There&rsquo;s no case queue, no role-aware approval gate, no forensic audit chain."
+                title="One missed screening hit means regulatory action."
+                body="CBUAE and DFSA examinations now include transaction sampling and sanction-screening spot checks. A single unresolved hit is sufficient grounds for enforcement proceedings."
               />
               <ProblemPoint
                 index="C"
-                title="Two years from now, an inspector will ask: prove your decision."
-                body="If your evidence is in email threads or spreadsheet comments, you lose. If you have an immutable, timestamped, hash-chained audit trail, you win."
+                title="Stitching four vendors creates audit gaps."
+                body="IDV here, screening there, cases in a spreadsheet, SAR by email. When the regulator asks for the full evidence chain, none of it links. TruVis closes the gap."
               />
             </div>
           </div>
@@ -81,49 +81,49 @@ export default function LandingPage() {
 
       {/* Three deep-dive product sections, alternating */}
       <ProductSection
-        eyebrow="Onboard"
-        title="A branded onboarding flow your customers will actually finish."
-        body="Tenant-branded, multi-step, resumable. Individuals and corporates. IDV, document upload to private storage, consent capture with version, timestamp and IP &mdash; DPA evidence in one row."
+        eyebrow="Audit-grade backbone"
+        title="Append-only, hash-chained audit log. Every decision, proven untampered."
+        body="Every compliance action — onboarding submission, screening hit, risk score, approval, SAR flag — lands in an immutable ledger. Altering a row breaks the SHA-256 chain and is forensically detectable."
         bullets={[
-          'Per-tenant branding (logo + colour) on the customer portal',
-          'KYC-individual and KYB-corporate forms, each step audited',
-          'Embedded identity verification with liveness, OCR and face match',
-          '15-minute signed URLs on every document — no caching, no leaks',
+          'Append-only audit_log with hash chain: each row commits to the previous row',
+          'Customer data versioning — every field change is a new row, never overwritten',
+          'goAML XML export bound to audit row with hash — regulator verifies file integrity',
+          '7-year retention by default; JSON-L export for regulator handover',
         ]}
-        ctaLabel="Walk through onboarding"
-        ctaHref="/product"
-        visual={<OnboardingVisual />}
+        ctaLabel="See the security model"
+        ctaHref="/security"
+        visual={<ProveVisual />}
       />
 
       <ProductSection
-        eyebrow="Decide"
-        title="Risk and cases your team can actually run."
-        body="A transparent 3-D risk model, role-aware case queues, four-eyes approvals, and SAR as a first-class action. The workbench your MLRO opens in the morning &mdash; no integration project required."
+        eyebrow="Real-time AML screening"
+        title="235+ sanctions lists. PEP registers. Adverse media. Under 150ms."
+        body="Screen customers and counterparties in real time against the world&rsquo;s leading watchlists. Push alerts fire on every list update — not nightly batch. Hit resolution runs inside the case, with full audit trail."
         bullets={[
-          '3-D risk: geography, PEP exposure, screening hits',
-          'Role-aware queues for Analyst → Senior Reviewer → MLRO',
-          'Four-eyes enforcement on approvals, recorded against the case',
-          'SAR flag as an action, not an out-of-band email',
+          '235+ sanctions lists, PEP registers, and adverse media sources',
+          'Sub-150ms average latency — screening completes before the onboarding page loads',
+          'Push alerts on every watchlist update, not nightly batch',
+          'Hit resolution workflow: confirm, dismiss, or escalate — each action recorded',
         ]}
-        ctaLabel="See the case workbench"
+        ctaLabel="See the screening workflow"
         ctaHref="/product"
         visual={<DecideVisual />}
         reverse
       />
 
       <ProductSection
-        eyebrow="Prove"
-        title="Audit, evidence and SAR &mdash; ready for the regulator."
-        body="Every action lands in an append-only, hash-chained ledger. Customer data is versioned &mdash; never a bare UPDATE. SARs export as goAML XML with a SHA-256 hash bound to the audit row."
+        eyebrow="One platform, end-to-end"
+        title="KYC onboarding, AML screening, case management, SAR filing. One workflow."
+        body="Replace five point solutions with one. UAE Pass liveness, Emirates ID parse, multi-step resumable onboarding, real-time screening, role-aware case queues, four-eyes approvals, SAR drafting with goAML XML export — all in one data model with one audit trail."
         bullets={[
-          'Append-only audit_log with hash-chain integrity',
-          'customer_data_versions — every revision retained',
-          'goAML XML export with one click; SHA-256 in the audit row',
-          'No PII in application logs — sanitiser-enforced in CI',
+          'UAE Pass liveness and Emirates ID parse out of the box',
+          'KYC-individual and KYB-corporate onboarding — each step audited',
+          'MLRO workbench: case queue, SLA tracking, RAI, escalation, EDD section',
+          'SAR drafting with goAML XML export and tipping-off masking enforced at schema level',
         ]}
-        ctaLabel="Read the security model"
-        ctaHref="/security"
-        visual={<ProveVisual />}
+        ctaLabel="See the full platform"
+        ctaHref="/product"
+        visual={<OnboardingVisual />}
       />
 
       <IndustryGrid />
@@ -145,28 +145,28 @@ export default function LandingPage() {
             <div className="lg:col-span-5">
               <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
                 <span className="copper-rule" aria-hidden="true" />
-                <span>Where we fit</span>
+                <span>How TruVis compares</span>
               </p>
               <h2 className="font-display mt-6 text-[32px] leading-[1.15] text-ink sm:text-[40px]">
-                Where we lead, and where we don&rsquo;t.
+                UAE-native and global-grade — not a trade-off.
               </h2>
               <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-soft">
-                We&rsquo;re an MLRO workbench, not an IDV provider. We&rsquo;re a SaaS, not a
-                bespoke integration. Read where that lands us versus the categories of tools
-                you may already be evaluating.
+                Global IDV platforms give you document breadth — but no UAE Pass, no goAML,
+                no Arabic. Regional suites give you regulator alignment — but monolithic, no
+                white-label, no API. TruVis gives you both.
               </p>
             </div>
             <div className="grid gap-3 lg:col-span-7 sm:grid-cols-2">
               <CompareCard
                 category="vs global IDV platforms"
-                edge="Compliance workflow + UAE residency"
-                concede="They lead on global IDV breadth"
+                edge="UAE Pass ✓ · goAML native ✓ · UAE data residency ✓"
+                concede="They lead on global document library breadth"
                 href="/compare"
               />
               <CompareCard
-                category="vs regional compliance suites"
-                edge="Transparent pricing + workbench depth"
-                concede="They lead on regulator-direct submissions"
+                category="vs regional GCC suites"
+                edge="API-first ✓ · white-label ✓ · hash-chained audit ✓"
+                concede="They lead on direct regulator-submission integrations"
                 href="/compare"
               />
             </div>
@@ -174,7 +174,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <CTASection />
+      <CTASection
+        title="CBUAE-examination-ready in 30 days — speak to our Gulf compliance team."
+        body="Reserve your demo — 30 minutes, no pitch deck, your workflow our focus."
+        primaryLabel="Book a Demo"
+        secondaryLabel="Start Free Trial"
+        secondaryHref="/signup"
+      />
     </>
   );
 }
