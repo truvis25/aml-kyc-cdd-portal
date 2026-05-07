@@ -34,7 +34,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
 const FILE_ID =
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? '1Xbi2tkMjwa6qrbxXRQTvvuOIegje0j1M'
-const SHEET_NAME = 'Feature Registry'
+const SHEET_NAME = '📋 BRD Feature Registry'
 
 // Column indices (0-based)
 const COL_MODULE = 0       // A
