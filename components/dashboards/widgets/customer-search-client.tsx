@@ -1,25 +1,29 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CustomerSearchClientProps {
   className?: string;
+  placeholder?: string;
 }
 
 /**
- * Customer lookup search box for the Onboarding Agent dashboard.
- * On submit, navigates to /cases?search=<q>.
- * Client component — uses useRouter for navigation without page reload.
+ * Client component: customer search box.
+ * On submit navigates to /cases?search=<q>.
+ * Only the search query (not PII) is passed through the URL.
  */
-export function CustomerSearchClient({ className }: CustomerSearchClientProps) {
+export function CustomerSearchClient({
+  className,
+  placeholder = 'Search by case ID or reference…',
+}: CustomerSearchClientProps) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const q = inputRef.current?.value.trim() ?? '';
+    const q = query.trim();
     if (!q) return;
     router.push(`/cases?search=${encodeURIComponent(q)}`);
   }
@@ -29,19 +33,28 @@ export function CustomerSearchClient({ className }: CustomerSearchClientProps) {
       onSubmit={handleSubmit}
       className={cn('flex items-center gap-2', className)}
       role="search"
-      aria-label="Customer lookup"
+      aria-label="Customer search"
     >
       <input
-        ref={inputRef}
         type="search"
-        name="q"
-        placeholder="Search by case ID or reference…"
-        className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        autoComplete="off"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        aria-label="Search query"
+        className={cn(
+          'flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm',
+          'placeholder:text-gray-400 text-gray-900',
+          'focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100',
+        )}
       />
       <button
         type="submit"
-        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+        className={cn(
+          'rounded-lg border border-blue-500 bg-blue-500 px-4 py-2 text-sm font-medium text-white',
+          'hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300',
+          'disabled:opacity-50',
+        )}
+        disabled={!query.trim()}
       >
         Search
       </button>

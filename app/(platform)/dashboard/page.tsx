@@ -8,6 +8,7 @@ import { AnalystDashboard } from '@/components/dashboards/analyst-dashboard';
 import { OnboardingAgentDashboard } from '@/components/dashboards/onboarding-agent-dashboard';
 import { ReadOnlyDashboard } from '@/components/dashboards/read-only-dashboard';
 import type { Period } from '@/components/dashboards/widgets/period-toggle';
+import type { ReadOnlyRange } from '@/components/dashboards/widgets/range-selector-client';
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -19,10 +20,17 @@ function getPeriod(raw: string | string[] | undefined): Period {
   return 'week';
 }
 
+function getRange(raw: string | string[] | undefined): ReadOnlyRange {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (v === '90d' || v === 'ytd') return v;
+  return '30d';
+}
+
 export default async function DashboardPage({ searchParams }: Props) {
   const { userId, role, tenantId } = await getPageAuth();
   const params = await searchParams;
   const period = getPeriod(params['period']);
+  const range = getRange(params['range']);
 
   switch (role) {
     case Role.PLATFORM_SUPER_ADMIN:
@@ -38,7 +46,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     case Role.ONBOARDING_AGENT:
       return <OnboardingAgentDashboard tenantId={tenantId} period={period} />;
     case Role.READ_ONLY:
-      return <ReadOnlyDashboard tenantId={tenantId} />;
+      return <ReadOnlyDashboard tenantId={tenantId} range={range} />;
     default:
       return null;
   }

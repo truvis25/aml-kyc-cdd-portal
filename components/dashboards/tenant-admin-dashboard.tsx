@@ -17,6 +17,7 @@ import {
   getTenantSetupCompleteness,
   getDailySessionVolume,
   startOfTodayIso,
+  getPendingInvitationsCount,
 } from '@/modules/dashboards/queries';
 
 interface Props {
@@ -45,6 +46,7 @@ export async function TenantAdminDashboard({ tenantId, period = 'week' }: Props)
     unassigned,
     completeness,
     dailySessions,
+    pendingInvitations,
   ] = await Promise.all([
     countActiveUsersInTenant(supabase, tenantId),
     getActiveWorkflow(supabase, tenantId),
@@ -54,6 +56,7 @@ export async function TenantAdminDashboard({ tenantId, period = 'week' }: Props)
     countUnassignedOpenCases(supabase, tenantId),
     getTenantSetupCompleteness(supabase, tenantId),
     getDailySessionVolume(supabase, tenantId, 30),
+    getPendingInvitationsCount(supabase, tenantId),
   ]);
 
   const setupSignals = [
@@ -107,6 +110,19 @@ export async function TenantAdminDashboard({ tenantId, period = 'week' }: Props)
         />
       </div>
 
+      {/* Outstanding invitations */}
+      {pendingInvitations > 0 && (
+        <div className="mt-4">
+          <StatCard
+            label="Outstanding Invitations"
+            value={pendingInvitations}
+            hint="Invitations not yet accepted"
+            href="/admin/users"
+            urgent={pendingInvitations > 0}
+          />
+        </div>
+      )}
+
       {/* Volume section with period toggle + sparkline */}
       <div className="mt-6 flex items-center justify-between gap-4">
         <h2 className="text-sm font-semibold text-gray-700">Onboarding volume</h2>
@@ -146,6 +162,12 @@ export async function TenantAdminDashboard({ tenantId, period = 'week' }: Props)
         <QueueSummary
           title="Quick actions"
           rows={[
+            {
+              label: 'Outstanding invitations',
+              value: pendingInvitations,
+              hint: pendingInvitations > 0 ? 'Pending acceptance' : 'None pending',
+              href: '/admin/users',
+            },
             { label: 'Invite a user', value: '→', href: '/admin/users' },
             { label: 'Manage configuration', value: '→', href: '/admin/config' },
             { label: 'Review open cases', value: openCases, href: '/cases?status=open' },

@@ -5,6 +5,7 @@ import { StatCard } from './widgets/stat-card';
 import { StatCardWithSparkline } from './widgets/stat-card-with-sparkline';
 import { QueueSummary } from './widgets/queue-summary';
 import { EmptyState } from './widgets/empty-state';
+import { FilterPillsClient } from './widgets/filter-pills-client';
 import {
   countCasesAssignedTo,
   countCasesByQueue,
@@ -13,6 +14,8 @@ import {
   countUnresolvedHits,
   getOldestOpenInQueue,
   getDailyCaseVolume,
+  getSarDraftCount,
+  getOverdueCasesCount,
 } from '@/modules/dashboards/queries';
 import { getRiskBandDistribution } from '@/modules/reporting/queries';
 
@@ -40,6 +43,8 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
     unresolvedHits,
     bandDistribution,
     dailyCases,
+    sarDraftCount,
+    overdueCases,
   ] = await Promise.all([
     countOpenCasesByRiskBand(supabase, tenantId, ['high', 'unacceptable']),
     getOldestOpenInQueue(supabase, tenantId, ['edd', 'escalation', 'senior']),
@@ -49,6 +54,8 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
     countUnresolvedHits(supabase, tenantId),
     getRiskBandDistribution(supabase, tenantId, 1),
     getDailyCaseVolume(supabase, tenantId, 30),
+    getSarDraftCount(supabase, tenantId),
+    getOverdueCasesCount(supabase, tenantId, 48),
   ]);
 
   const bandTotal = bandDistribution.reduce((sum, r) => sum + r.count, 0);
@@ -57,6 +64,13 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
     const pct = bandTotal > 0 ? Math.round((count / bandTotal) * 100) : 0;
     return { label: b, value: `${count} (${pct}%)` };
   });
+
+  const filterPills = [
+    { label: 'High Risk', filter: 'high-risk', count: highRiskCount, urgent: highRiskCount > 0 },
+    { label: 'EDD', filter: 'edd' },
+    { label: 'Escalations', filter: 'escalations', count: escalationQueue, urgent: escalationQueue > 0 },
+    { label: 'SAR', filter: 'sar', count: sarCount, urgent: sarCount > 0 },
+  ];
 
   return (
     <DashboardShell
@@ -82,6 +96,23 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
           urgent={sarCount > 0}
         />
         <StatCard
+          label="SAR Drafts Pending"
+          value={sarDraftCount}
+          hint="Draft — not yet submitted"
+          href="/sar?status=draft"
+          urgent={sarDraftCount > 0}
+        />
+        <StatCard
+          label="Cases Overdue (48h)"
+          value={overdueCases}
+          hint="Open / pending, no update in 48h"
+          href="/cases?filter=overdue"
+          urgent={overdueCases > 0}
+        />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
           label="Escalation Queue"
           value={escalationQueue}
           hint="Awaiting MLRO review"
@@ -93,6 +124,12 @@ export async function MLRODashboard({ userId, tenantId }: Props) {
           value={unresolvedHits}
           hint="Across all open cases"
         />
+      </div>
+
+      {/* Quick filter pills for queue navigation */}
+      <div className="mt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Queue filters</h2>
+        <FilterPillsClient pills={filterPills} basePath="/cases" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
