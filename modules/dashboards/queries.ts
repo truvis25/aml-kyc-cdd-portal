@@ -376,6 +376,343 @@ export async function getDailyCaseVolume(
   return counts;
 }
 
+// --- Cross-tenant health (platform super admin) ---
+
+export interface CrossTenantHealthRow {
+  tenantId: string;
+  tenantName: string;
+  openCases: number;
+  sessionsToday: number;
+  lastActivity: string | null;
+  queueDepth: number;
+}
+
+/**
+ * Returns per-tenant health metrics for the platform super admin dashboard.
+ * Requires the RLS policy to allow platform_super_admin to read all tenants.
+ */
+export async function getCrossTenantHealth(supabase: DB): Promise<CrossTenantHealthRow[]> {
+  const todayIso = startOfTodayIso();
+
+  const { data: tenants } = await supabase.from('tenants').select('id, name').eq('status', 'active');
+
+  if (!tenants || tenants.length === 0) return [];
+
+  const rows = await Promise.all(
+    (tenants as { id: string; name: string }[]).map(async (t) => {
+      const [openCasesRes, sessionsTodayRes, lastSessionRes, queueDepthRes] = await Promise.all([
+        supabase
+          .from('cases')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', t.id)
+          .in('status', ['open', 'in_review', 'pending_info', 'escalated']),
+        supabase
+          .from('onboarding_sessions')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', t.id)
+          .gte('started_at', todayIso),
+        supabase
+          .from('onboarding_sessions')
+          .select('last_activity_at')
+          .eq('tenant_id', t.id)
+          .order('last_activity_at', { ascending: false })
+          .limit(1),
+        supabase
+          .from('webhook_events')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', t.id)
+          .eq('status', 'pending'),
+      ]);
+
+      const lastActivity =
+        (lastSessionRes.data?.[0] as { last_activity_at: string } | undefined)
+          ?.last_activity_at ?? null;
+
+      return {
+        tenantId: t.id,
+        tenantName: t.name,
+        openCases: openCasesRes.count ?? 0,
+        sessionsToday: sessionsTodayRes.count ?? 0,
+        lastActivity,
+        queueDepth: queueDepthRes.count ?? 0,
+      };
+    }),
+  );
+
+  return rows;
+}
+
+// --- Webhook delivery rate ---
+
+export interface WebhookDeliveryRate {
+  successRate: number;
+  total: number;
+}
+
+/**
+ * Returns the webhook delivery success rate for the given tenant over the last
+ * `hours` hours (24h or 168h = 7 days).
+ */
+export async function getWebhookDeliveryRate(
+  supabase: DB,
+  tenantId: string,
+  hours: 24 | 168,
+): Promise<WebhookDeliveryRate> {
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+
+  const [totalRes, successRes] = await Promise.all([
+    supabase
+      .from('webhook_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('created_at', since),
+    supabase
+      .from('webhook_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('created_at', since)
+      .eq('status', 'delivered'),
+  ]);
+
+  const total = totalRes.count ?? 0;
+  const success = successRes.count ?? 0;
+  return {
+    total,
+    successRate: total > 0 ? Math.round((success / total) * 100) : 100,
+  };
+}
+
+// --- SAR drafts ---
+
+/**
+ * Counts SAR reports in 'draft' status for the given tenant.
+ * TODO: wire when sar_reports table has RLS enabled for mlro role.
+ */
+export async function getSarDraftCount(supabase: DB, tenantId: string): Promise<number> {
+  const { count } = await supabase
+    .from('sar_reports')
+    .select('id', { count: 'exact', head: true })
+    .eq('tenant_id', tenantId)
+    .eq('status', 'draft');
+  return count ?? 0;
+}
+
+// --- Overdue cases ---
+
+/**
+ * Counts open/pending cases whose updated_at is older than `thresholdHours`.
+ */
+export async function getOverdueCasesCount(
+  supabase: DB,
+  tenantId: string,
+  thresholdHours: 48,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - thresholdHours * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from('cases')
+    .select('id', { count: 'exact', head: true })
+    .eq('tenant_id', tenantId)
+    .in('status', ['open', 'pending_info'])
+    .lt('updated_at', cutoff);
+  return count ?? 0;
+}
+
+// --- Analyst avg decision time ---
+
+/**
+ * Returns the average hours from case assignment to decision for a given analyst/reviewer.
+ * Returns null if no decided cases exist.
+ */
+export async function getAnalystAvgDecisionTime(
+  supabase: DB,
+  userId: string,
+): Promise<number | null> {
+  const { data } = await supabase
+    .from('cases')
+    .select('assigned_at, decided_at')
+    .eq('assigned_to', userId)
+    .not('decided_at', 'is', null)
+    .not('assigned_at', 'is', null)
+    .limit(100);
+
+  if (!data || data.length === 0) return null;
+
+  const rows = data as { assigned_at: string; decided_at: string }[];
+  const totalHours = rows.reduce((sum, r) => {
+    const diff =
+      (new Date(r.decided_at).getTime() - new Date(r.assigned_at).getTime()) /
+      (1000 * 60 * 60);
+    return sum + diff;
+  }, 0);
+
+  return Math.round(totalHours / rows.length);
+}
+
+// --- Cases escalated by user ---
+
+export interface EscalatedCaseRow {
+  caseId: string;
+  status: string;
+}
+
+/**
+ * Returns the top `limit` cases escalated by the given user, with their current status.
+ */
+export async function getEscalatedCasesByUser(
+  supabase: DB,
+  userId: string,
+  limit: number = 5,
+): Promise<EscalatedCaseRow[]> {
+  const { data } = await supabase
+    .from('cases')
+    .select('id, status')
+    .eq('escalated_by', userId)
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+
+  return ((data ?? []) as { id: string; status: string }[]).map((r) => ({
+    caseId: r.id,
+    status: r.status,
+  }));
+}
+
+// --- Pending RAI count ---
+
+/**
+ * Counts RAI requests assigned to the given analyst that are in 'sent' status.
+ * TODO: wire when rai_requests table exists and has RLS for analyst role.
+ */
+export async function getPendingRaiCount(supabase: DB, userId: string): Promise<number> {
+  const { count } = await supabase
+    .from('rai_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('assigned_analyst', userId)
+    .eq('status', 'sent');
+  return count ?? 0;
+}
+
+// --- Recent document inbox ---
+
+export interface DocumentInboxRow {
+  documentId: string;
+  caseId: string;
+  uploadedAt: string;
+}
+
+/**
+ * Returns recently uploaded documents on cases assigned to the given analyst.
+ * Top `limit` ordered by uploaded_at desc.
+ */
+export async function getRecentDocumentInbox(
+  supabase: DB,
+  userId: string,
+  limit: number = 5,
+): Promise<DocumentInboxRow[]> {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: cases } = await supabase
+    .from('cases')
+    .select('id, customer_id')
+    .eq('assigned_to', userId);
+
+  const customerIds = [
+    ...new Set(((cases ?? []) as { id: string; customer_id: string }[]).map((c) => c.customer_id)),
+  ];
+  if (customerIds.length === 0) return [];
+
+  const caseByCustomer = new Map(
+    ((cases ?? []) as { id: string; customer_id: string }[]).map((c) => [c.customer_id, c.id]),
+  );
+
+  const { data } = await supabase
+    .from('documents')
+    .select('id, customer_id, uploaded_at')
+    .in('customer_id', customerIds)
+    .gte('uploaded_at', since)
+    .order('uploaded_at', { ascending: false })
+    .limit(limit);
+
+  return ((data ?? []) as { id: string; customer_id: string; uploaded_at: string }[]).map((d) => ({
+    documentId: d.id,
+    caseId: caseByCustomer.get(d.customer_id) ?? '',
+    uploadedAt: d.uploaded_at,
+  }));
+}
+
+// --- Analyst SLA rate ---
+
+/**
+ * Returns the percentage (0–100) of closed cases for this analyst that were
+ * resolved within 48 hours of assignment.
+ */
+export async function getAnalystSlaRate(supabase: DB, userId: string): Promise<number> {
+  const { data } = await supabase
+    .from('cases')
+    .select('assigned_at, decided_at')
+    .eq('assigned_to', userId)
+    .eq('status', 'closed')
+    .not('assigned_at', 'is', null)
+    .not('decided_at', 'is', null)
+    .limit(200);
+
+  if (!data || data.length === 0) return 0;
+
+  const rows = data as { assigned_at: string; decided_at: string }[];
+  const withinSla = rows.filter((r) => {
+    const hours =
+      (new Date(r.decided_at).getTime() - new Date(r.assigned_at).getTime()) /
+      (1000 * 60 * 60);
+    return hours <= 48;
+  }).length;
+
+  return Math.round((withinSla / rows.length) * 100);
+}
+
+// --- In-progress sessions for onboarding agent ---
+
+export interface InProgressSessionRow {
+  sessionId: string;
+  updatedAt: string;
+}
+
+/**
+ * Returns the top `limit` in-progress onboarding sessions for the tenant,
+ * ordered by updated_at desc (most recently active first).
+ */
+export async function getInProgressSessions(
+  supabase: DB,
+  tenantId: string,
+  limit: number = 5,
+): Promise<InProgressSessionRow[]> {
+  const { data } = await supabase
+    .from('onboarding_sessions')
+    .select('id, updated_at')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'in_progress')
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+
+  return ((data ?? []) as { id: string; updated_at: string }[]).map((r) => ({
+    sessionId: r.id,
+    updatedAt: r.updated_at,
+  }));
+}
+
+// --- Pending invitations count ---
+
+/**
+ * Counts outstanding (un-accepted) user invitations for the tenant.
+ * TODO: wire when user_invitations table exists.
+ */
+export async function getPendingInvitationsCount(supabase: DB, tenantId: string): Promise<number> {
+  const { count } = await supabase
+    .from('user_invitations')
+    .select('id', { count: 'exact', head: true })
+    .eq('tenant_id', tenantId)
+    .is('accepted_at', null);
+  return count ?? 0;
+}
+
 // --- Tenant setup completeness ---
 
 /**
