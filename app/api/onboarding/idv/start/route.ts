@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create Sumsub applicant
+    // Create IDV applicant
     const result = await createApplicant({
       onboardingSessionId,
       firstName: kyc.first_name,

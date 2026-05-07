@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: message },
+      { error: 'Identity verification status check failed. Please try again later.' },
       { status: 500 }
     );
   }

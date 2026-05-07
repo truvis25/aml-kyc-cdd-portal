@@ -65,17 +65,17 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
 
-    // Log error but return 200 to avoid Sumsub retries on validation errors.
-    log.error('Sumsub webhook error', error, { code: 'sumsub_webhook_failed' });
+    // Log error internally; do not reflect SDK error messages to the caller.
+    log.error('IDV webhook error', error, { code: 'idv_webhook_failed' });
 
     // Return 200 for signature/parsing errors (don't retry)
-    // Return 500 for transient errors (Sumsub will retry)
+    // Return 500 for transient errors (provider will retry)
     if (message.includes('signature') || message.includes('parse')) {
-      return NextResponse.json({ error: message }, { status: 200 });
+      return NextResponse.json({ error: 'Webhook signature or payload error' }, { status: 200 });
     }
 
     return NextResponse.json(
-      { error: message },
+      { error: 'Webhook processing failed. Retry later.' },
       { status: 500 }
     );
   }
