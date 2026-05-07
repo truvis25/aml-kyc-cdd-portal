@@ -441,10 +441,10 @@ This is the queue. It's a flattened version of §8.
 Sprint 1
 S1-01  [x] Strip "Sumsub"/"Azakaw" from marketing surfaces (§6.1) — PR #82
 S1-02  [x] Delete /compare/sumsub + /compare/azakaw, build generic /compare — PR #82
-S1-03  Dashboard improvements per §4 (all 7 dashboards)
-S1-04  Empty + loading states audit for all list pages
+S1-03  [x] Dashboard improvements per §4 (all 7 dashboards) — PR #83
+S1-04  [x] Empty + loading states audit for all list pages — PR #84
 S1-05  Playwright harness + e2e scenarios (≥20)
-S1-06  Add pgTAP for screening_hits, risk_assessments, sar_reports, tenant_billing
+S1-06  [x] Add pgTAP for screening_hits, risk_assessments, sar_reports, tenant_billing — PR #85
 S1-07  Docs cleanup per §7 — delete stale + add new
 S1-08  CI green: typecheck + lint + tests + check:pii + e2e
 
