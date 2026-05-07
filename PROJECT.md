@@ -146,7 +146,7 @@ additionalFoundations:
   - docs/ROLES_DASHBOARDS_FLOWS.md
   - lib/constants/events.ts
   - lib/supabase/database.types.ts
-  - middleware.ts
+  - proxy.ts
   - MANUAL_QA_BACKLOG.md
 ```
 
