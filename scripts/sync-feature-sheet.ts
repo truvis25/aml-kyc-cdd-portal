@@ -29,14 +29,18 @@ const SPREADSHEET_ID =
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? '1Xbi2tkMjwa6qrbxXRQTvvuOIegje0j1M'
 const SHEET_NAME = 'Feature Registry'
 
-// Column indices (0-based)
-const COL_MODULE = 0   // A
-const COL_FEATURE = 1  // B
-const COL_STATUS = 2   // C
-const COL_NEXT_SPRINT = 9 // J
+// Column indices (0-based) — used to compute A1 notation ranges
+const COL_MODULE = 0        // A
+const COL_FEATURE = 1       // B
+const COL_STATUS = 2        // C
+const COL_NEXT_SPRINT = 9   // J
+
+function colLetter(idx: number): string {
+  return String.fromCharCode(65 + idx)
+}
 
 interface Args {
-  module: string
+  moduleName: string
   features: string[]
   status: string
   pr?: number
@@ -49,18 +53,18 @@ function parseArgs(): Args | null {
     return i !== -1 ? argv[i + 1] : undefined
   }
 
-  const module = get('--module')
+  const moduleName = get('--module')
   const featuresRaw = get('--features')
   const status = get('--status') ?? '✅ Completed'
   const prRaw = get('--pr')
 
-  if (!module || !featuresRaw) {
+  if (!moduleName || !featuresRaw) {
     console.error('Usage: sync-feature-sheet.ts --module "<name>" --features "<f1,f2>" [--status "✅ Completed"] [--pr <N>]')
     return null
   }
 
   return {
-    module,
+    moduleName,
     features: featuresRaw.split(',').map((f) => f.trim()).filter(Boolean),
     status,
     pr: prRaw ? parseInt(prRaw, 10) : undefined,
@@ -114,7 +118,7 @@ async function main() {
   }
 
   const normalise = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
-  const targetModule = normalise(args.module)
+  const targetModule = normalise(args.moduleName)
   const targetFeatures = new Set(args.features.map(normalise))
 
   const updates: Array<{ row: number; feature: string }> = []
@@ -129,7 +133,7 @@ async function main() {
   })
 
   if (updates.length === 0) {
-    console.log(`No matching rows found for module "${args.module}" with the given features.`)
+    console.log(`No matching rows found for module "${args.moduleName}" with the given features.`)
     console.log('Features searched:', args.features.join(', '))
     process.exit(0)
   }
@@ -137,8 +141,8 @@ async function main() {
   const nextSprintNote = args.pr ? `Shipped PR #${args.pr}` : 'Shipped'
 
   for (const { row, feature } of updates) {
-    const statusRange = `${SHEET_NAME}!C${row}`
-    const nextSprintRange = `${SHEET_NAME}!J${row}`
+    const statusRange = `${SHEET_NAME}!${colLetter(COL_STATUS)}${row}`
+    const nextSprintRange = `${SHEET_NAME}!${colLetter(COL_NEXT_SPRINT)}${row}`
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
