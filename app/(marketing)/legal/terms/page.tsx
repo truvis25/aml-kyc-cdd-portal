@@ -11,8 +11,9 @@ export default function TermsPage() {
     <LegalPage title="Terms of Service" lastUpdated="29 April 2026">
       <p>
         These Terms of Service govern your use of TruVis, a software-as-a-service compliance
-        platform operated by TruVis FZ-LLC (&quot;TruVis&quot;, &quot;we&quot;). By creating an
-        account or accessing the service, you accept these terms on behalf of your organisation.
+        platform operated by TruVis Technologies LLC (&quot;TruVis&quot;, &quot;we&quot;). By
+        creating an account or accessing the service, you accept these terms on behalf of your
+        organisation.
       </p>
 
       <h2>1. The service</h2>
@@ -43,15 +44,16 @@ export default function TermsPage() {
       <h2>4. Fees and billing</h2>
       <p>
         Fees, billing cycle and verification caps are set out in your order form. Fees are exclusive
-        of VAT. Annual prepayment qualifies for a fifteen percent discount on Starter and Growth
-        tiers. Overage rates apply when your tier&apos;s monthly verification cap is exceeded.
+        of VAT. Annual prepayment qualifies for a fifteen percent discount on Foundations and
+        Compliance Suite tiers. Overage rates apply when your tier&apos;s monthly verification cap
+        is exceeded.
       </p>
 
       <h2>5. Service levels</h2>
       <p>
-        We target 99.5% monthly availability on Starter, 99.9% on Growth, and contractual SLAs are
-        available on Enterprise. Planned maintenance windows are communicated at least 48 hours in
-        advance.
+        We target 99.5% monthly availability on Foundations, 99.9% on Compliance Suite, and
+        contractual SLAs are available on Enterprise. Planned maintenance windows are communicated
+        at least 48 hours in advance.
       </p>
 
       <h2>6. Suspension and termination</h2>
@@ -77,8 +79,10 @@ export default function TermsPage() {
 
       <h2>9. Governing law</h2>
       <p>
-        These terms are governed by the laws of the Dubai International Financial Centre (DIFC).
-        Disputes are submitted to the DIFC Courts.
+        These terms are governed by the laws of the UAE (Federal Decree-Law No. 10 of 2025 and
+        associated regulations) and, for customers operating in financial free zones, the laws of
+        the Dubai International Financial Centre (DIFC). Disputes are submitted to the DIFC Courts
+        unless otherwise agreed in your order form.
       </p>
 
       <h2>10. Contact</h2>

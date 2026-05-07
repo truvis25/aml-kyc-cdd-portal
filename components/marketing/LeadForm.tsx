@@ -17,7 +17,13 @@ interface SubmitResponse {
   fieldErrors?: FieldErrors;
 }
 
-export function LeadForm({ sourcePath }: { sourcePath?: string }) {
+export function LeadForm({
+  sourcePath,
+  submitLabel = 'Reserve my demo spot',
+}: {
+  sourcePath?: string;
+  submitLabel?: string;
+}) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -85,9 +91,10 @@ export function LeadForm({ sourcePath }: { sourcePath?: string }) {
   if (success) {
     return (
       <div className="rounded-lg border border-green-200 bg-green-50 p-6">
-        <h3 className="text-base font-semibold text-green-900">Thanks — we&apos;ll be in touch.</h3>
+        <h3 className="text-base font-semibold text-green-900">Request received — we&apos;ll reply within 2 business hours.</h3>
         <p className="mt-2 text-sm text-green-800">
-          A TruVis team member will reply within one business day to schedule your demo.
+          Our Gulf-based compliance team will reply with slot options and any pre-reading relevant
+          to your workflow.
         </p>
       </div>
     );
@@ -141,7 +148,7 @@ export function LeadForm({ sourcePath }: { sourcePath?: string }) {
         </Field>
       </div>
 
-      <Field id="vertical" label="What best describes you?" error={errors.vertical}>
+      <Field id="vertical" label="Primary compliance need" error={errors.vertical}>
         <select
           id="vertical"
           value={vertical}
@@ -150,14 +157,14 @@ export function LeadForm({ sourcePath }: { sourcePath?: string }) {
           className="input-field"
         >
           <option value="">Select one (optional)</option>
-          <option value="dnfbp">DNFBP (real estate, gold, law firm, CSP)</option>
+          <option value="dnfbp">DNFBP (real estate, gold, law firm, VASP, CSP)</option>
           <option value="fintech">Fintech / EMI / PSP</option>
-          <option value="bank">Bank</option>
+          <option value="bank">Bank / Regulated FI</option>
           <option value="other">Other</option>
         </select>
       </Field>
 
-      <Field id="message" label="Anything we should know?" error={errors.message}>
+      <Field id="message" label="What's driving this now? (optional)" error={errors.message}>
         <textarea
           id="message"
           value={message}
@@ -168,7 +175,7 @@ export function LeadForm({ sourcePath }: { sourcePath?: string }) {
           className={cn(
             'flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50',
           )}
-          placeholder="Volume, jurisdictions, current tooling…"
+          placeholder="Upcoming examination, new licence, scaling onboarding volume…"
         />
       </Field>
 
@@ -192,7 +199,7 @@ export function LeadForm({ sourcePath }: { sourcePath?: string }) {
       )}
 
       <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-        {loading ? 'Sending…' : 'Request a demo'}
+        {loading ? 'Sending…' : submitLabel}
       </Button>
       <p className="text-xs text-gray-500">
         By submitting you agree to our{' '}

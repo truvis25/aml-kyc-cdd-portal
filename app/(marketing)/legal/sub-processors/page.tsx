@@ -48,8 +48,10 @@ export default function SubProcessorsPage() {
   return (
     <LegalPage title="Sub-processors" lastUpdated="29 April 2026">
       <p>
-        TruVis uses the sub-processors below to deliver the service. We give customers at least 30
-        days&apos; notice of any new sub-processor; the most current list is always on this page.
+        TruVis Technologies LLC uses the sub-processors below to deliver the service. We give
+        customers at least 30 days&apos; notice of any new sub-processor; the most current list is
+        always on this page. This disclosure is made in accordance with UAE Federal Decree-Law
+        No. 45 of 2021 (UAE PDPL) and the EU General Data Protection Regulation (GDPR).
       </p>
       <p>
         Sub-processors marked <em>optional</em> are engaged only when the corresponding feature is

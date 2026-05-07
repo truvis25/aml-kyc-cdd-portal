@@ -1,12 +1,12 @@
 import Link from 'next/link';
 
 export function CTASection({
-  title = 'See TruVis on your own data.',
-  body = 'Bring an anonymised customer file. We will walk you through onboarding, screening, risk and the audit trail in 20 minutes.',
+  title = 'CBUAE-examination-ready in 30 days — speak to our Gulf compliance team.',
+  body = 'Reserve your demo — 30 minutes, no pitch deck, your workflow our focus.',
   primaryHref = '/book-demo',
-  primaryLabel = 'Book a 20-min demo',
-  secondaryHref = '/pricing',
-  secondaryLabel = 'See pricing',
+  primaryLabel = 'Book a Demo',
+  secondaryHref = '/signup',
+  secondaryLabel = 'Start Free Trial',
 }: {
   title?: string;
   body?: string;

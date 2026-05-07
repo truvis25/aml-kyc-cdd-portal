@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy Policy" lastUpdated="29 April 2026">
       <p>
-        This Privacy Policy explains how TruVis FZ-LLC (&quot;TruVis&quot;) handles personal data.
+        This Privacy Policy explains how TruVis Technologies LLC (&quot;TruVis&quot;) handles personal data.
         It applies to data we hold about visitors to our website, prospects who contact us, and
         users invited into a TruVis tenant by a customer organisation.
       </p>
@@ -78,8 +78,10 @@ export default function PrivacyPage() {
 
       <h2>7. Your rights</h2>
       <p>
-        Where applicable law gives you rights over your personal data — access, correction,
-        deletion, objection, portability — you may exercise them by contacting{' '}
+        Where applicable law gives you rights over your personal data — including under UAE
+        Federal Decree-Law No. 45 of 2021 (UAE PDPL) and the EU General Data Protection
+        Regulation (GDPR) — you may exercise rights of access, correction, deletion, objection,
+        and portability by contacting{' '}
         <a href="mailto:privacy@truvis.ae">privacy@truvis.ae</a>. If you are a tenant end-user,
         please contact your tenant administrator first; they are the controller for that data.
       </p>

@@ -4,95 +4,87 @@ import { PricingCard, type PricingTier } from '@/components/marketing/PricingCar
 import { CTASection } from '@/components/marketing/CTASection';
 
 export const metadata: Metadata = {
-  title: 'Pricing',
+  title: 'Pricing — Transparent AED tiers for regulated firms',
   description:
-    'Transparent monthly pricing for TruVis. Starter, Growth and Enterprise tiers — published in AED.',
+    'TruVis pricing published in AED. Foundations, Compliance Suite, and Enterprise tiers. No NDA required to see what you pay.',
 };
 
 const TIERS: PricingTier[] = [
   {
-    name: 'Starter',
-    price: 'AED 1,500',
+    name: 'Foundations',
+    price: 'AED 2,500',
     cadence: '/ month',
-    audience: 'Single-entity DNFBPs and early-stage fintechs piloting TruVis.',
+    audience: 'For growing fintechs and DNFBPs. Up to 500 customer records.',
     features: [
-      '1 staff seat',
-      'Up to 100 verifications / month',
-      'KYC-individual, KYB-corporate, sanctions and PEP screening',
-      'Standard onboarding portal (TruVis-branded)',
-      'Append-only audit trail on every action',
+      'Up to 500 customer records',
+      'KYC onboarding with liveness and document parse',
+      'AML screening — sanctions and PEP registers',
+      'Basic case management with audit trail',
+      'Append-only hash-chained audit log on every action',
       'Email support, 1 business day response SLA',
     ],
     ctaHref: '/book-demo',
-    ctaLabel: 'Start with a demo',
+    ctaLabel: 'Book a Demo',
   },
   {
-    name: 'Growth',
-    price: 'AED 5,000',
+    name: 'Compliance Suite',
+    price: 'AED 8,500',
     cadence: '/ month',
-    audience: 'Multi-team DNFBPs, EMIs and Tier-2 fintechs running production workflows.',
+    audience: 'For regulated FIs and multi-entity groups. Unlimited customers.',
     features: [
-      '5 staff seats (additional seats billed per seat)',
-      'Up to 500 verifications / month',
-      'Full case workflow with role-aware queues',
+      'Unlimited customer records',
+      'Full MLRO workbench with role-aware case queues',
       'Four-eyes enforcement on approvals',
-      'Tenant-branded customer portal with resumable flows',
-      'SAR flag/unflag action with goAML XML export',
-      'Hash-chained audit log, JSON-L export for regulators',
+      'UAE Pass liveness and Emirates ID parse',
+      'SAR drafting with goAML XML export',
+      'EDD section with structured evidence capture',
+      'Audit trail export and 7-year retention',
+      'Advanced risk scoring — 3-D model with per-tenant thresholds',
       'Priority support, same-day response SLA',
-      'Arabic UI (roadmap: Q3 2026)',
     ],
     ctaHref: '/book-demo',
-    ctaLabel: 'Talk to sales',
+    ctaLabel: 'Book a Demo',
     highlight: true,
   },
   {
     name: 'Enterprise',
     price: 'Custom',
-    audience: 'Banks, regulated FIs, and groups with multiple licensed entities.',
+    audience: 'White-label, multi-tenant. For banks, holding groups, and platform operators.',
     features: [
-      'Unlimited seats and verifications',
-      'SSO (SAML 2.0 and OpenID Connect)',
-      'Dedicated Supabase tenant on isolated infrastructure',
-      'Named customer success and compliance engineer',
+      'White-label multi-tenant deployment',
+      'Custom workflow rules and risk model configuration',
+      'Dedicated customer success manager',
       'Contractual uptime SLA with incident response',
+      'Penetration test reports available under NDA',
+      'SSO (SAML 2.0 and OpenID Connect)',
+      'Dedicated infrastructure in Bahrain region (me1)',
       'Data Processing Agreement and sub-processor disclosures',
-      'Security questionnaire walkthrough and architecture review',
-      'Webhook operations viewer for async task visibility',
     ],
     ctaHref: '/book-demo',
-    ctaLabel: 'Request a quote',
+    ctaLabel: 'Talk to our Gulf team →',
   },
 ];
 
 const FAQ: { q: string; a: string }[] = [
   {
-    q: 'How is a “verification” counted?',
-    a: 'One completed onboarding session — the customer reaches a terminal state (approved, rejected, or formally withdrawn) — counts as one verification. Resumed sessions and partial submissions are not counted twice. Every verification is timestamped and recorded in the immutable audit trail.',
+    q: 'Is pricing in AED?',
+    a: 'Yes. All published prices are in UAE Dirhams (AED), exclusive of VAT. Annual prepayment earns a 15% discount on Foundations and Compliance Suite tiers. Enterprise is priced on contract.',
   },
   {
-    q: 'What happens if we exceed our monthly verification cap?',
-    a: 'We will not block ongoing onboardings. Overages are invoiced at the next billing cycle at AED 12 per verification on Starter and AED 8 on Growth. We will notify your admins before any overage is incurred.',
+    q: 'Can I switch tiers later?',
+    a: 'Yes. You can upgrade or downgrade at the next billing cycle. Upgrading mid-cycle is prorated. Downgrading takes effect at renewal. Your audit trail and data are always portable.',
   },
   {
-    q: 'Are IDV and screening provider fees included?',
-    a: 'Identity verification and sanctions / PEP screening are passed through at our wholesale rate during early-access. From Q3 we will publish a fixed per-verification figure that bundles both.',
+    q: 'What data residency do you provide?',
+    a: 'All customer data and audit logs are stored in Supabase region me1 (Bahrain) and served from Vercel region me1. Your data does not leave the GCC for processing or storage without your written instruction. See the Security page for architecture detail.',
   },
   {
-    q: 'How does the audit trail help with regulators?',
-    a: 'Every compliance action (onboarding, screening hit resolution, risk scoring, approval, SAR flag) is recorded in an immutable, hash-chained audit_log. When Federal Decree-Law No. 10 regulators ask to see your evidence, you export the JSON-L chain with no data loss or alteration possible.',
+    q: 'Is implementation support included?',
+    a: 'Foundations and Compliance Suite include onboarding documentation and email support. Compliance Suite customers receive a dedicated onboarding call to configure tenant branding, document types, and risk thresholds. Enterprise includes a named implementation engineer.',
   },
   {
-    q: 'Do you support Arabic and RTL?',
-    a: 'Arabic UI and RTL layout are on the Growth roadmap and will ship to existing Growth customers at no additional cost in Q3 2026.',
-  },
-  {
-    q: 'Can we self-host or have a dedicated database?',
-    a: 'Dedicated tenant infrastructure (separate Supabase project) is available on the Enterprise tier. All Enterprise tenants run in Bahrain region (me1). We do not currently offer customer-hosted deployments.',
-  },
-  {
-    q: 'What SLA do you offer?',
-    a: 'Starter and Growth tiers offer email support with response-time SLAs (1 business day and same-day, respectively). Enterprise includes a contractual uptime SLA with incident response procedures and a named customer success engineer.',
+    q: 'Do you have a free trial?',
+    a: 'Yes. A 14-day free trial with full Compliance Suite access is available with no credit card required. You can start from the signup page or request a guided trial via the demo booking.',
   },
 ];
 
@@ -103,10 +95,12 @@ export default function PricingPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Pricing</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-            Transparent pricing. No hidden regulator surprises.
+            Transparent pricing in AED. No NDA required.
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-700">
-            Most AML platforms hide their price until you sign an NDA. TruVis publishes in AED so you know what you pay before the demo. Every tier includes the immutable audit trail your regulator will inspect.
+            Most compliance platforms hide their price until you sign a non-disclosure. TruVis
+            publishes in AED so you know what you pay before the demo. Every tier includes the
+            hash-chained audit trail your regulator will inspect.
           </p>
         </div>
       </header>
@@ -119,10 +113,10 @@ export default function PricingPage() {
             ))}
           </div>
           <p className="mt-8 max-w-2xl text-sm text-gray-500">
-            Prices exclude VAT. Annual billing earns a 15% discount on Starter and Growth.
-            Design-partner cohorts get the first six months free in exchange for a case study —
-            <Link href="/book-demo" className="ml-1 text-blue-600 hover:underline">
-              ask us about it
+            Prices exclude VAT. Annual billing earns a 15% discount on Foundations and Compliance Suite.
+            Start a 14-day free trial with no credit card —{' '}
+            <Link href="/signup" className="text-blue-600 hover:underline">
+              sign up now
             </Link>
             .
           </p>
@@ -146,8 +140,11 @@ export default function PricingPage() {
       </section>
 
       <CTASection
-        title="Pick a tier, book a 20-minute demo."
-        body="We will help you choose the right tier and answer pricing questions on the call."
+        title="Not sure which tier fits? Ask us."
+        body="Reserve your demo — 30 minutes, no pitch deck, your workflow our focus. We will recommend the right tier on the call."
+        primaryLabel="Book a Demo"
+        secondaryLabel="Start Free Trial"
+        secondaryHref="/signup"
       />
     </>
   );
