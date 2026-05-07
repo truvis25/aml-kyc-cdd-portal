@@ -3,98 +3,87 @@ import Link from 'next/link';
 import { CTASection } from '@/components/marketing/CTASection';
 
 export const metadata: Metadata = {
-  title: 'Security & Data Residency — Built for regulated institutions',
+  title: 'Security & Data Residency | TruVis',
   description:
-    'TruVis security: SOC 2 Type II, ISO 27001 planned, UAE PDPL compliant. AES-256 at rest, TLS 1.3 in transit, UAE data residency (Bahrain/me1), hash-chained audit log, MFA enforced, 7 RBAC roles.',
+    'TruVis keeps your customer data in the UAE, enforces staff access controls, and maintains a permanent record of every compliance decision — ready for regulator review.',
 };
 
 const PRINCIPLES: { title: string; body: string; detail?: string[] }[] = [
   {
-    title: 'Certifications',
+    title: 'Your data stays in the UAE',
     body:
-      'TruVis is pursuing SOC 2 Type II certification. ISO 27001 certification is planned for 2026. TruVis is compliant with UAE Federal Decree-Law No. 45 of 2021 (UAE PDPL) and supports customers in their GDPR obligations as a processor.',
+      'TruVis hosts all customer data, audit records, and documents within UAE infrastructure. We do not route your data through EU or US servers by default — meeting UAE data residency expectations under the PDPL and supporting CBUAE, DFSA, and FSRA examination requirements.',
     detail: [
-      'SOC 2 Type II — audit in progress; report available to Enterprise customers under NDA',
-      'ISO 27001 — planned certification 2026',
-      'UAE PDPL (Federal Decree-Law No. 45 of 2021) — compliant',
-      'GDPR — processor obligations fulfilled via DPA',
+      'All data hosted in Bahrain (GCC region) — not EU or US',
+      'No cross-border data transfers without your explicit written instruction',
+      'Meets UAE Federal Decree-Law No. 45 of 2021 (UAE PDPL) requirements',
+      'Supports CBUAE, DFSA, FSRA, and VARA data governance obligations',
     ],
   },
   {
-    title: 'UAE data residency',
+    title: 'Only the right people see the right things',
     body:
-      'Your data stays in the UAE. Hosted on Vercel region me1 (Bahrain) and Supabase region me1 (Bahrain). Never routed through EU or US infrastructure by default. Cross-region replication requires your written instruction.',
+      'Every member of your compliance team has a defined role — Analyst, Senior Reviewer, Compliance Officer, MLRO, or Admin. Each role sees only the cases, reports, and actions they are authorised for. MFA is required for anyone who can approve cases or file SARs.',
     detail: [
-      'Vercel App Router region: me1 (Bahrain)',
-      'Supabase Postgres + Auth + Storage: me1 (Bahrain)',
-      'No cross-region replicas by default — opt-in only with written instruction',
-      'UAE PDPL cross-border transfer restrictions respected',
+      'Seven permission levels — from read-only viewer to platform administrator',
+      'MFA required for case approvers, SAR filers, and administrators',
+      'SAR reports visible only to MLRO and Compliance Officer — tipping-off protection built in',
+      'All login attempts and permission denials permanently recorded',
     ],
   },
   {
-    title: 'Encryption',
+    title: 'A permanent record that cannot be changed',
     body:
-      'All data is encrypted at rest using AES-256 and in transit using TLS 1.3. Key management is handled via cloud KMS. Customer documents are stored in private buckets with no public read access.',
+      'Every compliance action — approval, rejection, document upload, risk decision — is permanently recorded and cannot be altered or deleted after the fact. When a regulator asks what happened in a case, you can produce a complete, timestamped record in minutes.',
     detail: [
-      'AES-256 encryption at rest — Supabase-managed, platform-enforced',
-      'TLS 1.3 in transit — all connections, no downgrades',
-      'Cloud KMS for encryption key management',
-      'Customer documents: private storage buckets, 15-minute signed URLs, never cached',
+      'Every decision permanently recorded — nothing can be changed after the fact',
+      'Complete case history: who did what, when, and why',
+      'Customer record versioning — see every change to a customer profile over time',
+      'Seven-year retention by default',
+      'Full case file export for regulator handover',
     ],
   },
   {
-    title: 'Access control — MFA enforced, 7 RBAC roles',
+    title: 'Documents stored securely',
     body:
-      'MFA is enforced for all roles with case-approval or SAR-queue access. RBAC is applied at two layers: JWT middleware and API route. No privilege escalation is possible — least-privilege is the default.',
+      'Customer documents — passports, Emirates IDs, utility bills — are stored in private, encrypted vaults. Staff access them through time-limited links that expire automatically. Documents are never publicly accessible.',
     detail: [
-      'TOTP MFA enforced for MLRO, Compliance Officer, Tenant Admin, Senior Reviewer',
-      '7 role levels: Super Admin, Tenant Admin, MLRO, Compliance Officer, Senior Reviewer, Analyst, Viewer',
-      'RBAC enforced twice: JWT middleware (deny fast) and API route (deny late)',
-      'Least-privilege default — every role sees only the cases and actions it needs',
-      'Failed sign-in attempts and permission denials logged to the hash-chained audit trail',
+      'Documents stored in encrypted private storage — no public access',
+      'All data encrypted at rest and in transit',
+      'Access links expire automatically after a short window',
+      'Document access recorded in the audit trail',
     ],
   },
   {
-    title: 'Penetration testing',
+    title: 'Certifications and third-party testing',
     body:
-      'Annual third-party penetration test conducted by an independent security firm. Results are available under NDA to Enterprise customers. No public bug bounty programme is currently operated.',
+      'TruVis undergoes annual independent penetration testing. We are pursuing SOC 2 Type II certification, with ISO 27001 planned for 2026. Pen-test reports are available to Enterprise customers under NDA.',
     detail: [
-      'Annual third-party penetration test — scope: application, API, and infrastructure',
-      'Pen-test report available under NDA to Enterprise customers',
-      'Remediation timeline published within 5 business days of confirmed finding',
+      'Annual third-party penetration test — application, API, and infrastructure scope',
+      'SOC 2 Type II — audit in progress; report available under NDA to Enterprise customers',
+      'ISO 27001 — planned 2026',
+      'Security findings remediated within five business days',
     ],
   },
   {
-    title: 'Incident response — 72-hour breach notification',
+    title: 'Breach notification within 72 hours',
     body:
-      'TruVis notifies customers of confirmed personal-data breaches within 72 hours of confirmation, in accordance with UAE PDPL and GDPR obligations. The dedicated security contact for disclosures and incidents is security@truvis.io.',
+      'In the event of a confirmed personal data breach, TruVis notifies affected customers within 72 hours of confirmation — in line with UAE PDPL and GDPR obligations. We document what happened, what data was affected, and what we did about it.',
     detail: [
       '72-hour breach notification SLA (UAE PDPL and GDPR)',
-      'Breach notification includes: categories of data, approximate record count, likely consequences, remedial steps',
-      'Dedicated security contact: security@truvis.io',
-      'Coordinated disclosure requested before public publication of any vulnerability',
-    ],
-  },
-  {
-    title: 'Audit-grade backbone',
-    body:
-      'Every compliance action lands in an immutable, hash-chained ledger. UPDATE and DELETE are forbidden at the database layer. Altering a row breaks the SHA-256 chain — tampering is immediately detectable.',
-    detail: [
-      'Append-only audit_log: UPDATE/DELETE blocked by database trigger, no exceptions',
-      'SHA-256 hash chain: each row commits to the previous row',
-      'Customer data versioning: every field change is a new append-only row, never overwritten',
-      '7-year retention by default; JSON-L export for regulator handover',
-      'IP addresses masked to /24 before storage — geographic data only',
+      'Notification includes: data categories affected, approximate record count, remedial steps',
+      'Security disclosures: security@truvis.ae',
+      'Coordinated disclosure requested before publishing any vulnerability details',
     ],
   },
 ];
 
 const SUB_PROCESSORS_OVERVIEW: { category: string; purpose: string }[] = [
-  { category: 'Database, auth and storage', purpose: 'Tenant data, audit log and file storage in region me1 (Bahrain)' },
-  { category: 'Application hosting', purpose: 'Edge runtime in region me1 (Bahrain)' },
-  { category: 'Transactional email', purpose: 'RAI, decision and operational notifications' },
-  { category: 'Sanctions and PEP screening', purpose: 'Watchlist data and webhook delivery' },
-  { category: 'Identity verification', purpose: 'Liveness, OCR and face match' },
+  { category: 'Data storage and authentication', purpose: 'Customer data, audit records, and document storage — UAE region' },
+  { category: 'Application delivery', purpose: 'Platform hosting and edge routing — UAE region' },
+  { category: 'Email notifications', purpose: 'Review requests, approvals, and operational alerts sent to your team' },
+  { category: 'Sanctions and PEP screening', purpose: 'Watchlist data for AML screening checks' },
+  { category: 'Identity verification', purpose: 'Document reading, liveness checks, and face matching during onboarding' },
 ];
 
 export default function SecurityPage() {
@@ -104,15 +93,14 @@ export default function SecurityPage() {
         <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 lg:pb-20 lg:pt-28 lg:px-10">
           <p className="flex items-center gap-3 text-[12px] uppercase tracking-[0.18em] text-mute">
             <span className="copper-rule" aria-hidden="true" />
-            <span>Security &amp; Architecture</span>
+            <span>Security &amp; Data Residency</span>
           </p>
           <h1 className="font-display mt-6 max-w-[22ch] text-[40px] leading-[1.08] text-ink sm:text-[56px]">
-            Engineered for regulatory inspection.
+            Built to pass a regulator&rsquo;s examination.
           </h1>
           <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-soft">
-            SOC 2 Type II in progress. UAE PDPL compliant. AES-256 at rest, TLS 1.3 in transit,
-            UAE data residency in Bahrain. Every decision is oriented toward forensic defensibility
-            under CBUAE, DFSA, FSRA, and VARA examination.
+            When a CBUAE, DFSA, or FSRA examiner asks to see your data governance, access
+            controls, and decision audit — TruVis gives you the answers, not a scramble.
           </p>
         </div>
       </section>
@@ -121,10 +109,7 @@ export default function SecurityPage() {
         <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-2">
             {PRINCIPLES.map((p) => (
-              <div
-                key={p.title}
-                className="rounded-2xl border border-line bg-cream p-6"
-              >
+              <div key={p.title} className="rounded-2xl border border-line bg-cream p-6">
                 <h2 className="text-[16px] font-semibold text-ink">{p.title}</h2>
                 <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">{p.body}</p>
                 {p.detail && (
@@ -143,14 +128,14 @@ export default function SecurityPage() {
 
           <div className="mt-12 rounded-2xl border border-line bg-cream p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="text-[18px] font-semibold text-ink">Sub-processors</h2>
+              <h2 className="text-[18px] font-semibold text-ink">Third-party services we use</h2>
               <Link href="/legal/sub-processors" className="text-[13px] text-copper hover:underline">
-                See full list →
+                Full list →
               </Link>
             </div>
             <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-              We disclose every sub-processor that touches customer data. The full list, with
-              location and purpose, is on the legal page.
+              We disclose every service that processes your customer data. The complete list,
+              including the location and purpose of each, is on our legal page.
             </p>
             <ul className="mt-5 divide-y divide-line border-t border-line">
               {SUB_PROCESSORS_OVERVIEW.map((s) => (
@@ -163,23 +148,22 @@ export default function SecurityPage() {
           </div>
 
           <div className="mt-8 rounded-2xl border border-line bg-cream p-6">
-            <h2 className="text-[16px] font-semibold text-ink">Reporting a security issue</h2>
+            <h2 className="text-[16px] font-semibold text-ink">Found a security issue?</h2>
             <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-              If you believe you have found a vulnerability in TruVis, email{' '}
+              Email{' '}
               <a href="mailto:security@truvis.ae" className="text-copper hover:underline">
                 security@truvis.ae
               </a>
-              . We acknowledge within one business day and provide a remediation timeline within
-              five. 72-hour breach notification SLA per UAE PDPL. Coordinated disclosure requested
-              before public publication.
+              . We acknowledge within one business day and share a remediation timeline within five.
+              Please coordinate disclosure with us before publishing any details.
             </p>
           </div>
         </div>
       </section>
 
       <CTASection
-        title="Ready to review our security controls?"
-        body="Bring your security questionnaire. We will walk through SOC 2 controls, RLS policies, the hash-chained audit, and UAE data residency in 30 minutes."
+        title="Questions about data residency or access controls?"
+        body="Bring your security questionnaire or your regulator&rsquo;s checklist. We&rsquo;ll walk through every point on a 30-minute call."
         primaryLabel="Book a Demo"
         secondaryLabel="Read the DPA"
         secondaryHref="/legal/dpa"

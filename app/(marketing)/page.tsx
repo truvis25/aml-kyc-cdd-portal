@@ -81,29 +81,29 @@ export default function LandingPage() {
 
       {/* Three deep-dive product sections, alternating */}
       <ProductSection
-        eyebrow="Audit-grade backbone"
-        title="Append-only, hash-chained audit log. Every decision, proven untampered."
-        body="Every compliance action — onboarding submission, screening hit, risk score, approval, SAR flag — lands in an immutable ledger. Altering a row breaks the SHA-256 chain and is forensically detectable."
+        eyebrow="Complete audit trail"
+        title="Every decision on record — permanently, and ready for a regulator."
+        body="Every approval, rejection, document upload, and risk change is recorded automatically and can never be altered. When an examiner asks what happened in a case, you produce the complete file in minutes — not days."
         bullets={[
-          'Append-only audit_log with hash chain: each row commits to the previous row',
-          'Customer data versioning — every field change is a new row, never overwritten',
-          'goAML XML export bound to audit row with hash — regulator verifies file integrity',
-          '7-year retention by default; JSON-L export for regulator handover',
+          'Permanent record of every compliance action — nothing can be changed after the fact',
+          'Full case history: who decided what, when, and why',
+          'goAML export for FIU submissions, with file integrity verification',
+          'Seven-year retention by default, with full export for handover',
         ]}
-        ctaLabel="See the security model"
+        ctaLabel="How we handle security"
         ctaHref="/security"
         visual={<ProveVisual />}
       />
 
       <ProductSection
-        eyebrow="Real-time AML screening"
-        title="235+ sanctions lists. PEP registers. Adverse media. Under 150ms."
-        body="Screen customers and counterparties in real time against the world&rsquo;s leading watchlists. Push alerts fire on every list update — not nightly batch. Hit resolution runs inside the case, with full audit trail."
+        eyebrow="AML screening"
+        title="Know instantly if a customer or transaction is a risk."
+        body="TruVis screens against hundreds of sanctions lists, PEP registers, and adverse media sources the moment a customer applies — and alerts you when anything changes after onboarding. Your team reviews matches inside the case, with the full customer file alongside."
         bullets={[
-          '235+ sanctions lists, PEP registers, and adverse media sources',
-          'Sub-150ms average latency — screening completes before the onboarding page loads',
-          'Push alerts on every watchlist update, not nightly batch',
-          'Hit resolution workflow: confirm, dismiss, or escalate — each action recorded',
+          'Sanctions, PEP, and adverse media screening in real time',
+          'Alerts when a match appears — not on a nightly batch run',
+          'Hit review inside the case: confirm, dismiss, or escalate — each action recorded',
+          'Swap or add screening providers without rebuilding your workflow',
         ]}
         ctaLabel="See the screening workflow"
         ctaHref="/product"
@@ -112,14 +112,14 @@ export default function LandingPage() {
       />
 
       <ProductSection
-        eyebrow="One platform, end-to-end"
-        title="KYC onboarding, AML screening, case management, SAR filing. One workflow."
-        body="Replace five point solutions with one. UAE Pass liveness, Emirates ID parse, multi-step resumable onboarding, real-time screening, role-aware case queues, four-eyes approvals, SAR drafting with goAML XML export — all in one data model with one audit trail."
+        eyebrow="One connected platform"
+        title="From customer onboarding to SAR filing — in one place."
+        body="Replace the spreadsheet and the four separate tools. TruVis connects KYC onboarding, AML screening, risk scoring, case review, and SAR filing into one workflow. One customer record. One audit trail. One vendor to call when something needs fixing."
         bullets={[
-          'UAE Pass liveness and Emirates ID parse out of the box',
-          'KYC-individual and KYB-corporate onboarding — each step audited',
-          'MLRO workbench: case queue, SLA tracking, RAI, escalation, EDD section',
-          'SAR drafting with goAML XML export and tipping-off masking enforced at schema level',
+          'UAE Pass sign-in and Emirates ID reading built in — no extra integrations',
+          'Onboarding for individuals and companies, each step permanently recorded',
+          'MLRO workbench: case queue, deadlines, requests for information, EDD section',
+          'SAR drafting and goAML export, with tipping-off protection built in',
         ]}
         ctaLabel="See the full platform"
         ctaHref="/product"
@@ -159,14 +159,14 @@ export default function LandingPage() {
             <div className="grid gap-3 lg:col-span-7 sm:grid-cols-2">
               <CompareCard
                 category="vs global IDV platforms"
-                edge="UAE Pass ✓ · goAML native ✓ · UAE data residency ✓"
-                concede="They lead on global document library breadth"
+                edge="UAE Pass ✓ · goAML filing ✓ · UAE data residency ✓"
+                concede="They have a wider global document library"
                 href="/compare"
               />
               <CompareCard
                 category="vs regional GCC suites"
-                edge="API-first ✓ · white-label ✓ · hash-chained audit ✓"
-                concede="They lead on direct regulator-submission integrations"
+                edge="API access ✓ · white-label ✓ · transparent AED pricing ✓"
+                concede="They have deeper direct regulator-submission integrations today"
                 href="/compare"
               />
             </div>
@@ -175,8 +175,8 @@ export default function LandingPage() {
       </section>
 
       <CTASection
-        title="CBUAE-examination-ready in 30 days — speak to our Gulf compliance team."
-        body="Reserve your demo — 30 minutes, no pitch deck, your workflow our focus."
+        title="See TruVis running your compliance workflow."
+        body="30 minutes with your team. No slides. We walk through your onboarding, screening, and case review process — and show you exactly where TruVis fits."
         primaryLabel="Book a Demo"
         secondaryLabel="Start Free Trial"
         secondaryHref="/signup"
