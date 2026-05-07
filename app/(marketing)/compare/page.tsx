@@ -131,13 +131,14 @@ export default function CompareIndex() {
               <span>How TruVis compares</span>
             </p>
             <h1 className="font-display mt-6 text-[40px] leading-[1.1] text-ink sm:text-[52px]">
-              How TruVis compares to global and regional compliance platforms.
+              An honest comparison.
             </h1>
             <p className="mt-6 max-w-2xl text-[16px] leading-relaxed text-ink-soft">
-              Teams evaluating TruVis are usually also looking at two categories: global
-              identity-verification platforms (broad document library, global reach) and
-              regional GCC compliance suites (UAE regulatory alignment). TruVis is the platform
-              that gives you both — UAE-native and global-grade, without the trade-off.
+              How TruVis compares to global and regional compliance platforms. Teams evaluating
+              TruVis are usually looking at two categories: global identity-verification platforms
+              (broad document library, global reach) and regional GCC compliance suites (UAE
+              regulatory alignment). TruVis gives you both — UAE-native and global-grade, without
+              the trade-off.
             </p>
           </div>
         </div>
@@ -151,7 +152,7 @@ export default function CompareIndex() {
               <span>Category 1</span>
             </p>
             <h2 className="font-display mt-5 text-[32px] leading-[1.15] text-ink sm:text-[36px]">
-              vs global IDV platforms
+              vs global identity-verification platforms
             </h2>
             <p className="mt-5 text-[15px] leading-relaxed text-ink-soft">
               Global IDV platforms have broad document libraries, deepfake detection, and
