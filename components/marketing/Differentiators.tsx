@@ -7,33 +7,33 @@ interface Differentiator {
 const ITEMS: Differentiator[] = [
   {
     numeral: '01',
-    title: 'Case-first, not API-first.',
-    body: 'Workbench, queues, four-eyes &mdash; designed for compliance staff. Engineers don&rsquo;t need to wire a workflow before the team can work a case.',
+    title: 'One platform, end-to-end.',
+    body: 'KYC onboarding, corporate KYB, AML screening, case management, SAR filing, and MLRO workbench in one workflow. Replace five tools with one.',
   },
   {
     numeral: '02',
-    title: 'Audit you can defend two years later.',
-    body: 'Append-only and hash-chained at the database. Every decision links to every artefact: form revision, signed-URL request, screening hit, four-eyes approval.',
+    title: 'Audit-grade backbone.',
+    body: 'Append-only, hash-chained audit log. Every decision, every document version, every access event &mdash; mathematically proven untampered.',
   },
   {
     numeral: '03',
-    title: 'UAE-resident by design.',
-    body: 'Bahrain region (me1) by default. Row-level security on every tenant-scoped table. MFA required for MLRO and Tenant Admin roles.',
+    title: 'Real-time AML screening.',
+    body: 'Screen against 235+ sanctions lists, PEP registers, and adverse media in under 150ms. Push alerts on every update &mdash; not batch.',
   },
   {
     numeral: '04',
+    title: 'UAE-native regulatory stack.',
+    body: 'Built for CBUAE, DFSA (DIFC), FSRA (ADGM), VARA, and UAE PDPL. Not a global platform adapted after the fact &mdash; UAE-native from the first line of code.',
+  },
+  {
+    numeral: '05',
     title: 'Tipping-off-safe by construction.',
     body: 'SAR visibility is restricted to MLRO and Tenant Admin. The schema enforces it &mdash; analysts and reviewers literally cannot read SAR rows.',
   },
   {
-    numeral: '05',
-    title: 'Transparent SaaS pricing.',
-    body: 'Published AED tiers. Starter ships in days, Growth scales the team, Enterprise adds SSO and SLA. No quote-to-buy.',
-  },
-  {
     numeral: '06',
-    title: 'No PII in logs &mdash; ever.',
-    body: 'Application logs use customer_id, case_id, session_id. Names, DOBs and ID numbers never enter logging pipelines. Sanitiser-enforced in CI.',
+    title: 'Transparent SaaS pricing in AED.',
+    body: 'Published AED tiers. Foundations, Compliance Suite, Enterprise. No quote-to-buy for the first two. No hidden per-verification sticker shock.',
   },
 ];
 

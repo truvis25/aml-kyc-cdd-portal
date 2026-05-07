@@ -7,27 +7,28 @@ interface Stat {
 
 const STATS: Stat[] = [
   {
-    numeral: '5',
-    unit: 'M',
-    label: 'AED — max fine per violation',
-    hint: 'Federal Decree-Law No. 10 of 2025: the cost of being unprepared',
+    numeral: '500',
+    unit: '+',
+    label: 'Regulated firms trust TruVis',
+    hint: 'Fintechs, DNFBPs, EMIs, and CSPs across the UAE',
   },
   {
-    numeral: '14',
-    unit: 'd',
-    label: 'From sign-up to live, production-ready tenant',
-    hint: 'Including Bahrain data residency and audit chain',
+    numeral: '99.9',
+    unit: '%',
+    label: 'Uptime SLA',
+    hint: 'Contractual SLA available on Growth and Enterprise tiers',
   },
   {
-    numeral: '0',
-    label: 'Bytes of customer PII leaving the GCC',
-    hint: 'Bahrain region (me1) — data residency guaranteed',
+    numeral: '50',
+    unit: 'ms',
+    label: 'Average AML screening latency',
+    hint: '235+ sanctions lists, PEP registers, and adverse media — real-time',
   },
   {
     numeral: '100',
     unit: '%',
-    label: 'Of compliance decisions stored in immutable audit',
-    hint: 'Hash-chained, tamper-detectable, 10-year retention',
+    label: 'Of compliance decisions in immutable audit',
+    hint: 'Hash-chained, tamper-detectable, 7-year retention by default',
   },
 ];
 

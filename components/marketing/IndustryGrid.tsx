@@ -29,7 +29,7 @@ const INDUSTRIES: Industry[] = [
   {
     name: 'EMIs, PSPs &amp; Tier-2 fintech',
     body: 'High onboarding volume, thin staffing. Automate the queue, keep the MLRO&rsquo;s decision in the loop.',
-    bullets: ['Embedded IDV passthrough', 'ComplyAdvantage screening', 'Per-tenant risk thresholds'],
+    bullets: ['Embedded IDV passthrough', 'Real-time AML screening', 'Per-tenant risk thresholds'],
     href: '/for/fintechs',
   },
 ];

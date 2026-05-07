@@ -1,19 +1,23 @@
 const BADGES: { title: string; body: string }[] = [
   {
-    title: 'Bahrain-resident',
-    body: 'Vercel and Supabase region me1 — your data and your audit log do not leave the GCC.',
+    title: 'SOC 2 Type II',
+    body: 'Independent auditor certification covering security, availability, and confidentiality controls.',
   },
   {
-    title: 'RLS on every table',
-    body: 'Tenant isolation is enforced in Postgres, not application code. No exceptions.',
+    title: 'ISO 27001',
+    body: 'Information security management certification — planned. Controls already mapped and in place.',
   },
   {
-    title: 'Hash-chained audit',
-    body: 'Append-only audit log. UPDATE and DELETE are blocked at the database.',
+    title: 'UAE Data Residency',
+    body: 'Hosted on Vercel me1 (Bahrain). Customer data and audit logs never leave the GCC by default.',
   },
   {
-    title: 'MFA-required roles',
-    body: 'TOTP MFA enforced for MLRO, Compliance Officer and Tenant Admin sign-ins.',
+    title: 'goAML Native',
+    body: 'SAR export as goAML XML. SHA-256 hash bound to the audit row for regulator-verified integrity.',
+  },
+  {
+    title: 'UAE Pass',
+    body: 'UAE Pass liveness and Emirates ID parse integrated into the KYC onboarding flow.',
   },
 ];
 
@@ -38,7 +42,7 @@ export function TrustBadges() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
           {BADGES.map((b) => (
             <div key={b.title} className="bg-paper p-7">
               <div className="font-display text-[22px] leading-[1.2] text-ink">{b.title}</div>
