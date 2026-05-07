@@ -3,11 +3,13 @@ import { Role } from '@/lib/constants/roles';
 import { DashboardShell } from './dashboard-shell';
 import { StatCard } from './widgets/stat-card';
 import { QueueSummary } from './widgets/queue-summary';
+import { CompletenessCard } from './widgets/completeness-card';
 import {
   countActiveSessions,
   countActiveUsersInTenant,
   countOpenCases,
   getTenantSlug,
+  getTenantSetupCompleteness,
 } from '@/modules/dashboards/queries';
 
 interface Props {
@@ -26,12 +28,36 @@ export async function PlatformAdminDashboard({ tenantId }: Props) {
     | { id: string; name: string; slug: string; status: string; created_at: string }
     | null;
 
-  const [users, sessions, cases, slug] = await Promise.all([
+  const [users, sessions, cases, slug, completeness] = await Promise.all([
     countActiveUsersInTenant(supabase, tenantId),
     countActiveSessions(supabase, tenantId),
     countOpenCases(supabase, tenantId),
     getTenantSlug(supabase, tenantId),
+    getTenantSetupCompleteness(supabase, tenantId),
   ]);
+
+  const setupSignals = [
+    {
+      label: 'Active workflow published',
+      done: completeness.signals.workflowActive,
+      href: '/admin/workflows',
+    },
+    {
+      label: 'Tenant configuration set',
+      done: completeness.signals.configSet,
+      href: '/admin/config',
+    },
+    {
+      label: 'MLRO assigned',
+      done: completeness.signals.mlroAssigned,
+      href: '/admin/users',
+    },
+    {
+      label: 'Analyst or reviewer assigned',
+      done: completeness.signals.reviewerOrAnalystAssigned,
+      href: '/admin/users',
+    },
+  ];
 
   return (
     <DashboardShell
@@ -46,7 +72,7 @@ export async function PlatformAdminDashboard({ tenantId }: Props) {
         <StatCard label="Open Cases" value={cases} hint={`${sessions} active sessions`} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <QueueSummary
           title="System governance"
           rows={[
@@ -55,6 +81,13 @@ export async function PlatformAdminDashboard({ tenantId }: Props) {
             { label: 'Workflows', value: '→', href: '/admin/workflows' },
             { label: 'Users', value: users, href: '/admin/users' },
           ]}
+        />
+        <CompletenessCard
+          title="Tenant setup completeness"
+          percent={completeness.percent}
+          completed={completeness.completed}
+          total={completeness.total}
+          signals={setupSignals}
         />
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
           <p className="font-semibold mb-1">Cross-tenant view pending</p>

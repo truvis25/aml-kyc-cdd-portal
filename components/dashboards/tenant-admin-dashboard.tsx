@@ -2,8 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 import { Role } from '@/lib/constants/roles';
 import { DashboardShell } from './dashboard-shell';
 import { StatCard } from './widgets/stat-card';
+import { StatCardWithSparkline } from './widgets/stat-card-with-sparkline';
 import { QueueSummary } from './widgets/queue-summary';
 import { CompletenessCard } from './widgets/completeness-card';
+import { PeriodToggle, type Period } from './widgets/period-toggle';
 import {
   countActiveSessions,
   countActiveUsersInTenant,
@@ -13,36 +15,45 @@ import {
   daysAgoIso,
   getActiveWorkflow,
   getTenantSetupCompleteness,
+  getDailySessionVolume,
   startOfTodayIso,
 } from '@/modules/dashboards/queries';
 
 interface Props {
   tenantId: string;
+  /** Injected from the page's searchParams for the period toggle. */
+  period?: Period;
 }
 
-export async function TenantAdminDashboard({ tenantId }: Props) {
+export async function TenantAdminDashboard({ tenantId, period = 'week' }: Props) {
   const supabase = await createClient();
+
+  // Volume since-cutoff driven by selected period
+  const sincePeriod =
+    period === 'today'
+      ? startOfTodayIso()
+      : period === 'month'
+        ? daysAgoIso(30)
+        : daysAgoIso(7);
 
   const [
     activeUsers,
     activeWorkflow,
-    sessionsToday,
-    sessionsWeek,
-    sessionsMonth,
+    sessionsInPeriod,
     activeSessions,
     openCases,
     unassigned,
     completeness,
+    dailySessions,
   ] = await Promise.all([
     countActiveUsersInTenant(supabase, tenantId),
     getActiveWorkflow(supabase, tenantId),
-    countSessionsSince(supabase, tenantId, startOfTodayIso()),
-    countSessionsSince(supabase, tenantId, daysAgoIso(7)),
-    countSessionsSince(supabase, tenantId, daysAgoIso(30)),
+    countSessionsSince(supabase, tenantId, sincePeriod),
     countActiveSessions(supabase, tenantId),
     countOpenCases(supabase, tenantId),
     countUnassignedOpenCases(supabase, tenantId),
     getTenantSetupCompleteness(supabase, tenantId),
+    getDailySessionVolume(supabase, tenantId, 30),
   ]);
 
   const setupSignals = [
@@ -67,6 +78,9 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
       href: '/admin/users',
     },
   ];
+
+  const periodLabel =
+    period === 'today' ? 'today' : period === 'month' ? 'last 30 days' : 'last 7 days';
 
   return (
     <DashboardShell
@@ -93,6 +107,34 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
         />
       </div>
 
+      {/* Volume section with period toggle + sparkline */}
+      <div className="mt-6 flex items-center justify-between gap-4">
+        <h2 className="text-sm font-semibold text-gray-700">Onboarding volume</h2>
+        <PeriodToggle activePeriod={period} />
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCardWithSparkline
+          label={`Sessions — ${periodLabel}`}
+          value={sessionsInPeriod}
+          trend={dailySessions}
+          trendColor="#3b82f6"
+          filled
+        />
+        <StatCard
+          label="Active right now"
+          value={activeSessions}
+          hint="Onboarding in progress"
+        />
+        <StatCard
+          label="Unassigned cases"
+          value={unassigned}
+          hint={unassigned > 0 ? 'Needs assignment' : 'All assigned'}
+          href={unassigned > 0 ? '/cases?status=open' : undefined}
+          urgent={unassigned > 0}
+        />
+      </div>
+
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <CompletenessCard
           title="Setup completeness"
@@ -100,14 +142,6 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
           completed={completeness.completed}
           total={completeness.total}
           signals={setupSignals}
-        />
-        <QueueSummary
-          title="Onboarding volume"
-          rows={[
-            { label: 'Today', value: sessionsToday },
-            { label: 'Last 7 days', value: sessionsWeek },
-            { label: 'Last 30 days', value: sessionsMonth },
-          ]}
         />
         <QueueSummary
           title="Quick actions"
@@ -118,6 +152,19 @@ export async function TenantAdminDashboard({ tenantId }: Props) {
             { label: 'Audit trail', value: '→', href: '/audit' },
           ]}
         />
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Onboarding completeness</h3>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full rounded-full bg-blue-500 transition-all"
+              style={{ width: `${completeness.percent}%` }}
+              aria-label={`${completeness.percent}% complete`}
+            />
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            {completeness.completed} of {completeness.total} setup steps done
+          </p>
+        </div>
       </div>
     </DashboardShell>
   );

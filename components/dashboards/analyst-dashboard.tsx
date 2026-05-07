@@ -3,6 +3,7 @@ import { Role } from '@/lib/constants/roles';
 import { DashboardShell } from './dashboard-shell';
 import { StatCard } from './widgets/stat-card';
 import { QueueSummary } from './widgets/queue-summary';
+import { EmptyState } from './widgets/empty-state';
 import {
   countCasesAssignedTo,
   countCasesAssignedToWithStatus,
@@ -53,13 +54,20 @@ export async function AnalystDashboard({ userId }: Props) {
       </div>
 
       <div className="mt-6">
-        <QueueSummary
-          title="Quick actions"
-          rows={[
-            { label: 'Go to my queue', value: '→', href: '/cases' },
-            { label: 'Customer lookup', value: '→', href: '/customers' },
-          ]}
-        />
+        {open === 0 ? (
+          <EmptyState
+            title="Your queue is empty"
+            body="No open cases are assigned to you. Check back after the next onboarding batch is processed."
+          />
+        ) : (
+          <QueueSummary
+            title="Quick actions"
+            rows={[
+              { label: 'Go to my queue', value: '→', href: '/cases' },
+              { label: 'Customer lookup', value: '→', href: '/customers' },
+            ]}
+          />
+        )}
       </div>
     </DashboardShell>
   );
