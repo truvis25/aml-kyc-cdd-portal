@@ -11,6 +11,7 @@
 import { randomUUID } from 'node:crypto'
 import { emit } from '@/modules/audit/audit.service'
 import type { AuditEventType, AuditEntityType } from '@/lib/constants/events'
+import type { Json } from '@/lib/supabase/database.types'
 
 export interface AuditContext {
   tenantId: string
@@ -40,7 +41,7 @@ export async function writeAuditLog(
     event_type: eventType,
     entity_type: entityType,
     entity_id: entityId,
-    payload: payload ?? {},
+    payload: (payload ?? {}) as Json,
     actor_id: ctx.actorId ?? null,
     actor_role: ctx.actorRole ?? null,
     session_id: ctx.sessionId ?? null,

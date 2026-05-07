@@ -30,7 +30,7 @@ export function toPublicExampleModel(model: ExampleModel): PublicExampleModel {
     id: model.id,
     name: model.name,
     email: model.email,
-  })
+  }) as PublicExampleModel
 }
 
 // ---- Keep this file as a template; copy + rename for each new model ----

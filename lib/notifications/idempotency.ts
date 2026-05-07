@@ -1,8 +1,8 @@
 /**
  * Idempotency helpers for outbound notifications and side-effects.
  *
- * Uses the Supabase admin client to store idempotency keys so that retries
- * never double-fire emails, webhooks, or background jobs.
+ * Callers pass their own Supabase client so this lib stays import-clean.
+ * In app/api/ route handlers, pass the admin client for system-level access.
  *
  * Requires an `idempotency_keys` table:
  *   id         uuid  primary key default gen_random_uuid()
@@ -13,7 +13,7 @@
  * Add it via a Supabase migration if not already present.
  */
 
-import { createAdminClient } from '@/lib/supabase/admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Wraps an outbound side-effect in an idempotency check.
@@ -22,11 +22,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * Otherwise the key is created, `fn` is called, and its result returned.
  */
 export async function withIdempotency<T>(
+  supabase: SupabaseClient,
   key: string,
   ttlMs: number,
   fn: () => Promise<T>,
 ): Promise<T | null> {
-  const supabase = createAdminClient()
   const now = new Date()
   const expiresAt = new Date(now.getTime() + ttlMs)
 
@@ -38,7 +38,7 @@ export async function withIdempotency<T>(
     .single()
 
   if (existing) {
-    if (new Date(existing.expires_at) > now) {
+    if (new Date(existing.expires_at as string) > now) {
       return null
     }
     await supabase.from('idempotency_keys').delete().eq('key', key)

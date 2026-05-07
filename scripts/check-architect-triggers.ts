@@ -79,7 +79,7 @@ const TRIGGERS: Trigger[] = [
     description: 'Cross-tenant data access pattern',
     test: (diff) =>
       /SELECT\s+\*\s+FROM\s+\w+\s+WHERE(?!.*auth\.uid)/i.test(diff) ||
-      /\.findMany\(\s*\{(?![^}]*userId)[^}]*\}\s*\)/s.test(diff),
+      /supabase\.from\([^)]+\)\.select\(/.test(diff) && !/tenant_id/.test(diff),
   },
   {
     id: 9,
